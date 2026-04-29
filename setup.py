@@ -10,7 +10,7 @@ from setuptools import find_packages
 setup(
     # Project
     name='flatlib',
-    version='0.2.3',
+    version='0.2.5',
 
     # Sources
     packages=find_packages(),
