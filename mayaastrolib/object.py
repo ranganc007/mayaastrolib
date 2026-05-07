@@ -10,6 +10,7 @@ and Fixed-Stars.
 """
 
 from . import angle, const, props, utils
+from ._compat import property_with_method_compat
 
 # ------------------ #
 #   Generic Object   #
@@ -47,6 +48,7 @@ class GenericObject:
 
     # === Properties === #
 
+    @property_with_method_compat
     def orb(self):
         """Returns the orb of this object."""
         return -1.0
@@ -110,14 +112,17 @@ class Object(GenericObject):
 
     # === Properties === #
 
+    @property_with_method_compat
     def orb(self):
         """Returns the orb of this object."""
         return props.object.orb[self.id]
 
+    @property_with_method_compat
     def meanMotion(self):
         """Returns the mean daily motion of this object."""
         return props.object.meanMotion[self.id]
 
+    @property_with_method_compat
     def movement(self):
         """Returns if this object is direct, retrograde
         or stationary.
@@ -130,14 +135,17 @@ class Object(GenericObject):
         else:
             return const.RETROGRADE
 
+    @property_with_method_compat
     def gender(self):
         """Returns the gender of this object."""
         return props.object.gender[self.id]
 
+    @property_with_method_compat
     def faction(self):
         """Returns the faction of this object."""
         return props.object.faction[self.id]
 
+    @property_with_method_compat
     def element(self):
         """Returns the element of this object."""
         return props.object.element[self.id]
@@ -146,19 +154,19 @@ class Object(GenericObject):
 
     def isDirect(self):
         """Returns if this object is in direct motion."""
-        return self.movement() == const.DIRECT
+        return self.movement == const.DIRECT
 
     def isRetrograde(self):
         """Returns if this object is in retrograde motion."""
-        return self.movement() == const.RETROGRADE
+        return self.movement == const.RETROGRADE
 
     def isStationary(self):
         """Returns if this object is stationary."""
-        return self.movement() == const.STATIONARY
+        return self.movement == const.STATIONARY
 
     def isFast(self):
         """Returns if this object is in fast motion."""
-        return abs(self.lonspeed) >= self.meanMotion()
+        return abs(self.lonspeed) >= self.meanMotion
 
 
 # ------------------ #
@@ -183,10 +191,12 @@ class House(GenericObject):
 
     # === Properties === #
 
+    @property_with_method_compat
     def num(self):
         """Returns the number of this house [1..12]."""
         return int(self.id[5:])
 
+    @property_with_method_compat
     def condition(self):
         """Returns the condition of this house.
         The house can be angular, succedent or cadent.
@@ -194,6 +204,7 @@ class House(GenericObject):
         """
         return props.house.condition[self.id]
 
+    @property_with_method_compat
     def gender(self):
         """Returns the gender of this house."""
         return props.house.gender[self.id]
@@ -236,6 +247,7 @@ class FixedStar(GenericObject):
     # Map magnitudes to orbs
     _ORBS = [[2, 7.5], [3, 5.5], [4, 3.5], [5, 1.5]]
 
+    @property_with_method_compat
     def orb(self):
         """Returns the orb of this fixed star."""
         for mag, orb in FixedStar._ORBS:
@@ -251,4 +263,4 @@ class FixedStar(GenericObject):
 
         """
         dist = angle.closestdistance(self.lon, obj.lon)
-        return abs(dist) < self.orb()
+        return abs(dist) < self.orb
