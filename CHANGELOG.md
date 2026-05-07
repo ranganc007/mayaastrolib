@@ -30,6 +30,22 @@ All notable changes to this project will be documented in this file. Format foll
   getters) now reflects the actual value's truthiness instead of being
   unconditionally true because of the bound-method object's identity.
 
+### Added (Datetime ergonomics)
+- `Datetime.from_pydatetime(dt, utcoffset=None)` — construct from a
+  Python `datetime.datetime`. Accepts naive (with explicit `utcoffset`)
+  or timezone-aware. When both an aware `dt` and an explicit `utcoffset`
+  are given, the explicit offset wins and `dt` is converted via
+  `astimezone()` to that offset's wall-clock time.
+- `Datetime.now(utcoffset='+00:00')` — current UTC moment expressed in
+  the given offset. Does NOT handle DST; pass a fixed offset.
+- `Datetime.to_pydatetime()` — convert to a timezone-aware
+  `datetime.datetime`. Round-trips with `from_pydatetime` (whole
+  seconds; sub-second precision is dropped, documented).
+
+### Notes
+- DST-aware timezone handling (e.g. via IANA names like
+  `"Europe/Dublin"`) is deliberately deferred. See `docs/IDEAS.md`.
+
 ## [0.3.0] — 2026-05-07
 
 ### Changed

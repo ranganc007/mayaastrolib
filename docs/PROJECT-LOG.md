@@ -6,6 +6,131 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 007: Datetime ergonomics
+
+**Session length:** ~25 minutes (single Claude Code session)
+**Branch:** `task-007-datetime-ergonomics`
+**Commits:** see `git log task-007-datetime-ergonomics`
+
+### What was done
+
+Added three classmethods (and two private helpers) to
+`mayaastrolib/datetime.py`:
+
+1. **`Datetime.from_pydatetime(dt, utcoffset=None)`** — constructs a
+   `Datetime` from a Python `datetime.datetime`.
+   - Naive `dt` + missing `utcoffset` → `ValueError` with a clear
+     remediation message.
+   - Naive `dt` + explicit `utcoffset` → use both verbatim.
+   - Aware `dt` + missing `utcoffset` → derive offset from
+     `dt.tzinfo` via the new `_format_offset` helper.
+   - Aware `dt` + explicit `utcoffset` → explicit wins; convert
+     `dt` via `astimezone()` to that target offset's wall-clock
+     time. No warning is emitted for the "mismatch" case because
+     the most common consumer (`now('+05:30')`) deliberately
+     passes a UTC `dt` with a non-UTC target.
+2. **`Datetime.now(utcoffset='+00:00')`** — wraps
+   `datetime.now(timezone.utc)` and feeds it through
+   `from_pydatetime`. Default returns the current UTC moment.
+3. **`Datetime.to_pydatetime()`** — inverse of `from_pydatetime`.
+   Reads `self.utcoffset.value` (a float in hours) and converts to
+   `datetime.timezone(timedelta(hours=...))`. Half-hour offsets
+   work. Sub-second precision is dropped because the underlying
+   `Time` class normalises to whole seconds in its `time()`
+   accessor.
+4. **`_format_offset(td)`** / **`_parse_offset(str)`** — module-level
+   helpers that translate between `timedelta` and `"+HH:MM"` strings.
+   Used internally by `from_pydatetime`.
+5. **`tests/test_datetime_ergonomics.py`** — 11 tests covering:
+   - Aware vs naive input.
+   - Naive without `utcoffset` raises ValueError.
+   - Naive with explicit offset uses it verbatim.
+   - Half-hour offset (India `"+05:30"`).
+   - Negative offset (`"-08:00"`).
+   - Aware UTC + explicit `+05:30` converts wall-clock by 5h30m.
+   - `now()` default is UTC; runs close to the actual current
+     moment (tolerance ±1 second for the rounding loss); preserves
+     non-default offset.
+   - Round-trip `pydatetime → Datetime → pydatetime` preserves
+     all integer fields and the offset.
+   - Microseconds are dropped (documented, intentional).
+6. **`docs/IDEAS.md`** — new file at the repo root listing
+   deferred work. Two entries today:
+   - DST-aware timezone handling via `zoneinfo`.
+   - ISO 8601 string parsing.
+
+### Verification
+
+```
+$ .venv-task007/bin/pytest tests/
+============================== 80 passed in 0.49s ==============================
+```
+
+80 tests = 69 from Task 006 + 11 new datetime tests.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (after one auto-format pass
+  that reflowed two lines in the new files).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline.
+- `pytest -x` — **80/80 PASS**.
+
+### What was tried and discarded
+
+- **Considered** the spec's "warn if utcoffset and dt's tzinfo
+  conflict" recommendation. Rejected: the most common call,
+  `Datetime.now(utcoffset='+05:30')`, internally passes a UTC `dt`
+  with a non-UTC explicit offset. Warning on every such call would
+  be user-hostile. The chosen rule — "explicit `utcoffset` wins;
+  convert silently" — matches Python's own `astimezone` semantics
+  and keeps `now('+05:30')` clean.
+- **Considered** preserving microseconds by extending the `Time`
+  class to track sub-second floats. Rejected: out of scope, and
+  the existing `Time.time()` accessor returns whole-integer
+  components; threading through a fractional second would touch
+  every consumer of `Datetime`. Documented the rounding behaviour
+  explicitly in the `from_pydatetime` docstring and in
+  `test_microseconds_are_dropped`.
+- **The demo webapp** mentioned in the spec is at
+  `/opt/homebrew/var/www/mayaastro-demo/` per the task. Did not
+  inspect or modify — out of scope of the repo, and the new API
+  is a strict superset of the old (the strftime dance still works,
+  it's just no longer required).
+
+### Surprises
+
+- Python's `datetime.datetime.astimezone` does the heavy lifting
+  for the "aware-with-explicit-offset" case. Treating the explicit
+  utcoffset as authoritative collapses the implementation to a
+  three-line conditional inside `from_pydatetime`.
+- `mayaastrolib.Time` accepts both float (hours) and signed-list
+  (`["+", 5, 30, 0]`) representations via `angle.toFloat`. Half-hour
+  offsets land perfectly: `Time("+05:30").value == 5.5`.
+- The microsecond drop happens implicitly in `to_pydatetime`
+  because `int(hh)`, `int(mm)`, `int(ss)` truncate. Tested it both
+  ways to make sure round-trip is lossless when the input has zero
+  microseconds.
+
+### Demo update
+
+Did NOT update the demo webapp. It lives outside the repo
+(`/opt/homebrew/var/www/mayaastro-demo/`) and the spec's optional
+"if you have access" path. The new API is additive; the old
+strftime dance still works. Friction reduction will land the next
+time the demo is touched.
+
+### Definition of done — verified
+
+- [x] Three classmethods exist with docstrings + examples.
+- [x] Round-trip test passes for half-hour offset (India case).
+- [x] Naive-datetime-without-offset raises `ValueError` with a clear
+  message.
+- [x] All 80 tests pass.
+- [x] CHANGELOG and IDEAS updated.
+
+---
+
 ## 2026-05-07 — Task 006: Object–Chart integration
 
 **Session length:** ~50 minutes (single Claude Code session)
