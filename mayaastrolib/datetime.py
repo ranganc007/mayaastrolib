@@ -48,6 +48,40 @@ def jdnDate(jdn):
     return [year, month, day]
 
 
+# === UTC offset string helpers (used by Datetime.from_pydatetime / now) === #
+
+
+def _format_offset(td):
+    """Format a ``datetime.timedelta`` as ``"+HH:MM"`` / ``"-HH:MM"``.
+
+    Used to derive the offset string from an aware datetime's tzinfo.
+    """
+    total_seconds = int(td.total_seconds())
+    sign = "+" if total_seconds >= 0 else "-"
+    total_seconds = abs(total_seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return f"{sign}{hours:02d}:{minutes:02d}"
+
+
+def _parse_offset(offset_str):
+    """Parse ``"+05:30"`` / ``"-08:00"`` into a ``datetime.timedelta``.
+
+    Used when ``Datetime.from_pydatetime`` is asked to convert an aware
+    datetime to a different target offset.
+    """
+    import datetime as _pydt
+
+    if not offset_str or len(offset_str) < 6 or offset_str[0] not in "+-":
+        raise ValueError(
+            f"Invalid utcoffset format: {offset_str!r} (expected '+HH:MM' or '-HH:MM')"
+        )
+    sign = 1 if offset_str[0] == "+" else -1
+    hours = int(offset_str[1:3])
+    minutes = int(offset_str[4:6])
+    return _pydt.timedelta(hours=sign * hours, minutes=sign * minutes)
+
+
 # ------------------ #
 #     Date Class     #
 # ------------------ #
@@ -202,6 +236,110 @@ class Datetime:
         date = Date(round(localJD))
         time = Time((localJD + 0.5 - date.jdn) * 24)
         return Datetime(date, time, utcoffset)
+
+    @classmethod
+    def from_pydatetime(cls, dt, utcoffset=None):
+        """Construct a Datetime from a Python ``datetime.datetime``.
+
+        Args:
+            dt: A ``datetime.datetime`` instance. May be naive or
+                timezone-aware.
+            utcoffset: UTC offset string like ``"+05:30"`` or ``"-08:00"``.
+                Required if ``dt`` is naive (no tzinfo). If ``dt`` is
+                aware AND ``utcoffset`` is None, the offset is derived
+                from ``dt.tzinfo``. If ``dt`` is aware AND ``utcoffset``
+                is given, ``utcoffset`` wins: ``dt`` is converted to that
+                offset's wall-clock time.
+
+        Returns:
+            A new Datetime instance. Sub-second precision is rounded to
+            whole seconds — the underlying Time class does not preserve
+            microseconds.
+
+        Raises:
+            ValueError: if ``dt`` is naive and ``utcoffset`` is not given.
+
+        Example:
+            >>> import datetime as pydt
+            >>> now = pydt.datetime.now(pydt.timezone.utc)
+            >>> mdate = Datetime.from_pydatetime(now)
+        """
+        import datetime as _pydt
+
+        if dt.tzinfo is None:
+            if utcoffset is None:
+                raise ValueError(
+                    "Datetime.from_pydatetime requires utcoffset for a "
+                    "naive datetime (no tzinfo). Pass utcoffset='+00:00' "
+                    "for UTC, or the local offset string."
+                )
+            target_offset_str = utcoffset
+            target_dt = dt
+        else:
+            if utcoffset is None:
+                target_offset_str = _format_offset(dt.utcoffset())
+                target_dt = dt
+            else:
+                # Explicit utcoffset wins. Convert the aware dt to that
+                # offset's wall-clock time so the resulting Datetime
+                # represents the same instant in the requested zone.
+                target_offset_str = utcoffset
+                target_offset = _parse_offset(utcoffset)
+                target_dt = dt.astimezone(_pydt.timezone(target_offset))
+
+        date_str = "%04d/%02d/%02d" % (target_dt.year, target_dt.month, target_dt.day)
+        time_str = "%02d:%02d:%02d" % (target_dt.hour, target_dt.minute, target_dt.second)
+        return cls(date_str, time_str, target_offset_str)
+
+    @classmethod
+    def now(cls, utcoffset="+00:00"):
+        """Return a Datetime representing the current moment.
+
+        Args:
+            utcoffset: UTC offset for the returned Datetime. Defaults to
+                UTC. The underlying time is always the current wall-clock
+                UTC moment; the offset controls how the wall-clock fields
+                are formatted. To get a chart for "right now in Dublin",
+                pass ``utcoffset="+01:00"`` (BST) or ``"+00:00"`` (GMT)
+                depending on current DST state — this method does not
+                handle DST.
+
+        Returns:
+            A Datetime for the current UTC moment, expressed in the given
+            offset.
+
+        Example:
+            >>> mdate = Datetime.now()                  # UTC
+            >>> mdate = Datetime.now(utcoffset='-05:00') # US Eastern (no DST awareness)
+        """
+        import datetime as _pydt
+
+        return cls.from_pydatetime(
+            _pydt.datetime.now(_pydt.timezone.utc),
+            utcoffset=utcoffset,
+        )
+
+    def to_pydatetime(self):
+        """Convert to a Python ``datetime.datetime`` with timezone info.
+
+        Returns:
+            A timezone-aware ``datetime.datetime`` in the offset originally
+            specified at construction time. Sub-second precision is not
+            preserved (see ``from_pydatetime``).
+
+        Example:
+            >>> mdate = Datetime("2015/03/13", "17:00", "+00:00")
+            >>> py = mdate.to_pydatetime()
+            >>> py.tzinfo.utcoffset(py)  # timedelta(0)
+        """
+        import datetime as _pydt
+
+        year, month, day = jdnDate(self.date.jdn)
+        hh, mm, ss = self.time.time()
+        # self.time.time() can return floats (e.g. for fractional seconds);
+        # cast to int because pydatetime requires int components.
+        tz = _pydt.timezone(_pydt.timedelta(hours=self.utcoffset.value))
+        return _pydt.datetime(year, month, day, int(hh), int(mm), int(ss), tzinfo=tz)
 
     def getUTC(self):
         """Returns this Datetime localized for UTC."""
