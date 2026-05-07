@@ -77,8 +77,8 @@ def viaCombusta(obj):
 
 def haiz(obj, chart):
     """Returns if an object is in Haiz."""
-    objGender = obj.gender()
-    objFaction = obj.faction()
+    objGender = obj.gender
+    objFaction = obj.faction
 
     if obj.id == const.MERCURY:
         # Gender and faction of mercury depends on orientality
@@ -281,7 +281,7 @@ class AccidentalDignity:
                 res.append(asp.type)
             else:
                 # Only exact or applicative aspects
-                movement = asp.movement()
+                movement = asp.movement
                 if movement in [const.EXACT, const.APPLICATIVE]:
                     res.append(asp.type)
 

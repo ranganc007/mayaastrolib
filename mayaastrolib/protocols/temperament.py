@@ -69,7 +69,7 @@ def singleFactor(factors, chart, factor, obj, aspect=None):
             res["sign"] = obj.sign
             res["element"] = props.sign.element[obj.sign]
         else:
-            res["element"] = obj.element()
+            res["element"] = obj.element
 
     try:
         # If there's element, insert into list
@@ -90,7 +90,7 @@ def modifierFactor(chart, factor, factorObj, otherObj, aspList):
             "factor": factor,
             "aspect": asp,
             "objID": otherObj.id,
-            "element": otherObj.element(),
+            "element": otherObj.element,
         }
     return None
 

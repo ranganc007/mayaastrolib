@@ -30,6 +30,7 @@ passive object.
 """
 
 from . import angle, const
+from ._compat import property_with_method_compat
 
 # Orb for minor and exact aspects
 MAX_MINOR_ASP_ORB = 3
@@ -87,7 +88,7 @@ def _aspectDict(obj1, obj2, aspList):
         # Check if aspect is within orb
         if asp in const.MAJOR_ASPECTS:
             # Ignore major aspects out of orb
-            if obj1.orb() < orb and obj2.orb() < orb:
+            if obj1.orb < orb and obj2.orb < orb:
                 continue
         else:
             # Ignore minor aspects out of max orb
@@ -135,8 +136,8 @@ def _aspectProperties(obj1, obj2, aspDict):
         return prop
 
     # Aspect within orb
-    prop1["inOrb"] = orb <= obj1.orb()
-    prop2["inOrb"] = orb <= obj2.orb()
+    prop1["inOrb"] = orb <= obj1.orb
+    prop2["inOrb"] = orb <= obj2.orb
 
     # Direction
     prop["direction"] = const.DEXTER if sep <= 0 else const.SINISTER
@@ -213,7 +214,7 @@ def isAspecting(obj1, obj2, aspList):
     """
     aspDict = _aspectDict(obj1, obj2, aspList)
     if aspDict:
-        return aspDict["orb"] < obj1.orb()
+        return aspDict["orb"] < obj1.orb
     return False
 
 
@@ -265,6 +266,7 @@ class Aspect:
         """Returns if this aspect is valid."""
         return self.type != const.NO_ASPECT
 
+    @property_with_method_compat
     def movement(self):
         """Returns the movement of this aspect.
         The movement is the one of the active object, except
