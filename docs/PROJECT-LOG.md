@@ -6,6 +6,171 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 002b: Repository housekeeping
+
+**Session length:** ~25 minutes (single Claude Code session)
+**Branch:** `task-002b-housekeeping`
+**Commits:** see `git log task-002b-housekeeping`
+
+### What was done
+
+All six in-scope steps from `prompts/task-002b-housekeeping.md`:
+
+1. **`.gitignore`** — appended a "Modern Python tooling artifacts"
+   block with `__pycache__/`, `*.egg-info/`, `.coverage`,
+   `.coverage.*`, `htmlcov/`, `.pytest_cache/`, `.mypy_cache/`,
+   `.ruff_cache/`, `.venv*/`, `venv*/`, plus `dist/`. Skipped
+   duplicates: `*.py[cdo]` already covers `.pyc`/`.pyo`, `venv/` was
+   present (extended to `venv*/`), `build/` already there.
+
+2. **Legacy scripts** — `git rm scripts/build.py scripts/clean.py
+   scripts/utils.py`. The `scripts/` directory was removed
+   automatically by git when its last tracked file went. No other
+   files were present in `scripts/` (nothing extra to report).
+
+3. **README reconciliation** — `git rm README.rst`; `MANIFEST.in`
+   reduced to a single `include LICENSE` line (the previous
+   `include README.rst` was removed; `README.md` is already wired in
+   via `pyproject.toml [project] readme = "README.md"`, so setuptools
+   includes it in the sdist automatically — no `include README.md`
+   needed in MANIFEST.in).
+
+4. **pytest pythonpath** — added `pythonpath = ["."]` to
+   `[tool.pytest.ini_options]` in `pyproject.toml`. RECON §2 footgun
+   resolved: contributors who skip `pip install -e .` can still
+   `pytest tests/`.
+
+5. **`CHANGELOG.md`** — created at repo root with the Keep-a-Changelog
+   skeleton from the spec (Unreleased + 0.2.6).
+
+### Verification — step 6 (editable install path)
+
+```
+$ python3 -m venv .venv-task002b
+$ .venv-task002b/bin/pip install -e ".[dev]"
+… (Successfully installed mayaastrolib-0.2.6 + dev deps)
+
+$ .venv-task002b/bin/python -c "import flatlib; print(flatlib.__version__)"
+0.2.6
+
+$ .venv-task002b/bin/pytest tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /opt/homebrew/var/www/oss-contrib/mayaastrolib
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 5 items
+
+tests/test_angles.py ....                                                [ 80%]
+tests/test_chart.py .                                                    [100%]
+
+============================== 5 passed in 0.38s ===============================
+```
+
+5/5 passed.
+
+### Verification — step 7 (pythonpath, NO editable install)
+
+```
+$ python3 -m venv .venv-task002b-bare
+$ .venv-task002b-bare/bin/pip install pytest pytest-cov pyswisseph==2.10.3.2
+$ .venv-task002b-bare/bin/pytest tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /opt/homebrew/var/www/oss-contrib/mayaastrolib
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 5 items
+
+tests/test_angles.py ....                                                [ 80%]
+tests/test_chart.py .                                                    [100%]
+
+============================== 5 passed in 0.54s ===============================
+```
+
+5/5 passed. The `pythonpath = ["."]` config works as intended:
+contributors no longer need `pip install -e .` to run the test suite.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — still fails (52 files would be reformatted,
+  one fewer than Task 002 because three `scripts/*.py` deletions and
+  one `README.rst` deletion offset against zero new Python files).
+  Expected; Task 003.
+- `ruff check .` — still reports configured-rule-set violations.
+  Expected; Task 003.
+- `mypy flatlib/` — 2 errors, unchanged from RECON.
+- `pytest -x` — 5/5 in both editable and bare-pythonpath flows.
+- Coverage gate skipped per spec.
+
+### What was tried and discarded
+
+- **Considered** putting `include README.md` in `MANIFEST.in` for
+  parallelism with the deleted `include README.rst`. Discarded:
+  setuptools auto-includes the file declared in
+  `pyproject.toml [project] readme`, so a duplicate MANIFEST entry is
+  redundant. MANIFEST.in is now down to the single `include LICENSE`
+  line — easier to scan, no reason to add ceremony.
+- **Considered** dropping the existing `venv/` line from `.gitignore`
+  in favour of just `venv*/`. Kept both: the `venv*/` glob covers
+  `venv/`, but leaving the original line means anyone diffing the file
+  doesn't have to wonder if a previously-ignored path is now tracked.
+  Idempotent and explicit beats clever-and-implicit for `.gitignore`.
+
+### Surprises
+
+- Task 002's commits showed up at the top of `git log development`
+  before this session even started — the local `development` branch
+  was fast-forward-merged to `task-002-build-system`'s tip between
+  sessions, and the topic branch was deleted. Nothing wrong, just
+  worth noting that the merge happened outside Claude Code.
+- The bare `pip install pytest pytest-cov pyswisseph==2.10.3.2` venv
+  successfully ran the tests without `pyproject.toml` validation
+  errors or warnings about missing the project. pytest's
+  `configfile:` line still showed `pyproject.toml` (it reads
+  `[tool.pytest.ini_options]` regardless of whether the project is
+  installed), so the pythonpath setting kicks in even without
+  setuptools knowing about the project. That's exactly the intended
+  behaviour — pleasant to confirm.
+- `.gitignore` had `venv/` (without the trailing wildcard) but no
+  `*.egg-info/`, `.coverage`, `__pycache__/`, or any of the modern
+  cache directories. The repo really hadn't been touched by anyone on
+  modern tooling since 2021.
+
+### Follow-ups for later tasks
+
+- **Task 003:** `ruff format` / `ruff check` cleanup is the next
+  obvious step. RECON §9 already lays out the order.
+- **Task 004:** GitHub Actions CI + the eclipse hot-fix from RECON
+  §8 ¶1.
+- **Task 005:** the `flatlib/` → `mayaastrolib/` rename, after which
+  the dormant `[tool.coverage.run] source = ["mayaastrolib"]` setting
+  becomes meaningful.
+- **Maintainer decision deferred:** the repository now has no
+  `setup.py` shim. If anyone tries `pip install` from a git URL with
+  a very old pip, they'll get the modern build path. Worth noting in
+  README's installation section once the package is published.
+
+### Definition of done — verified
+
+- [x] `.gitignore` updated, no duplicate entries.
+- [x] `scripts/build.py`, `scripts/clean.py`, `scripts/utils.py`
+  deleted; `scripts/` directory gone.
+- [x] `README.rst` deleted; `MANIFEST.in` consistent with the new
+  README situation.
+- [x] `pyproject.toml` has `readme = "README.md"` (already from Task
+  002) and `pythonpath = ["."]` (added this session).
+- [x] `CHANGELOG.md` exists at repo root with the spec's initial
+  content.
+- [x] Both verification runs produce 5/5 passing tests.
+- [x] `git diff development --stat` of committed files shows exactly
+  the expected files: `.gitignore`, `CHANGELOG.md`, `MANIFEST.in`,
+  `docs/PROJECT-LOG.md`, `pyproject.toml`, plus the deletions of
+  `README.rst`, `scripts/build.py`, `scripts/clean.py`,
+  `scripts/utils.py`.
+
+---
+
 ## 2026-05-07 — Task 002: Build system modernisation
 
 **Session length:** ~45 minutes (single Claude Code session)
