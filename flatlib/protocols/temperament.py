@@ -13,9 +13,7 @@ and the Sun Season.
 
 """
 
-from flatlib import const, dignities
-from flatlib import aspects
-from flatlib import props
+from flatlib import aspects, const, props
 from flatlib.dignities import essential
 
 # Temperament factors

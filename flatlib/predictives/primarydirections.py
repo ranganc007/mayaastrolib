@@ -14,11 +14,8 @@ Default assumptions:
 
 """
 
-from flatlib import angle
-from flatlib import utils
-from flatlib import const
+from flatlib import angle, const, utils
 from flatlib.dignities import tables
-
 
 # === Base functions === #
 

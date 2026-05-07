@@ -8,10 +8,9 @@ for the ephem subpackage.
 
 """
 
+from flatlib import angle, const, utils
+
 from . import swe
-from flatlib import angle
-from flatlib import const
-from flatlib import utils
 
 # One arc-second error for iterative algorithms
 MAX_ERROR = 0.0003

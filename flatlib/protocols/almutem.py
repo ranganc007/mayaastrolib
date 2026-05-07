@@ -10,8 +10,8 @@ which scores higher in some hylegic points.
 """
 
 from flatlib import const
-from flatlib.tools import planetarytime
 from flatlib.dignities import essential
+from flatlib.tools import planetarytime
 
 # House scores
 HOUSE_SCORES = {

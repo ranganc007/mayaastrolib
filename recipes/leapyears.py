@@ -20,8 +20,8 @@ To plot the graphics you must have matplotlib installed.
 
 from flatlib import const
 from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
 from flatlib.ephem import ephem
+from flatlib.geopos import GeoPos
 
 
 def plot(hdiff, title):

@@ -8,10 +8,8 @@ handling some of the dynamics of an astrology Chart.
 
 """
 
-from flatlib import const
-from flatlib import aspects
+from flatlib import aspects, const
 from flatlib.dignities import essential
-
 
 # ----------------------- #
 #   ChartDynamics Class   #

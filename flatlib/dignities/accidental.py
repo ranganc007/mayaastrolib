@@ -11,10 +11,7 @@ Chart.
 
 from copy import copy
 
-from flatlib import angle, dignities
-from flatlib import const
-from flatlib import props
-from flatlib import aspects
+from flatlib import angle, aspects, const, props
 from flatlib.dignities import essential
 from flatlib.tools.chartdynamics import ChartDynamics
 

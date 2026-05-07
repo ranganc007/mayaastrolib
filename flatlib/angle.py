@@ -26,7 +26,6 @@ list for further use.
 
 import math
 
-
 # === Angular utilities === #
 
 

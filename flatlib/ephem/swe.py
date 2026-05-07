@@ -12,8 +12,8 @@ accessible.
 """
 
 import swisseph
-from flatlib import angle
-from flatlib import const
+
+from flatlib import angle, const
 
 # Map objects
 SWE_OBJECTS = {

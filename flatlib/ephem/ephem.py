@@ -13,13 +13,11 @@ accessing the ephemeris.
 
 """
 
-from . import eph
-from . import swe
-
 from flatlib.datetime import Datetime
-from flatlib.object import GenericObject, Object, House, FixedStar
-from flatlib.lists import GenericList, ObjectList, HouseList, FixedStarList
+from flatlib.lists import FixedStarList, GenericList, HouseList, ObjectList
+from flatlib.object import FixedStar, GenericObject, House, Object
 
+from . import eph, swe
 
 # === Objects === #
 

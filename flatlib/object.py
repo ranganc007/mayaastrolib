@@ -9,11 +9,7 @@ and Fixed-Stars.
 
 """
 
-from . import const
-from . import angle
-from . import utils
-from . import props
-
+from . import angle, const, props, utils
 
 # ------------------ #
 #   Generic Object   #

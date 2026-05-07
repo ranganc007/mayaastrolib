@@ -12,6 +12,7 @@ accessible.
 """
 
 import flatlib
+
 from . import swe
 
 # Set default swefile path

@@ -9,8 +9,8 @@ Arabic Parts.
 """
 
 from flatlib import const
-from flatlib.object import GenericObject
 from flatlib.dignities import essential
+from flatlib.object import GenericObject
 
 # Define arabic parts
 PARS_FORTUNA = const.PARS_FORTUNA

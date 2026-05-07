@@ -20,12 +20,9 @@ There are also methods to access fixed stars.
 
 """
 
-from . import angle
-from . import const
-from . import utils
-from .ephem import ephem
+from . import angle, const, utils
 from .datetime import Datetime
-
+from .ephem import ephem
 
 # ------------------ #
 #    Chart Class     #
@@ -158,6 +155,6 @@ class Chart:
 
         """
         sun = self.getObject(const.SUN)
-        date = Datetime("{0}/01/01".format(year), "00:00", self.date.utcoffset)
+        date = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
         srDate = ephem.nextSolarReturn(date, sun.lon)
         return Chart(srDate, self.pos, hsys=self.hsys)

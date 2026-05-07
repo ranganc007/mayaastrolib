@@ -11,7 +11,6 @@ from flatlib.datetime import Datetime
 from flatlib.geopos import GeoPos
 from flatlib.tools import planetarytime
 
-
 # Build a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")
 pos = GeoPos("38n32", "8w54")

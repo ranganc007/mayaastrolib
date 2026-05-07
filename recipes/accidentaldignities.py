@@ -10,11 +10,9 @@ accidental dignities.
 from flatlib import const
 from flatlib.chart import Chart
 from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-
 from flatlib.dignities import accidental
 from flatlib.dignities.accidental import AccidentalDignity
-
+from flatlib.geopos import GeoPos
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")

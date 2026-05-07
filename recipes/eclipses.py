@@ -10,7 +10,6 @@ of the previous and next solar and lunar eclipses.
 from flatlib.datetime import Datetime
 from flatlib.ephem import ephem
 
-
 # Build a Datetime object
 date = Datetime("2016/10/11", "12:00", "+00:00")
 

@@ -11,8 +11,9 @@ almutems.
 
 """
 
-from . import tables
 from flatlib import const
+
+from . import tables
 
 # Face variants
 CHALDEAN_FACES = "Chaldean Faces"

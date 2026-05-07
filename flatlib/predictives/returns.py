@@ -10,8 +10,8 @@ It only handles solar returns for now.
 """
 
 from flatlib import const
-from flatlib.ephem import ephem
 from flatlib.chart import Chart
+from flatlib.ephem import ephem
 
 
 def _computeChart(chart, date):

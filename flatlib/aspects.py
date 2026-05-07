@@ -29,8 +29,7 @@ passive object.
 
 """
 
-from . import angle
-from . import const
+from . import angle, const
 
 # Orb for minor and exact aspects
 MAX_MINOR_ASP_ORB = 3

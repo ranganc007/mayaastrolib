@@ -12,11 +12,9 @@ dicts and jd/lat/lon as float.
 
 """
 
-from . import swe
-from . import tools
-from flatlib import angle
-from flatlib import const
+from flatlib import angle, const
 
+from . import swe, tools
 
 # === Objects === #
 

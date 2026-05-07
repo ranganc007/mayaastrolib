@@ -14,8 +14,8 @@ datetimes of each hour ruler.
 """
 
 from flatlib import const
-from flatlib.ephem import ephem
 from flatlib.datetime import Datetime
+from flatlib.ephem import ephem
 
 # Planetary rulers starting at Sunday
 DAY_RULERS = [
