@@ -2,14 +2,14 @@
 
 Catches the pyswisseph keyword argument bug found during fork recon
 (see RECON.md §8 ¶1 and KNOWN-BUGS.md). Once the bug is fixed in
-flatlib/ephem/swe.py, these tests pin the behaviour so any future
+mayaastrolib/ephem/swe.py, these tests pin the behaviour so any future
 regression will fail loudly in CI.
 """
 
 import unittest
 
-from flatlib.datetime import Datetime
-from flatlib.ephem import ephem
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.ephem import ephem
 
 
 class EclipseTests(unittest.TestCase):

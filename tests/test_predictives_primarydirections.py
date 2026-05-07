@@ -1,16 +1,16 @@
-"""Smoke tests for flatlib.predictives.primarydirections.
+"""Smoke tests for mayaastrolib.predictives.primarydirections.
 
 Reference: recipes/primarydirections.py.
 """
 
 import unittest
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.predictives import primarydirections
-from flatlib.predictives.primarydirections import PDTable, PrimaryDirections
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.predictives import primarydirections
+from mayaastrolib.predictives.primarydirections import PDTable, PrimaryDirections
 
 
 class PrimaryDirectionsTests(unittest.TestCase):

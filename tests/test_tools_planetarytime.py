@@ -1,14 +1,14 @@
-"""Smoke tests for flatlib.tools.planetarytime.
+"""Smoke tests for mayaastrolib.tools.planetarytime.
 
 Reference: recipes/planetarytime.py.
 """
 
 import unittest
 
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.tools import planetarytime
-from flatlib.tools.planetarytime import HourTable
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.tools import planetarytime
+from mayaastrolib.tools.planetarytime import HourTable
 
 
 class PlanetaryTimeTests(unittest.TestCase):

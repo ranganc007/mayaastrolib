@@ -7,10 +7,10 @@ the almutem protocol.
 
 """
 
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.protocols import almutem
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.protocols import almutem
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")

@@ -15,8 +15,8 @@ To plot the graphics you must have matplotlib installed.
 
 """
 
-from flatlib.datetime import Datetime
-from flatlib.ephem import ephem
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.ephem import ephem
 
 
 def plot(hdiff, title):

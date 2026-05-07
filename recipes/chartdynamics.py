@@ -7,11 +7,11 @@ of the chart dynamics.
 
 """
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.tools.chartdynamics import ChartDynamics
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.tools.chartdynamics import ChartDynamics
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")

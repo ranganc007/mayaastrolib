@@ -7,11 +7,11 @@ essential dignities.
 
 """
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.dignities import essential
-from flatlib.geopos import GeoPos
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.dignities import essential
+from mayaastrolib.geopos import GeoPos
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")

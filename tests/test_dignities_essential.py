@@ -1,15 +1,15 @@
-"""Smoke tests for flatlib.dignities.essential.
+"""Smoke tests for mayaastrolib.dignities.essential.
 
 Reference: recipes/essentialdignities.py.
 """
 
 import unittest
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.dignities import essential
-from flatlib.geopos import GeoPos
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.dignities import essential
+from mayaastrolib.geopos import GeoPos
 
 
 class EssentialDignityTests(unittest.TestCase):

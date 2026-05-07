@@ -7,11 +7,11 @@ primary directions.
 
 """
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.predictives import primarydirections
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.predictives import primarydirections
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")
@@ -34,7 +34,7 @@ arc = primarydirections.getArc(prom, sig, mc, pos, zerolat=False)
 print(arc)  # 56.74266
 
 # Create Primary Directions class
-from flatlib.predictives.primarydirections import PrimaryDirections  # noqa: E402, I001
+from mayaastrolib.predictives.primarydirections import PrimaryDirections  # noqa: E402, I001
 
 pd = PrimaryDirections(chart)
 
@@ -44,7 +44,7 @@ print(arc["arcm"])  # 56.74266 (arc in-mundo)
 print(arc["arcz"])  # 56.17347 (arc in-zodiaco)
 
 # Create Primary Directions table class
-from flatlib.predictives.primarydirections import PDTable  # noqa: E402, I001
+from mayaastrolib.predictives.primarydirections import PDTable  # noqa: E402, I001
 
 pd = PDTable(chart, const.MAJOR_ASPECTS)
 pd.byPromissor(const.MARS)  # List all directions by promissor

@@ -1,4 +1,4 @@
-"""Smoke tests for flatlib.dignities.tables.
+"""Smoke tests for mayaastrolib.dignities.tables.
 
 The module is mostly static reference data; tests assert the
 expected constants exist with sensible shapes.
@@ -6,7 +6,7 @@ expected constants exist with sensible shapes.
 
 import unittest
 
-from flatlib.dignities import tables
+from mayaastrolib.dignities import tables
 
 
 class TablesTests(unittest.TestCase):

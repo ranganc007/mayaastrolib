@@ -1,16 +1,16 @@
-"""Smoke tests for flatlib.dignities.accidental.
+"""Smoke tests for mayaastrolib.dignities.accidental.
 
 Reference: recipes/accidentaldignities.py.
 """
 
 import unittest
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.dignities import accidental
-from flatlib.dignities.accidental import AccidentalDignity
-from flatlib.geopos import GeoPos
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.dignities import accidental
+from mayaastrolib.dignities.accidental import AccidentalDignity
+from mayaastrolib.geopos import GeoPos
 
 
 class AccidentalDignityTests(unittest.TestCase):

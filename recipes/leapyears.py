@@ -18,10 +18,10 @@ To plot the graphics you must have matplotlib installed.
 
 """
 
-from flatlib import const
-from flatlib.datetime import Datetime
-from flatlib.ephem import ephem
-from flatlib.geopos import GeoPos
+from mayaastrolib import const
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.ephem import ephem
+from mayaastrolib.geopos import GeoPos
 
 
 def plot(hdiff, title):

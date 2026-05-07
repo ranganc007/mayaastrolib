@@ -7,11 +7,11 @@ profections.
 
 """
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.predictives import profections
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.predictives import profections
 
 # Build a chart for a date and location
 date = Datetime("2011/03/13", "17:00", "+00:00")

@@ -7,8 +7,8 @@ of the previous and next solar and lunar eclipses.
 
 """
 
-from flatlib.datetime import Datetime
-from flatlib.ephem import ephem
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.ephem import ephem
 
 # Build a Datetime object
 date = Datetime("2016/10/11", "12:00", "+00:00")

@@ -1,14 +1,14 @@
-"""Smoke tests for flatlib.protocols.behavior.
+"""Smoke tests for mayaastrolib.protocols.behavior.
 
 Reference: recipes/behavior.py.
 """
 
 import unittest
 
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
-from flatlib.protocols import behavior
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib.protocols import behavior
 
 
 class BehaviorTests(unittest.TestCase):

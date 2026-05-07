@@ -1,6 +1,6 @@
 import unittest
 
-from flatlib import angle
+from mayaastrolib import angle
 
 
 class AngleTests(unittest.TestCase):

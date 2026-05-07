@@ -7,10 +7,10 @@ aspects.
 
 """
 
-from flatlib import aspects, const
-from flatlib.chart import Chart
-from flatlib.datetime import Datetime
-from flatlib.geopos import GeoPos
+from mayaastrolib import aspects, const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
 
 # Build a chart for a date and location
 date = Datetime("2015/03/13", "17:00", "+00:00")
