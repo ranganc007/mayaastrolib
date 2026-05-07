@@ -37,4 +37,4 @@ jobs:
         run: pytest tests/ -v
 
       - name: Run tests with coverage
-        run: pytest tests/ --cov=flatlib --cov-report=term-missing
+        run: pytest tests/ --cov=mayaastrolib --cov-report=term-missing
