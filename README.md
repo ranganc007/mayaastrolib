@@ -7,34 +7,52 @@
 
 ---
 
-# flatlib
+# mayaastrolib
 
-Flatlib is a python library for Traditional Astrology.
+`mayaastrolib` is a Python library for Traditional and Vedic Astrology, forked from `flatangle/flatlib`.
 
 ```python
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
 
->>> date = Datetime('2015/03/13', '17:00', '+00:00')
->>> pos = GeoPos('38n32', '8w54')
->>> chart = Chart(date, pos)
+date = Datetime('2015/03/13', '17:00', '+00:00')
+pos = GeoPos('38n32', '8w54')
+chart = Chart(date, pos)
 
->>> sun = chart.get(const.SUN)
->>> print(sun)
-<Sun Pisces +22:47:25 +00:59:51>
-
+sun = chart.get(const.SUN)
+print(sun)
+# <Sun Pisces +22:47:25 +00:59:51>
 ```
 
 ## Documentation
 
-Flatlib's documentation is available at [http://flatlib.readthedocs.org/](http://flatlib.readthedocs.org/).
-
+The original flatlib documentation lives at [http://flatlib.readthedocs.org/](http://flatlib.readthedocs.org/) and is largely still applicable — substitute `flatlib` with `mayaastrolib` in the import paths. Fork-specific documentation will follow.
 
 ## Installation
 
-Flatlib is a Python 3 package, make sure you have Python 3 installed on your system. 
+`mayaastrolib` requires Python 3.10 or later. Install from source:
 
-You can install flatlib with `pip3 install flatlib` or download the latest stable version from [https://pypi.python.org/pypi/flatlib](https://pypi.python.org/pypi/flatlib) and install it with `python3 setup.py install`. 
+```sh
+git clone https://github.com/ranganc007/mayaastrolib.git
+cd mayaastrolib
+pip install -e .
+```
 
+A PyPI release will follow once the API surface stabilises.
+
+### Migrating from flatlib
+
+`mayaastrolib` 0.3.0 ships a compatibility shim: existing `import flatlib` and `from flatlib.x import Y` calls continue to work but emit a `DeprecationWarning`. Update your imports to `mayaastrolib` at your convenience; the shim will be removed in version 1.0.
 
 ## Development
 
-You can clone this repository or download a zip file using the right side buttons. 
+Clone the repository and install dev dependencies:
+
+```sh
+git clone https://github.com/ranganc007/mayaastrolib.git
+cd mayaastrolib
+pip install -e ".[dev]"
+pytest tests/
+```

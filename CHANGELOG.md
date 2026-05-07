@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+(none — see 0.3.0 below)
+
+## [0.3.0] — 2026-05-07
+
+### Changed
+- Renamed package from `flatlib` to `mayaastrolib`. The new canonical
+  import is `from mayaastrolib import …`.
+
+### Added
+- Compatibility shim: `import flatlib` continues to work but emits a
+  `DeprecationWarning`. Marked for removal in version 1.0.
+- Compatibility shims for all subpackages: `flatlib.dignities`,
+  `flatlib.ephem`, `flatlib.predictives`, `flatlib.protocols`,
+  `flatlib.tools`, plus every leaf-module path
+  (`flatlib.dignities.essential` etc.) via `sys.modules` aliases so
+  both `import flatlib.X` and `from flatlib.X import Y` resolve.
+
+### Deprecated
+- The `flatlib` package name. Migrate to `mayaastrolib`. The shim
+  will be removed in 1.0.
+
+### Verified
+- `pytest tests/` produces 47/47 passing both natively and via the
+  shim.
+- `chart.get(const.SUN)` returns identical positions
+  (`<Sun Pisces +22:47:25 +00:59:51>`) when called via the new
+  `mayaastrolib.*` paths and via the legacy `flatlib.*` paths.
+
 ### Changed
 - Forked from flatangle/flatlib at upstream version 0.2.5
 - Modernised build system: replaced setup.py with pyproject.toml

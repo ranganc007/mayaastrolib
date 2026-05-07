@@ -6,6 +6,199 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 005: Rename flatlib → mayaastrolib
+
+**Session length:** ~50 minutes (single Claude Code session)
+**Branch:** `task-005-rename`
+**Commits:** see `git log task-005-rename`
+
+### What was done
+
+1. **Directory rename.** `git mv flatlib mayaastrolib`. All 32 source
+   files moved with full git history preserved.
+2. **Internal imports.** Mass `sed` rewrite of `from flatlib...` and
+   `import flatlib` → `mayaastrolib` across `mayaastrolib/`,
+   `tests/`, and `recipes/`. Fixed one bare `flatlib.PATH_RES`
+   reference in `mayaastrolib/ephem/__init__.py:19` that the
+   word-boundary regex didn't catch (it wasn't an import statement,
+   just an attribute access).
+3. **Test docstring updates.** The 12 smoke-test files I added in
+   Task 004a all said "Smoke tests for flatlib.X" in their module
+   docstrings. Updated to "mayaastrolib.X". Same for the prose
+   mentions in `mayaastrolib/aspects.py`, `mayaastrolib/ephem/ephem.py`,
+   and `tests/test_eclipses.py`.
+4. **Compatibility shim package.** New `flatlib/` directory with
+   `__init__.py` that emits a DeprecationWarning, re-exports from
+   `mayaastrolib`, and registers `sys.modules['flatlib.X'] =
+   mayaastrolib.X` for every top-level submodule. Subpackage shims
+   (`flatlib/dignities/`, `flatlib/ephem/`, `flatlib/predictives/`,
+   `flatlib/protocols/`, `flatlib/tools/`) follow the same pattern
+   for their inner modules.
+5. **`pyproject.toml`.** `[tool.setuptools] packages` lists both
+   `mayaastrolib*` (6 packages — the actual code) and `flatlib*`
+   (6 packages — the shim). `[tool.setuptools.package-data]`
+   `flatlib = […]` becomes `mayaastrolib = […]` so the swefiles
+   stay packaged. `[tool.coverage.run] source = ["mayaastrolib"]`
+   was already correct (set in Task 002).
+6. **CI workflow.** `.github/workflows/test.yml` step
+   `--cov=flatlib` → `--cov=mayaastrolib`.
+7. **Version bump.** `pyproject.toml [project] version = "0.3.0"`
+   (was 0.2.6). The compatibility shim makes this technically
+   non-breaking, but the structural change is large enough to
+   warrant a minor bump.
+8. **README.md.** Replaced flatlib code example, install
+   instructions, and headings with mayaastrolib equivalents. Added
+   a "Migrating from flatlib" section explaining the shim.
+9. **CHANGELOG.md.** Added a new `[0.3.0] — 2026-05-07` section
+   listing Changed/Added/Deprecated/Verified. Cleared `[Unreleased]`
+   to "(none — see 0.3.0 below)".
+
+### Critical verification — native vs shim
+
+```
+$ .venv-task005/bin/python -c "
+from mayaastrolib.chart import Chart
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.geopos import GeoPos
+from mayaastrolib import const
+
+date = Datetime('2015/03/13', '17:00', '+00:00')
+pos = GeoPos('38n32', '8w54')
+chart = Chart(date, pos)
+print('Native:', chart.get(const.SUN))
+"
+Native: <Sun Pisces +22:47:25 +00:59:51>
+
+$ .venv-task005/bin/python -W ignore::DeprecationWarning -c "
+from flatlib.chart import Chart
+from flatlib.datetime import Datetime
+from flatlib.geopos import GeoPos
+from flatlib import const
+
+date = Datetime('2015/03/13', '17:00', '+00:00')
+pos = GeoPos('38n32', '8w54')
+chart = Chart(date, pos)
+print('Shim:  ', chart.get(const.SUN))
+"
+Shim:   <Sun Pisces +22:47:25 +00:59:51>
+
+$ .venv-task005/bin/python -W error::DeprecationWarning -c "import flatlib"
+…DeprecationWarning: The 'flatlib' package has been renamed to 'mayaastrolib'.
+Update your imports: 'from flatlib import X' → 'from mayaastrolib import X'.
+The 'flatlib' shim will be removed in version 1.0.
+```
+
+Native and shim outputs MATCH EXACTLY. The DeprecationWarning fires.
+
+### Test suite + recipes
+
+```
+$ .venv-task005/bin/pytest tests/
+============================== 47 passed in 0.08s ==============================
+
+$ .venv-task005/bin/python recipes/aspects.py
+… <Moon Sun 90 Applicative +00:24:31>
+
+$ .venv-task005/bin/python recipes/eclipses.py
+<2017/02/11 00:43:49 00:00:00>
+<2017/02/26 14:53:24 00:00:00>
+
+$ .venv-task005/bin/python recipes/solarreturn.py
+<Asc Taurus +26:25:53>
+<2015/06/14 04:38:37 01:00:00>
+```
+
+47/47 tests pass. All sampled recipes run.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (69 files already formatted —
+  up from 51 because the rename added the 6 new flatlib shim
+  __init__.py files plus the test docstring updates didn't change
+  formatting).
+- `ruff check .` — **PASS** (one A004 builtin-shadowing on the shim
+  re-exporting `object` got a per-line `noqa` with rationale —
+  the shim has to re-export the public-API `object` namespace).
+- `pytest -x` — **47/47 PASS**.
+- `mayaastrolib.__version__` reports `0.3.0`.
+
+### What was tried and discarded
+
+- **First shim version** only re-exported attributes
+  (`from mayaastrolib import chart` etc.) at the package level. That
+  made `import flatlib` and `flatlib.chart` (attribute access) work,
+  but `from flatlib.chart import Chart` failed with
+  `ModuleNotFoundError: No module named 'flatlib.chart'` because
+  Python's import machinery looks for a real submodule, not an
+  attribute. **Discarded.** Switched to `sys.modules['flatlib.chart']
+  = mayaastrolib.chart` after the re-export, which works for both
+  attribute access AND import-from. Same pattern applied to every
+  subpackage shim.
+- **Considered** updating the "This file is part of flatlib - (C)
+  FlatAngle" docstring banners across the 32 source files.
+  Discarded: those are João Ventura's original copyright attribution
+  and FORK-RATIONALE.md explicitly preserves the original
+  copyright chain. Modifying them is a documentation question, not
+  a Task-005 mechanical concern. Left as-is.
+- **Considered** stripping the deprecation warning when running
+  under pytest so the test suite output stays clean. Discarded:
+  warnings during test runs are exactly the right user feedback if
+  somebody tries to run flatlib's old test suite against this
+  package.
+
+### Surprises
+
+- The sed regex `from flatlib(\.|[[:space:]])` didn't match
+  `flatlib.PATH_RES + "swefiles"` in `mayaastrolib/ephem/__init__.py`
+  because that's an attribute access, not an import. Caught it
+  before pushing because the install failed. Worth flagging: any
+  future mass-rewrite tooling needs to also handle bare `flatlib.X`
+  attribute references inside function bodies, not just import
+  statements.
+- The first shim attempt's `ModuleNotFoundError` was instructive.
+  The Python language reference is explicit: a name in a package
+  is not the same thing as a submodule of that package. The
+  `sys.modules` registration trick is the canonical fix; without
+  it the shim would have been a 50%-solution. Important to remember
+  for any future package-rename work.
+- Coverage is now collected via `--cov=mayaastrolib` (CI workflow
+  updated), so the previously-dormant
+  `[tool.coverage.run] source = ["mayaastrolib"]` from Task 002 is
+  now live.
+
+### Follow-ups for Phase 1
+
+- The `[tool.setuptools] packages` list will need adjusting once
+  the `flatlib` shim is removed in 1.0 — drop the 6 `flatlib*`
+  entries.
+- The 32 source files still carry the "This file is part of
+  flatlib - (C) FlatAngle" banner. A documentation pass to update
+  these to a fork-aware attribution (preserving João Ventura's
+  copyright but acknowledging the renamed package) is worth doing
+  before the first PyPI release.
+- `docs/source/conf.py` still says `project = "flatlib"`. Sphinx
+  rebuild is Phase 1 work.
+
+### Definition of done — verified
+
+- [x] `mayaastrolib/` directory exists with all source code.
+- [x] `flatlib/` directory exists ONLY as compatibility shims —
+  every `__init__.py` re-exports from `mayaastrolib` and registers
+  `sys.modules` aliases.
+- [x] All internal imports use `mayaastrolib`.
+- [x] All 47 tests pass.
+- [x] Native and shim usage produce IDENTICAL Sun-position output.
+- [x] Sampled recipes run without error.
+- [x] `pyproject.toml` discovery includes both packages.
+- [x] Version bumped to 0.3.0; `mayaastrolib.__version__` confirms.
+- [x] CHANGELOG.md updated with `[0.3.0]` section.
+- [x] CI workflow updated for `--cov=mayaastrolib`.
+- [x] PROJECT-LOG.md (this file) updated.
+
+This completes Phase 0.
+
+---
+
 ## 2026-05-07 — Task 004a: Smoke tests for public-API modules
 
 **Session length:** ~30 minutes (single Claude Code session)
