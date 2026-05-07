@@ -9,7 +9,19 @@ essential dignity table, functions for retrieving
 information from the table and to compute scores and
 almutems.
 
+Most functions accept ``terms_variant`` and ``faces_variant`` as
+keyword-only parameters. Pass these for thread-safe variant
+selection. The legacy module-level globals (``TERMS``, ``FACES``)
+and the ``setTerms`` / ``setFaces`` mutators are still honoured but
+deprecated — they are not thread-safe and will be removed in 1.0.
+
+The convenience functions ``score(obj)``, ``getInfo(obj)``, and
+``isPeregrine(obj)`` accept an Object instance directly to spare
+callers the ``obj.id, obj.sign, obj.signlon`` boilerplate.
+
 """
+
+import warnings
 
 from mayaastrolib import const
 
@@ -24,17 +36,26 @@ EGYPTIAN_TERMS = "Egyptian Terms"
 TETRABIBLOS_TERMS = "Tetrabiblos Terms"
 LILLY_TERMS = "Lilly Terms"
 
-# Defaults
+# Defaults (legacy module-level state — see setTerms/setFaces)
 FACES = tables.CHALDEAN_FACES
 TERMS = tables.EGYPTIAN_TERMS
 TABLE = tables.ESSENTIAL_DIGNITIES
 
 
 def setFaces(variant):
-    """
-    Sets the default faces variant
+    """[DEPRECATED] Set the global faces variant.
 
+    Module-level state is not thread-safe. Pass
+    ``faces_variant=...`` to dignity functions instead. This function
+    will be removed in version 1.0.
     """
+    warnings.warn(
+        "setFaces() mutates global state and is not thread-safe. "
+        "Pass faces_variant=... to dignity functions instead. "
+        "setFaces() will be removed in version 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     global FACES
     if variant == CHALDEAN_FACES:
         FACES = tables.CHALDEAN_FACES
@@ -43,11 +64,19 @@ def setFaces(variant):
 
 
 def setTerms(variant):
-    """
-    Sets the default terms of the Dignities
-    table.
+    """[DEPRECATED] Set the global terms variant.
 
+    Module-level state is not thread-safe. Pass
+    ``terms_variant=...`` to dignity functions instead. This function
+    will be removed in version 1.0.
     """
+    warnings.warn(
+        "setTerms() mutates global state and is not thread-safe. "
+        "Pass terms_variant=... to dignity functions instead. "
+        "setTerms() will be removed in version 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     global TERMS
     if variant == EGYPTIAN_TERMS:
         TERMS = tables.EGYPTIAN_TERMS
@@ -105,18 +134,48 @@ def fallDeg(sign):
     return TABLE[sign]["fall"][1]
 
 
-def term(sign, lon):
-    """Returns the term for a sign and longitude."""
-    terms = TERMS[sign]
-    for ID, a, b in terms:
+def term(sign, lon, *, terms_variant=None):
+    """Return the term lord for a given sign and longitude.
+
+    Args:
+        sign: Sign constant from const.LIST_SIGNS.
+        lon: Longitude within the sign (0-30).
+        terms_variant: One of EGYPTIAN_TERMS, TETRABIBLOS_TERMS,
+            LILLY_TERMS table dicts (from
+            ``mayaastrolib.dignities.tables``). Defaults to the value
+            most recently passed to ``setTerms()`` (or
+            ``EGYPTIAN_TERMS`` if never set), but passing this
+            parameter is preferred and thread-safe.
+
+    Returns:
+        The term lord (a planet ID string).
+    """
+    if terms_variant is None:
+        terms_variant = TERMS
+    for ID, a, b in terms_variant[sign]:
         if a <= lon < b:
             return ID
     return None
 
 
-def face(sign, lon):
-    """Returns the face for a sign and longitude."""
-    faces = FACES[sign]
+def face(sign, lon, *, faces_variant=None):
+    """Return the face lord for a given sign and longitude.
+
+    Args:
+        sign: Sign constant.
+        lon: Longitude within the sign (0-30).
+        faces_variant: One of CHALDEAN_FACES, TRIPLICITY_FACES table
+            dicts (from ``mayaastrolib.dignities.tables``). Defaults
+            to the value most recently passed to ``setFaces()`` (or
+            ``CHALDEAN_FACES`` if never set), but passing this
+            parameter is preferred and thread-safe.
+
+    Returns:
+        The face lord (a planet ID string).
+    """
+    if faces_variant is None:
+        faces_variant = FACES
+    faces = faces_variant[sign]
     if lon < 10:
         return faces[0]
     elif lon < 20:
@@ -128,30 +187,98 @@ def face(sign, lon):
 # === Complex properties === #
 
 
-def getInfo(sign, lon):
-    """Returns the complete essential dignities
-    for a sign and longitude.
+def _is_object(o):
+    """Return True if ``o`` looks like an Object (has id/sign/signlon)."""
+    return hasattr(o, "id") and hasattr(o, "sign") and hasattr(o, "signlon")
 
+
+def getInfo(obj_or_sign, lon=None, *, terms_variant=None, faces_variant=None):
+    """Return the complete essential dignities for a position.
+
+    Two call styles:
+
+        getInfo(planet_object)            # preferred
+        getInfo(sign, lon)                # legacy
+
+    Args:
+        obj_or_sign: Either an Object instance (sign and signlon are
+            read from it), or a sign constant.
+        lon: Required when ``obj_or_sign`` is a sign string. Longitude
+            within the sign (0-30).
+        terms_variant: See ``term()``.
+        faces_variant: See ``face()``.
+
+    Returns:
+        Dict with keys ``ruler``, ``exalt``, ``dayTrip``,
+        ``nightTrip``, ``partTrip``, ``term``, ``face``, ``exile``,
+        ``fall``.
+
+    Raises:
+        TypeError: when called as ``getInfo(sign)`` with no ``lon``.
     """
+    if _is_object(obj_or_sign):
+        sign = obj_or_sign.sign
+        lon = obj_or_sign.signlon
+    else:
+        sign = obj_or_sign
+        if lon is None:
+            raise TypeError(
+                "getInfo(sign, lon) requires a longitude. "
+                "For convenience, getInfo(obj) accepts an Object directly."
+            )
     return {
         "ruler": ruler(sign),
         "exalt": exalt(sign),
         "dayTrip": dayTrip(sign),
         "nightTrip": nightTrip(sign),
         "partTrip": partTrip(sign),
-        "term": term(sign, lon),
-        "face": face(sign, lon),
+        "term": term(sign, lon, terms_variant=terms_variant),
+        "face": face(sign, lon, faces_variant=faces_variant),
         "exile": exile(sign),
         "fall": fall(sign),
     }
 
 
-def isPeregrine(ID, sign, lon):
-    """Returns if an object is peregrine
-    on a sign and longitude.
+def isPeregrine(
+    obj_or_id,
+    sign=None,
+    lon=None,
+    *,
+    terms_variant=None,
+    faces_variant=None,
+):
+    """Return True if the planet is peregrine at the given position.
 
+    Two call styles:
+
+        isPeregrine(planet_object)
+        isPeregrine(planet_id, sign, lon)
+
+    Args:
+        obj_or_id: Either an Object or a planet ID string.
+        sign, lon: Required when ``obj_or_id`` is a string.
+        terms_variant, faces_variant: See ``term()`` / ``face()``.
+
+    Raises:
+        TypeError: if ``obj_or_id`` is a string and sign/lon are missing.
     """
-    info = getInfo(sign, lon)
+    if _is_object(obj_or_id):
+        ID = obj_or_id.id
+        sign = obj_or_id.sign
+        lon = obj_or_id.signlon
+    else:
+        ID = obj_or_id
+        if sign is None or lon is None:
+            raise TypeError(
+                "isPeregrine(id, sign, lon) requires all three arguments. "
+                "For convenience, isPeregrine(obj) accepts an Object directly."
+            )
+    info = getInfo(
+        sign,
+        lon,
+        terms_variant=terms_variant,
+        faces_variant=faces_variant,
+    )
     for dign, objID in info.items():
         if dign not in ["exile", "fall"] and ID == objID:
             return False
@@ -173,25 +300,69 @@ SCORES = {
 }
 
 
-def score(ID, sign, lon):
-    """Returns the score of an object on
-    a sign and longitude.
+def score(
+    obj_or_id,
+    sign=None,
+    lon=None,
+    *,
+    terms_variant=None,
+    faces_variant=None,
+):
+    """Compute the essential dignity score for a planet at a position.
 
+    Two call styles:
+
+        score(planet_object)            # preferred
+        score(id, sign, lon)            # legacy
+
+    Args:
+        obj_or_id: Either an Object instance, or a planet ID string.
+        sign: Required if ``obj_or_id`` is a string. Sign constant.
+        lon: Required if ``obj_or_id`` is a string. Longitude within
+            sign.
+        terms_variant: See ``term()``.
+        faces_variant: See ``face()``.
+
+    Returns:
+        Integer score in [-10, +5].
+
+    Raises:
+        TypeError: if ``obj_or_id`` is a string but sign/lon are
+            missing.
     """
-    info = getInfo(sign, lon)
+    if _is_object(obj_or_id):
+        ID = obj_or_id.id
+        sign = obj_or_id.sign
+        lon = obj_or_id.signlon
+    else:
+        ID = obj_or_id
+        if sign is None or lon is None:
+            raise TypeError(
+                "score(id, sign, lon) requires all three arguments. "
+                "For convenience, score(obj) accepts an Object directly."
+            )
+    info = getInfo(
+        sign,
+        lon,
+        terms_variant=terms_variant,
+        faces_variant=faces_variant,
+    )
     dignities = [dign for (dign, objID) in info.items() if objID == ID]
     return sum([SCORES[dign] for dign in dignities])
 
 
-def almutem(sign, lon):
-    """Returns the almutem for a given
-    sign and longitude.
-
-    """
+def almutem(sign, lon, *, terms_variant=None, faces_variant=None):
+    """Return the almutem (highest-scoring planet) for a position."""
     planets = const.LIST_SEVEN_PLANETS
     res = [None, 0]
     for ID in planets:
-        sc = score(ID, sign, lon)
+        sc = score(
+            ID,
+            sign,
+            lon,
+            terms_variant=terms_variant,
+            faces_variant=faces_variant,
+        )
         if sc > res[1]:
             res = [ID, sc]
     return res[0]
