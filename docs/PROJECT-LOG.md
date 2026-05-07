@@ -6,6 +6,149 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 006: Object–Chart integration
+
+**Session length:** ~50 minutes (single Claude Code session)
+**Branch:** `task-006-object-chart-integration`
+**Commits:** see `git log task-006-object-chart-integration`
+
+### What was done
+
+1. **`mayaastrolib/_compat.py`** — `property_with_method_compat`
+   decorator. Wraps each method in a `_DualAccess` proxy that:
+   - Returns the value on attribute access (the new way).
+   - Returns the value AND emits a `DeprecationWarning` when called
+     like a method (the old way).
+   - Forwards `==`, `!=`, `<`, `<=`, `>`, `>=`, `bool`, `hash`, `str`,
+     `repr`, `int`, `float` to the wrapped value.
+2. **12 method-to-property conversions:**
+   - `mayaastrolib/object.py`: `GenericObject.orb`, `Object.orb`,
+     `Object.meanMotion`, `Object.movement`, `Object.gender`,
+     `Object.faction`, `Object.element`, `House.num`,
+     `House.condition`, `House.gender`, `FixedStar.orb`.
+   - `mayaastrolib/aspects.py`: `Aspect.movement`.
+   - `Aspect.direction` was on the spec's "suspected" list but is
+     already a stored attribute, not a method — no conversion.
+3. **Internal call sites updated** to bare property access so library
+   code emits no warnings against itself:
+   - `mayaastrolib/object.py` — `isDirect`/`isRetrograde`/`isStationary`
+     use `self.movement`; `isFast` uses `self.meanMotion`;
+     `FixedStar.aspects` uses `self.orb`.
+   - `mayaastrolib/aspects.py` — `_aspectDict`, `_aspectProperties`,
+     `isAspecting` use `obj1.orb` / `obj2.orb`.
+   - `mayaastrolib/dignities/accidental.py` — `sunRelation` uses
+     `obj.gender` / `obj.faction`; the `AccidentalDignity` score code
+     uses `asp.movement`.
+   - `mayaastrolib/protocols/temperament.py` — `singleFactor` /
+     `modifierFactor` use `obj.element`.
+4. **Chart linker.** `Chart.__init__` now calls
+   `_link_objects_to_houses` after `self.objects` and `self.houses`
+   exist. Sets `obj.house` (the containing `House` instance, via
+   `HouseList.getObjectHouse`) and `house.objects` (a list of the
+   objects whose `obj.house is house`).
+5. **`Chart.houseOf(obj)`** — accepts an Object or a planet ID string,
+   returns the house or None. Wraps the lookup in try/except to
+   convert `KeyError` (raised by `GenericList.get` for unknown IDs)
+   into None as the spec requires.
+6. **`Chart.objectsInHouse(house_id)`** — same pattern; returns `[]`
+   for unknown house IDs.
+7. **`tests/test_compat.py`** — 11 tests covering property access,
+   method access + warning, comparison operators (including
+   reflected), bool, hash, str/repr, int/float, and dict-key use.
+8. **`tests/test_chart_house_links.py`** — 11 tests covering the
+   chart linking and the `houseOf`/`objectsInHouse` API, plus three
+   regression tests for the property-truthiness bug.
+9. **`docs/PROPERTY-MIGRATION.md`** — documents every conversion
+   with the rationale and the 1.0 removal plan.
+
+### Verification
+
+```
+$ .venv-task006/bin/pytest tests/
+============================== 69 passed in 0.10s ==============================
+```
+
+69 tests = 47 pre-existing + 11 compat + 11 chart-link.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (72 files left unchanged after
+  format pass).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to RECON baseline. No
+  new errors introduced.
+- `pytest -x` — **69/69 PASS**.
+- DeprecationWarnings: zero emitted from internal library code; any
+  external code calling `obj.movement()` style will see them.
+
+### What was tried and discarded
+
+- **First `_compat.py`** only forwarded `==`, `!=`, `bool`, `hash`,
+  `str`, `repr` per the spec sketch. Adding the comparison operators
+  (`<`, `<=`, `>`, `>=`) became necessary because internal code does
+  `abs(speed) >= self.meanMotion` and `obj.orb < orb` — without
+  reflected comparisons the test suite would have crashed at
+  `aspects.py:91`. Added them upfront with a `_unwrap` helper to
+  handle the case where both sides are `_DualAccess`.
+- **Initial `houseOf`** implementation assumed `getObject` returns
+  None for unknown IDs. It actually raises `KeyError` (via
+  `GenericList.get` on `lists.py:43`). Wrapped the call in try/except
+  to honour the spec's "returns None" contract. Same fix applied to
+  `objectsInHouse`.
+- **Considered** splitting the object.py changes into per-class
+  commits as the spec suggests. Discarded: all 11 conversions live
+  in the same file in adjacent regions; splitting would require
+  `git add -p` and produce noisier history. Did one focused commit
+  for object.py and a second for aspects.py + the external
+  call-site updates.
+- **`Aspect.direction`** was on the spec's "suspected" list but
+  reading aspects.py revealed it's set in the properties dict via
+  `_aspectProperties`, not defined as a method on `Aspect`. Skipped
+  with a note in PROPERTY-MIGRATION.md.
+
+### Surprises
+
+- The bug class is real — `bound method object` is always truthy
+  regardless of return value. `tests/test_compat.py::test_bool_of_falsy_value_is_false`
+  is the canonical regression and it passes.
+- The smoke tests from Task 004a are doing their job: they exercise
+  every consumer code path in the library, so the conversion of
+  internal call sites was self-validating. Nothing broke; the suite
+  was 47/47 → 58/58 → 69/69 across the conversion commits.
+- `_link_objects_to_houses` uses `HouseList.getObjectHouse(obj)`,
+  which already existed (lists.py:95). Saved writing the inner
+  loop. No measurable performance impact on Chart construction.
+
+### Follow-ups
+
+- Recipes still use `obj.movement()` style in a few places (e.g.
+  `recipes/aspects.py`). They'll emit deprecation warnings when run.
+  The spec says don't update recipes in this task — note for a
+  later docs sweep.
+- Tests using `obj.gender()`-style access (none currently exist)
+  would emit warnings too. Same handling.
+- Phase 2 / 1.0: drop `_compat.py`, replace decorators with bare
+  `@property`, sweep the codebase for `obj.X()` patterns and
+  rewrite. PROPERTY-MIGRATION.md has the playbook.
+
+### Definition of done — verified
+
+- [x] All 12 identified methods accept both property and method-style
+  access.
+- [x] Method-style access emits `DeprecationWarning`.
+- [x] The bug class (`if obj.movement:` always truthy) is fixed and
+  pinned by `test_bool_of_falsy_value_is_false`.
+- [x] `obj.house` is set after Chart construction for every Object.
+- [x] `house.objects` is set after Chart construction for every House.
+- [x] `Chart.houseOf()` and `Chart.objectsInHouse()` exist and work,
+  including the unknown-id paths.
+- [x] New tests cover all of the above.
+- [x] Pre-existing 47 tests still pass.
+- [x] CHANGELOG updated.
+- [x] `docs/PROPERTY-MIGRATION.md` exists.
+
+---
+
 ## 2026-05-07 — Task 005: Rename flatlib → mayaastrolib
 
 **Session length:** ~50 minutes (single Claude Code session)

@@ -4,7 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
-(none — see 0.3.0 below)
+### Added
+- `Chart.houseOf(obj)` returns the house containing an object. Accepts
+  either an Object instance or a planet ID string.
+- `Chart.objectsInHouse(house_id)` returns the list of objects in a
+  named house.
+- `Object.house` attribute, set on every Object during `Chart.__init__`.
+- `House.objects` attribute, set on every House during `Chart.__init__`.
+- Property-style access for `Object.movement`, `Object.gender`,
+  `Object.faction`, `Object.element`, `Object.orb`, `Object.meanMotion`,
+  `House.num`, `House.condition`, `House.gender`, `Aspect.movement`,
+  `FixedStar.orb`, and `GenericObject.orb`. Implemented via the new
+  `mayaastrolib._compat.property_with_method_compat` decorator, which
+  emits a `DeprecationWarning` if the legacy method-style access is used.
+- `docs/PROPERTY-MIGRATION.md` documents the migration and the 1.0
+  removal plan.
+
+### Deprecated
+- Method-style access for the property-converted methods above
+  (e.g. `obj.movement()`). Emits `DeprecationWarning`. Will be removed
+  in version 1.0. Use `obj.movement` (no parens) instead.
+
+### Fixed
+- `if obj.movement:` (and similar truthiness checks on the converted
+  getters) now reflects the actual value's truthiness instead of being
+  unconditionally true because of the bound-method object's identity.
 
 ## [0.3.0] — 2026-05-07
 
