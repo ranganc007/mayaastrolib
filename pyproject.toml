@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mayaastrolib"
-version = "0.2.6"
+version = "0.3.0"
 description = "Python library for Traditional and Vedic Astrology (fork of flatangle/flatlib)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -47,6 +47,12 @@ Upstream = "https://github.com/flatangle/flatlib"
 
 [tool.setuptools]
 packages = [
+    "mayaastrolib",
+    "mayaastrolib.dignities",
+    "mayaastrolib.ephem",
+    "mayaastrolib.predictives",
+    "mayaastrolib.protocols",
+    "mayaastrolib.tools",
     "flatlib",
     "flatlib.dignities",
     "flatlib.ephem",
@@ -56,7 +62,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
-flatlib = [
+mayaastrolib = [
     "resources/README.md",
     "resources/swefiles/*.se1",
     "resources/swefiles/*.cat",
