@@ -50,6 +50,21 @@ class Chart:
         self.hsys = hsys
         self.objects = ephem.getObjectList(IDs, date, pos)
         self.houses, self.angles = ephem.getHouses(date, pos, hsys)
+        self._link_objects_to_houses()
+
+    def _link_objects_to_houses(self):
+        """Stamp `obj.house` on every Object and `house.objects` on every House.
+
+        Uses HouseList.getObjectHouse, which iterates the houses and returns
+        the first whose `inHouse(obj.lon)` is true. Defensive fallback to
+        None if no house matches (shouldn't happen in normal house systems
+        but allows for fixed-stars or angle objects whose membership is not
+        meaningful).
+        """
+        for obj in self.objects:
+            obj.house = self.houses.getObjectHouse(obj)
+        for house in self.houses:
+            house.objects = [o for o in self.objects if o.house is house]
 
     def copy(self):
         """Returns a deep copy of this chart."""
@@ -87,6 +102,44 @@ class Chart:
             return self.getAngle(ID)
         else:
             return self.getObject(ID)
+
+    def houseOf(self, obj):
+        """Return the House containing obj, or None if obj is not in any house.
+
+        Equivalent to ``obj.house``, provided for callers who have the chart
+        but only the object's id.
+
+        Args:
+            obj: An Object instance, or a planet ID string (e.g. const.SUN).
+
+        Returns:
+            The House instance, or None.
+        """
+        if isinstance(obj, str):
+            try:
+                obj = self.getObject(obj)
+            except KeyError:
+                return None
+            if obj is None:
+                return None
+        return getattr(obj, "house", None)
+
+    def objectsInHouse(self, house_id):
+        """Return the list of Objects in the named house.
+
+        Args:
+            house_id: A house ID string (e.g. const.HOUSE5).
+
+        Returns:
+            List of Object instances, possibly empty.
+        """
+        try:
+            house = self.getHouse(house_id)
+        except KeyError:
+            return []
+        if house is None:
+            return []
+        return list(house.objects)
 
     # === Fixed stars === #
 
