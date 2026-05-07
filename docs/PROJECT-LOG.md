@@ -6,6 +6,119 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 004a: Smoke tests for public-API modules
+
+**Session length:** ~30 minutes (single Claude Code session)
+**Branch:** `task-004a-smoke-tests`
+**Commits:** see `git log task-004a-smoke-tests`
+
+### What was done
+
+Added 12 new test files, one per zero-coverage module identified
+in RECON §2:
+
+- `tests/test_dignities_essential.py` — 4 tests
+- `tests/test_dignities_accidental.py` — 3 tests
+- `tests/test_dignities_tables.py` — 8 tests (mostly shape checks
+  against the static reference tables)
+- `tests/test_predictives_profections.py` — 2 tests
+- `tests/test_predictives_returns.py` — 2 tests
+- `tests/test_predictives_primarydirections.py` — 4 tests
+- `tests/test_protocols_almutem.py` — 2 tests
+- `tests/test_protocols_behavior.py` — 2 tests
+- `tests/test_protocols_temperament.py` — 3 tests
+- `tests/test_tools_arabicparts.py` — 2 tests
+- `tests/test_tools_chartdynamics.py` — 3 tests
+- `tests/test_tools_planetarytime.py` — 3 tests
+
+Each file follows the same pattern: an `import` test, then one or
+more "happy-path" tests calling the module's main public entry
+point with the recipe's reference inputs (`2015/03/13 17:00 UTC`,
+`38n32 / 8w54`) and asserting the output has the right shape (type
+or key presence). No specific astronomical values are pinned —
+that's golden-chart fixture work for Phase 1.
+
+### Verification
+
+```
+$ python3 -m venv .venv-task004a
+$ .venv-task004a/bin/pip install -e ".[dev]"
+$ .venv-task004a/bin/pytest tests/ -v
+…
+============================== 47 passed in 0.08s ==============================
+
+$ .venv-task004a/bin/pytest tests/ --cov=flatlib --cov-report=term
+…
+TOTAL                                       1878    271    86%
+============================== 47 passed in 0.26s ==============================
+```
+
+**Test count:** 47 (5 baseline + 4 eclipse from Task 004 + 38 new).
+**Coverage:** **86%** — well above the ≥55% target. RECON baseline
+was 34%, so this is +52 percentage points. The 12 modules that were
+at literally 0% coverage are now between **80% and 100%**.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (63 files left unchanged after
+  formatting the 12 new tests, which were already conformant on
+  write).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `pytest -x` — **47/47 PASS**.
+- Coverage 86% — far above the 80% target from CLAUDE.md.
+
+### What was tried and discarded
+
+- **Initially asserted** `accidental.sunRelation(venus, sun)`
+  returns a `str`. It returned `None` for the reference chart
+  (Venus has no special Sun relation — not combust, not cazimi,
+  not under the sun). Relaxed the assertion to "str or None"
+  rather than picking a different planet that *does* have a
+  relation, because the value-of-None path is the more common
+  case and worth covering.
+- **Considered** asserting specific Asc signs in
+  `tests/test_predictives_profections.py` (the recipe says
+  "Asc Capricorn"). Discarded: that pins astronomical values,
+  which is Phase 1 golden-chart work, not Task 004a smoke-test
+  scope.
+
+### Surprises
+
+- Coverage jumped from 34% to **86%** in one task — a much bigger
+  bump than the spec predicted (~55-65%). The 12 added smoke tests
+  exercise much more of the call graph than expected because each
+  module's main public function transitively touches the foundation
+  modules (`const`, `angle`, `props`, `object`, `chart`, `ephem`).
+  Even minimal calls light up large code paths.
+- Every smoke test passed on the first run after the one
+  `sunRelation` adjustment. No xfails were necessary — none of the
+  12 modules has a hidden bug at the smoke level. Good news for
+  Task 005's rename safety net.
+- `flatlib/tools/chartdynamics.py` jumped to **98%** coverage from
+  3 tests because `ChartDynamics(chart)` precomputes a lot of
+  internal state, which then satisfies the line-coverage tracker
+  even before any per-method test runs.
+
+### Follow-ups for Task 005
+
+- The smoke-test safety net is now in place. Task 005's rename
+  can run with confidence: any missed import in any of these 12
+  modules will fail loudly in pytest.
+- All test files import from `flatlib.*` — Task 005's import
+  rewriter will need to update them to `mayaastrolib.*`.
+
+### Definition of done — verified
+
+- [x] 12 new test files exist, one per uncovered module.
+- [x] Each file has at least one import + one happy-path test.
+- [x] All tests pass; no xfails needed.
+- [x] Coverage 34% → 86% (target was ≥55%).
+- [x] CHANGELOG.md updated under `[Unreleased]` `### Added`.
+- [x] CI: workflow only fires on development/master pushes per the
+  Task 004 spec, so it'll run when this branch is merged.
+
+---
+
 ## 2026-05-07 — Task 004: CI and eclipse bug fix
 
 **Session length:** ~20 minutes (single Claude Code session)

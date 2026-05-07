@@ -21,6 +21,11 @@ All notable changes to this project will be documented in this file. Format foll
   ruff lint and pytest on Python 3.10/3.11/3.12
 - Regression tests for eclipse functions (`tests/test_eclipses.py`)
 - `docs/KNOWN-BUGS.md` documenting the eclipse fix
+- Smoke tests for 12 previously zero-coverage modules: dignities
+  (essential, accidental, tables), predictives (profections, returns,
+  primarydirections), protocols (almutem, behavior, temperament),
+  tools (arabicparts, chartdynamics, planetarytime). Coverage rose
+  from 34% to 86%.
 
 ### Fixed
 - Eclipse functions in `flatlib/ephem/swe.py` (`solarEclipseGlobal`,
