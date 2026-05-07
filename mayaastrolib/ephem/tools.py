@@ -8,7 +8,7 @@ for the ephem subpackage.
 
 """
 
-from flatlib import angle, const, utils
+from mayaastrolib import angle, const, utils
 
 from . import swe
 

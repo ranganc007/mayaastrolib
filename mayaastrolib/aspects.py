@@ -4,7 +4,7 @@ Author: João Ventura (flatangleweb@gmail.com)
 
 
 This module provides useful for handling aspects between
-objects in flatlib. An aspect is an angular relation
+objects in mayaastrolib. An aspect is an angular relation
 between a planet and another object.
 
 This module has the following base terminology:

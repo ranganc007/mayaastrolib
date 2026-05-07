@@ -11,7 +11,7 @@ almutems.
 
 """
 
-from flatlib import const
+from mayaastrolib import const
 
 from . import tables
 

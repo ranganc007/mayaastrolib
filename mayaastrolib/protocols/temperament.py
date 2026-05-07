@@ -13,8 +13,8 @@ and the Sun Season.
 
 """
 
-from flatlib import aspects, const, props
-from flatlib.dignities import essential
+from mayaastrolib import aspects, const, props
+from mayaastrolib.dignities import essential
 
 # Temperament factors
 ASC_SIGN = "Asc Sign"

@@ -9,9 +9,9 @@ which scores higher in some hylegic points.
 
 """
 
-from flatlib import const
-from flatlib.dignities import essential
-from flatlib.tools import planetarytime
+from mayaastrolib import const
+from mayaastrolib.dignities import essential
+from mayaastrolib.tools import planetarytime
 
 # House scores
 HOUSE_SCORES = {

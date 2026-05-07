@@ -13,7 +13,7 @@ accessible.
 
 import swisseph
 
-from flatlib import angle, const
+from mayaastrolib import angle, const
 
 # Map objects
 SWE_OBJECTS = {

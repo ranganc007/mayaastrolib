@@ -11,12 +11,12 @@ accessible.
 
 """
 
-import flatlib
+import mayaastrolib
 
 from . import swe
 
 # Set default swefile path
-swe.setPath(flatlib.PATH_RES + "swefiles")
+swe.setPath(mayaastrolib.PATH_RES + "swefiles")
 
 
 # Configure swefile path

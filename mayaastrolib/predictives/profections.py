@@ -10,8 +10,8 @@ handling profections.
 
 import math
 
-from flatlib import const
-from flatlib.ephem import ephem
+from mayaastrolib import const
+from mayaastrolib.ephem import ephem
 
 
 def compute(chart, date, fixedObjects=False):

@@ -12,7 +12,7 @@ dicts and jd/lat/lon as float.
 
 """
 
-from flatlib import angle, const
+from mayaastrolib import angle, const
 
 from . import swe, tools
 

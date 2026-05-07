@@ -14,8 +14,8 @@ Default assumptions:
 
 """
 
-from flatlib import angle, const, utils
-from flatlib.dignities import tables
+from mayaastrolib import angle, const, utils
+from mayaastrolib.dignities import tables
 
 # === Base functions === #
 

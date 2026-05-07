@@ -11,9 +11,9 @@ Chart.
 
 from copy import copy
 
-from flatlib import angle, aspects, const, props
-from flatlib.dignities import essential
-from flatlib.tools.chartdynamics import ChartDynamics
+from mayaastrolib import angle, aspects, const, props
+from mayaastrolib.dignities import essential
+from mayaastrolib.tools.chartdynamics import ChartDynamics
 
 # Relations with Sun
 COMBUST = "Combust"

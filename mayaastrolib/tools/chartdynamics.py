@@ -8,8 +8,8 @@ handling some of the dynamics of an astrology Chart.
 
 """
 
-from flatlib import aspects, const
-from flatlib.dignities import essential
+from mayaastrolib import aspects, const
+from mayaastrolib.dignities import essential
 
 # ----------------------- #
 #   ChartDynamics Class   #

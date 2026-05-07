@@ -13,9 +13,9 @@ datetimes of each hour ruler.
 
 """
 
-from flatlib import const
-from flatlib.datetime import Datetime
-from flatlib.ephem import ephem
+from mayaastrolib import const
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.ephem import ephem
 
 # Planetary rulers starting at Sunday
 DAY_RULERS = [

@@ -4,18 +4,18 @@ Author: João Ventura (flatangleweb@gmail.com)
 
 
 This module implements functions which are useful
-for flatlib. Basically, it converts internal objects
-and lists from the ephemeris to flatlib.objects and
-flatlib.lists.
+for mayaastrolib. Basically, it converts internal objects
+and lists from the ephemeris to mayaastrolib.objects and
+mayaastrolib.lists.
 
 Flatlib users will want to use this module for
 accessing the ephemeris.
 
 """
 
-from flatlib.datetime import Datetime
-from flatlib.lists import FixedStarList, GenericList, HouseList, ObjectList
-from flatlib.object import FixedStar, GenericObject, House, Object
+from mayaastrolib.datetime import Datetime
+from mayaastrolib.lists import FixedStarList, GenericList, HouseList, ObjectList
+from mayaastrolib.object import FixedStar, GenericObject, House, Object
 
 from . import eph, swe
 

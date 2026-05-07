@@ -8,8 +8,8 @@ Protocol.
 
 """
 
-from flatlib import aspects, const
-from flatlib.dignities import essential
+from mayaastrolib import aspects, const
+from mayaastrolib.dignities import essential
 
 
 def _merge(listA, listB):

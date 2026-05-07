@@ -9,9 +9,9 @@ It only handles solar returns for now.
 
 """
 
-from flatlib import const
-from flatlib.chart import Chart
-from flatlib.ephem import ephem
+from mayaastrolib import const
+from mayaastrolib.chart import Chart
+from mayaastrolib.ephem import ephem
 
 
 def _computeChart(chart, date):
