@@ -6,6 +6,204 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 002: Build system modernisation
+
+**Session length:** ~45 minutes (single Claude Code session)
+**Branch:** `task-002-build-system`
+**Commits:** see `git log task-002-build-system`
+
+### What was done
+
+- Confirmed read of `CLAUDE.md`, `docs/RECON.md`, `docs/CONTRIBUTION-PLAN.md`,
+  and `docs/FORK-RATIONALE.md` before any edits.
+- Created `pyproject.toml` (PEP 621, setuptools backend) with:
+  - `name = "mayaastrolib"`, `version = "0.2.6"` (single source of truth),
+    `requires-python = ">=3.10"`.
+  - Authors: João Ventura preserved; Rangan C. added as maintainer.
+  - License MIT; classifiers, keywords, URLs migrated from `setup.py`.
+  - Dependency: `pyswisseph >= 2.10.3.2`.
+  - `[project.optional-dependencies] dev = [pytest, pytest-cov, ruff,
+    mypy]`. Skipped the `docs` group: `docs/source/` exists but the
+    Sphinx skeleton is from 2015 and isn't part of the current build —
+    spec said to skip if not built.
+  - `[tool.setuptools] packages = ["flatlib", "flatlib.dignities",
+    "flatlib.ephem", "flatlib.predictives", "flatlib.protocols",
+    "flatlib.tools"]` — directory rename is Task 005.
+  - `[tool.setuptools.package-data]` includes `resources/README.md`,
+    `resources/swefiles/*.se1`, `*.cat`, `*.txt` (verified against
+    `setup.py` `package_data` and `MANIFEST.in`; covers all 9 `.se1`,
+    `fixstars.cat`, `sefstars.txt`).
+  - `[tool.ruff]` line-length 100, target-version py310, lint
+    `select = ["E","F","I","B","A","UP"]` — `N` deferred per spec.
+  - `[tool.mypy]` python_version 3.10, warn_unused_ignores,
+    ignore_missing_imports (pyswisseph has no stubs).
+  - `[tool.pytest.ini_options] testpaths = ["tests"], addopts =
+    "--strict-markers"`.
+  - `[tool.coverage.run] source = ["mayaastrolib"]` (matches CLAUDE.md
+    pre-completion checklist; will become live after Task 005 rename).
+- Rewrote `flatlib/__init__.py` to derive `__version__` from
+  `importlib.metadata.version("mayaastrolib")` with a
+  `PackageNotFoundError` fallback to `"0.0.0+unknown"`. Eliminates the
+  RECON §8 ¶13 version mismatch (`0.2.3` vs `0.2.5`).
+- Deleted `setup.py` and `requirements.txt`. `setup.cfg` was already
+  absent. `MANIFEST.in` left in place — handling of `README.rst` vs
+  `README.md` is Task 002b per the task spec.
+
+### Verification (Definition of Done step 9)
+
+Fresh `.venv-task002` on Python 3.14.3 (CI matrix Python is not
+installed locally; flagged for Task 004).
+
+```
+$ python3 -m venv .venv-task002
+$ .venv-task002/bin/pip install -e ".[dev]"
+…
+Successfully installed ast-serialize-0.3.0 coverage-7.13.5 iniconfig-2.3.0
+  librt-0.10.0 mayaastrolib-0.2.6 mypy-2.0.0 mypy_extensions-1.1.0
+  packaging-26.2 pathspec-1.1.1 pluggy-1.6.0 pygments-2.20.0
+  pyswisseph-2.10.3.2 pytest-9.0.3 pytest-cov-7.1.0 ruff-0.15.12
+  typing_extensions-4.15.0
+```
+
+```
+$ .venv-task002/bin/pip show mayaastrolib
+Name: mayaastrolib
+Version: 0.2.6
+Summary: Python library for Traditional and Vedic Astrology (fork of flatangle/flatlib)
+Home-page: https://github.com/ranganc007/mayaastrolib
+Author:
+Author-email: João Ventura <flatangleweb@gmail.com>
+License: MIT
+Location: /opt/homebrew/var/www/oss-contrib/mayaastrolib/.venv-task002/lib/python3.14/site-packages
+Editable project location: /opt/homebrew/var/www/oss-contrib/mayaastrolib
+Requires: pyswisseph
+Required-by:
+```
+
+```
+$ .venv-task002/bin/python -c "import flatlib; print(flatlib.__version__)"
+0.2.6
+```
+
+```
+$ .venv-task002/bin/pytest tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /opt/homebrew/var/www/oss-contrib/mayaastrolib
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 5 items
+
+tests/test_angles.py ....                                                [ 80%]
+tests/test_chart.py .                                                    [100%]
+
+============================== 5 passed in 0.38s ===============================
+```
+
+5/5 passed — matches the RECON §2 baseline.
+
+### Pre-completion checklist (with notes from spec)
+
+- `ruff format --check .` — **53 files would be reformatted** (expected;
+  Task 003). One file fewer than the RECON 54 because `setup.py` is now
+  deleted.
+- `ruff check .` — **123 errors** with the configured rule set (E, F, I,
+  B, A, UP). RECON saw 25 with default rules. The increase comes
+  primarily from `B` (bugbear), `A` (builtin shadowing — flags
+  `flatlib/props.py`'s `class object`), `UP` (pyupgrade), and `I`
+  (isort). 58 are auto-fixable. Within RECON §9's "50–100+" prediction
+  ballpark; `N` (the headline driver) is deliberately still off.
+- `mypy flatlib/` — **2 errors**, identical to the RECON §4 baseline.
+- `pytest -x` — **5/5 passed**, matches RECON baseline.
+- `pytest --cov=mayaastrolib --cov-fail-under=80` — **skipped per task
+  spec.** Source dir is still `flatlib/`; the `[tool.coverage.run]
+  source = ["mayaastrolib"]` setting will start collecting coverage
+  after Task 005 renames the directory.
+
+### What was tried and discarded
+
+- **Tried** including a `docs` optional-dependency group with
+  `sphinx`. Discarded: `docs/source/` is a 2015 Sphinx skeleton that
+  isn't currently built (no `make html` ran in years). Per the task
+  spec ("only if `docs/source/` will be built; if not, skip"), I left
+  the group out. Trivial to add later.
+- **Considered** pinning `pyswisseph==2.10.3.2` (matching `setup.py`
+  exactly) vs `>=2.10.3.2`. Chose `>=` because (a) the CLAUDE.md
+  contribution plan calls for modern-Python compatibility, (b) RECON
+  §8 ¶1 noted that the eclipse-function regression came from a
+  pyswisseph API change — pinning hides the issue rather than
+  surfacing it for Task 002a/004. Lock should live in a `requirements`
+  file or test matrix, not in the runtime metadata.
+- **Considered** adding `pythonpath = ["."]` to
+  `[tool.pytest.ini_options]` to fix the RECON §2 footgun. Out of
+  scope: the task spec explicitly defers it to Task 002b. Did not add.
+- **Considered** updating `MANIFEST.in` (currently includes
+  `README.rst`, which the fork swapped for `README.md`). Out of scope
+  — Task 002b territory. Did not touch.
+- **Considered** committing the leftover working-tree CLAUDE.md edit
+  (the AUTO-MANAGED `## Current codebase state` block from the Task
+  001 auto-memory hook). Did NOT commit it: out of Task 002 scope, and
+  CLAUDE.md is listed as "files that are sacred — should not be
+  modified without explicit instruction". Left in working tree for the
+  human reviewer to decide.
+
+### Surprises
+
+- `pip show mayaastrolib`'s `Author:` field renders empty even though
+  the `[project] authors` table uses `name`/`email`. setuptools maps
+  PEP 621 `authors` to RFC-822 `Author-email` (where it correctly shows
+  "João Ventura <flatangleweb@gmail.com>"); the legacy `Author:` line
+  stays blank by design. Not a problem, just unfamiliar.
+- `pytest` now picks up `pyproject.toml` as `configfile:` automatically
+  — no `pytest.ini` needed. Slight bonus: `--strict-markers` is now in
+  effect, which means undeclared markers will raise. None used today,
+  so no fallout.
+- `ruff check` count jumped from 25 → 123 with the configured rule
+  set. The single biggest contributor is `UP` (pyupgrade) flagging
+  hundreds of "use `X | None` instead of `Optional[X]`"-style hints
+  across the codebase, plus `B` and `A`. Task 003 will need to triage
+  carefully — many will auto-fix, but a chunk are stylistic
+  judgement-calls (e.g. `class object` in `props.py` is `A001`/`A003`
+  builtin-shadow).
+- The editable install built cleanly without `MANIFEST.in` listing
+  `pyproject.toml`. setuptools handles it implicitly. (`MANIFEST.in`
+  matters only for the sdist; in editable mode it's irrelevant.)
+
+### Follow-ups for Task 002b
+
+- Update `.gitignore` to add `*.egg-info/`, `.coverage`,
+  `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `htmlcov/`,
+  `.venv*/`, `dist/`, `build/`. (RECON §8 ¶8.)
+- Delete `scripts/build.py`, `scripts/clean.py`, `scripts/utils.py` —
+  the new build backend obsoletes them. (RECON §8 ¶7.)
+- Resolve `README.rst` vs `README.md`: either delete `README.rst` (the
+  fork already uses `README.md` per `[project] readme = "README.md"`)
+  or align `MANIFEST.in`. (RECON §8 ¶6.)
+- Add `pythonpath = ["."]` to `[tool.pytest.ini_options]` so a
+  contributor who skips `pip install -e .` still gets import
+  resolution. (RECON §2.)
+- Create an empty `CHANGELOG.md` — Task 002 deliberately deferred per
+  the spec; subsequent tasks need one to append to.
+- Decide whether to install Python 3.10/3.11/3.12 via pyenv before
+  Task 004 (CI matrix). Today this Mac still only has 3.14.3.
+
+### Definition of done — verified
+
+- [x] `pyproject.toml` exists; `python3 -c "import tomllib;
+  tomllib.load(open('pyproject.toml','rb'))"` returns without error
+  (printed `valid; project.name= mayaastrolib version= 0.2.6`).
+- [x] Fresh-venv `pip install -e ".[dev]"` succeeds.
+- [x] `import flatlib; flatlib.__version__ == "0.2.6"`.
+- [x] `pytest tests/` reports 5/5 passed.
+- [x] `setup.py`, `requirements.txt` deleted; `setup.cfg` was already
+  absent.
+- [x] `git diff development --stat` of committed files shows only:
+  `pyproject.toml` (added), `flatlib/__init__.py` (modified),
+  `setup.py` (deleted), `requirements.txt` (deleted), and this
+  PROJECT-LOG.md entry.
+
+---
+
 ## 2026-05-07 — Task 001: Recon and baseline
 
 **Session length:** ~1.5 hours (single Claude Code session)
