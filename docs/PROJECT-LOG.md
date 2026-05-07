@@ -6,6 +6,138 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 004: CI and eclipse bug fix
+
+**Session length:** ~20 minutes (single Claude Code session)
+**Branch:** `task-004-ci-and-eclipse-fix`
+**Commits:** see `git log task-004-ci-and-eclipse-fix`
+
+### What was done
+
+1. **GitHub Actions workflow.** Created `.github/workflows/test.yml`
+   targeting Python 3.10/3.11/3.12 with `fail-fast: false`. Steps:
+   pip install `-e ".[dev]"`, `ruff format --check .`, `ruff check .`,
+   `pytest tests/ -v`, then `pytest tests/ --cov=flatlib --cov-report=term-missing`.
+   Coverage source stays `flatlib` because the rename is Task 005.
+2. **Eclipse keyword bugfix.** `flatlib/ephem/swe.py` lines 150 and
+   165 now pass `backwards=backward` to `swisseph.sol_eclipse_when_glob`
+   and `swisseph.lun_eclipse_when` respectively. The function-level
+   parameter name `backward` is left unchanged (it's part of the
+   internal API; renaming would cascade further than necessary).
+3. **Regression tests.** `tests/test_eclipses.py` — 4 unittest
+   smoke tests that simply call `nextSolarEclipse`, `prevSolarEclipse`,
+   `nextLunarEclipse`, `prevLunarEclipse` for `2020/01/01 12:00 UTC`
+   and assert the result isn't None. They don't pin specific eclipse
+   times (that's Phase 1 golden-chart work) — the point is to catch
+   any future TypeError immediately.
+4. **`docs/KNOWN-BUGS.md`.** New file documenting the eclipse fix
+   under "Resolved" with cross-references to RECON.md and the
+   regression test.
+
+### Verification
+
+```
+$ python3 -m venv .venv-task004
+$ .venv-task004/bin/pip install -e ".[dev]"
+$ .venv-task004/bin/pytest tests/ -v
+…
+tests/test_angles.py::AngleTests::test_closest_distances PASSED          [ 11%]
+tests/test_angles.py::AngleTests::test_distances PASSED                  [ 22%]
+tests/test_angles.py::AngleTests::test_norm PASSED                       [ 33%]
+tests/test_angles.py::AngleTests::test_znorm PASSED                      [ 44%]
+tests/test_chart.py::ChartTests::test_solar_return_hsys PASSED           [ 55%]
+tests/test_eclipses.py::EclipseTests::test_next_lunar_eclipse_does_not_crash PASSED [ 66%]
+tests/test_eclipses.py::EclipseTests::test_next_solar_eclipse_does_not_crash PASSED [ 77%]
+tests/test_eclipses.py::EclipseTests::test_prev_lunar_eclipse_does_not_crash PASSED [ 88%]
+tests/test_eclipses.py::EclipseTests::test_prev_solar_eclipse_does_not_crash PASSED [100%]
+
+============================== 9 passed in 0.43s ===============================
+
+$ .venv-task004/bin/python recipes/eclipses.py
+<2017/02/11 00:43:49 00:00:00>
+<2017/02/26 14:53:24 00:00:00>
+```
+
+`recipes/eclipses.py` runs to completion — RECON §7's broken recipe
+is now fixed.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (51 files already formatted;
+  one more than Task 003's 50 because `tests/test_eclipses.py` was
+  added).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy flatlib/` — still 2 errors from RECON §4. Phase 1.
+- `pytest -x` — **9/9 PASS** (5 baseline + 4 new eclipse tests).
+- Coverage: 35% (up from 34% baseline; the small bump is from the
+  4 eclipse tests covering the `swe.solarEclipseGlobal` /
+  `swe.lunarEclipseGlobal` paths plus the `ephem.next*Eclipse` /
+  `prev*Eclipse` wrappers).
+
+### What was tried and discarded
+
+- **Considered** also renaming the function parameter `backward` →
+  `backwards` to match the swisseph keyword. Discarded: it's not
+  the bug, the call site is — and renaming the parameter cascades
+  to `flatlib/ephem/ephem.py` `nextSolarEclipse(date)` /
+  `prevSolarEclipse(date)` etc., which call `swe.solarEclipseGlobal(jd, True)`
+  with positional args anyway. Smaller diff = lower risk. The
+  RECON §8 ¶1 recommendation was a one-keyword-rename; that's what
+  shipped.
+- **Considered** adding more rigorous eclipse assertions — known
+  eclipse dates from a known table. Out of scope: that's golden
+  chart fixture work (Phase 1 per CONTRIBUTION-PLAN.md). The
+  smoke-test "doesn't crash on call" assertion is exactly enough
+  to pin the regression.
+
+### Surprises
+
+- `recipes/eclipses.py` outputs eclipse times in the past (2017),
+  not the next eclipse from "today". The recipe hardcodes a date
+  for reproducibility — that's intentional, not a bug. Same pattern
+  as the other recipes.
+- Coverage gain from 4 tests is only +1pp because the eclipse code
+  path is small (~22 lines combined in swe.py + a shim in ephem.py).
+  This is fine — coverage isn't the goal, regression-pinning is.
+- The PreToolUse security-reminder hook fired on the workflow file
+  edit because it pattern-matches "GitHub Actions". The workflow
+  uses only `${{ matrix.python-version }}` (controlled by the
+  workflow itself), no user-controlled input strings — so no
+  injection surface.
+
+### CI status
+
+The branch is being pushed; the GitHub Actions run will trigger
+on push to `task-004-ci-and-eclipse-fix`. The workflow is configured
+to run on push to `development` and `master`, plus PRs targeting
+`development`. The push to a topic branch will NOT trigger CI by
+the `on:` rules currently — that's intentional per the spec
+(`on: push: branches: [development, master]`). CI will fire when
+this branch is merged into `development`.
+
+### Follow-ups for later tasks
+
+- **Task 004a:** smoke-test the 12 zero-coverage modules (RECON §2
+  rows). Recommended in RECON §9 as the safety net before Task 005.
+- **Task 005:** the `flatlib/` → `mayaastrolib/` rename. After 005,
+  the CI workflow's `--cov=flatlib` becomes `--cov=mayaastrolib`.
+
+### Definition of done — verified
+
+- [x] `.github/workflows/test.yml` exists and is valid YAML.
+- [x] `flatlib/ephem/swe.py` eclipse calls use `backwards=` kwarg.
+- [x] `tests/test_eclipses.py` exists with 4 tests.
+- [x] All 4 new tests pass; pytest reports 9/9.
+- [x] `recipes/eclipses.py` runs without error.
+- [x] `KNOWN-BUGS.md` documents the fix.
+- [x] CHANGELOG.md updated under `[Unreleased]` (`### Added`,
+  `### Fixed`).
+- [ ] CI green across 3.10/3.11/3.12 — to be verified after the
+  branch is merged into `development` (the workflow's `on:` rule
+  only fires on `development`/`master` pushes).
+
+---
+
 ## 2026-05-07 — Task 003: Ruff baseline and code style
 
 **Session length:** ~40 minutes (single Claude Code session)

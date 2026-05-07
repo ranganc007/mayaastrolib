@@ -16,6 +16,21 @@ All notable changes to this project will be documented in this file. Format foll
   E712/E721/F402/B005/B006/B007/B905/A001/E402); deferred 23 UP031
   printf-format instances to docs/RUFF-DEBT.md
 
+### Added
+- GitHub Actions CI workflow (`.github/workflows/test.yml`) running
+  ruff lint and pytest on Python 3.10/3.11/3.12
+- Regression tests for eclipse functions (`tests/test_eclipses.py`)
+- `docs/KNOWN-BUGS.md` documenting the eclipse fix
+
+### Fixed
+- Eclipse functions in `flatlib/ephem/swe.py` (`solarEclipseGlobal`,
+  `lunarEclipseGlobal`) now pass `backwards=` instead of `backward=`
+  to pyswisseph 2.x, which renamed the keyword. Previously
+  `nextSolarEclipse` / `prevSolarEclipse` / `nextLunarEclipse` /
+  `prevLunarEclipse` raised `TypeError` on every call. Same root
+  cause as the upstream rise_trans patch (commit 856d26b on master)
+  but for eclipse functions, which were missed at the time.
+
 ### Removed
 - Legacy build scripts (scripts/build.py, scripts/clean.py, scripts/utils.py)
 - Legacy packaging files (setup.py, setup.cfg, requirements.txt)
