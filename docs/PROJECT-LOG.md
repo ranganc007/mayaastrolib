@@ -6,6 +6,169 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 003: Ruff baseline and code style
+
+**Session length:** ~40 minutes (single Claude Code session)
+**Branch:** `task-003-ruff-baseline`
+**Commits:** see `git log task-003-ruff-baseline`
+
+### What was done
+
+1. **Archived broken contrib file.** `contrib/topical_almuten.py` →
+   `.broken`, plus a sibling `topical_almuten.README.md` documenting
+   the SyntaxError and how to revive the file (per RECON §8 ¶2).
+   The `.broken` suffix takes the file out of ruff's scan path
+   without needing any per-file ignore.
+2. **`ruff format` across the repo.** 50 files reformatted (RECON
+   predicted 54; the delta is from `setup.py`, three `scripts/*.py`,
+   and `README.rst` removed in Tasks 002/002b plus the `.broken`
+   rename above). Pure whitespace/quote/wrap. pytest 5/5 still passes.
+3. **`ruff check --fix`.** 96 → 47 violations; 49 auto-fixed across
+   39 files. Categories: F401 (unused imports), E703 (semicolons),
+   I001 (import sort), some UP modernisations. Reviewed every diff
+   before committing — `flatlib/ephem/{swe,eph}.py` and
+   `flatlib/protocols/temperament.py` are pure isort consolidation,
+   nothing semantic.
+4. **Hand-fixed remaining 22 violations.** Per-rule:
+   - E712 (×2): `== True` → `is True and …`.
+   - E721 (×2): `type(x) == str` → `isinstance(x, str)`.
+   - F402 (×1): rename `for angle in angles:` → `for ang in angles:`
+     in `flatlib/ephem/eph.py`.
+   - B007 (×3): unused loop vars prefixed `_`.
+   - B006 (×1): mutable default `values=[]` →
+     `values=None` + `for obj in values or []:` in
+     `flatlib/lists.py`.
+   - B905 (×8): explicit `strict=False` on every `dict(zip(...))` in
+     `flatlib/props.py`.
+   - A001 (×2): per-line `noqa` on `class object` (props.py — public
+     API, breaking change deferred) and `copyright` (Sphinx
+     convention).
+   - E402 (×3): per-line `noqa` on `docs/source/conf.py:116` (Sphinx
+     style) and `recipes/primarydirections.py:37,47` (intentional
+     teaching style noted in RECON §7). Recipe imports also need
+     `I001` in the noqa to stop isort from regrouping them.
+5. **Deferred UP031 (printf-format) — 23 instances.** Added
+   `ignore = ["UP031"]` to `[tool.ruff.lint]` in `pyproject.toml`
+   and recorded the deferral in the new `docs/RUFF-DEBT.md`. Volume
+   exceeds the spec's "~10 instance" hand-fix threshold and several
+   are in recipe scripts where stylistic rewrites would be churn.
+6. **Updated `CHANGELOG.md`.** Added bullets under `[Unreleased]
+   ### Changed` (ruff format + lint pass) and `### Removed` (broken
+   contrib archive).
+
+### Verification (Definition of Done)
+
+```
+$ python3 -m venv .venv-task003
+$ .venv-task003/bin/pip install -e ".[dev]"
+$ .venv-task003/bin/ruff format --check .
+50 files already formatted
+
+$ .venv-task003/bin/ruff check .
+All checks passed!
+
+$ .venv-task003/bin/pytest tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /opt/homebrew/var/www/oss-contrib/mayaastrolib
+configfile: pyproject.toml
+plugins: cov-7.1.0
+collected 5 items
+
+tests/test_angles.py ....                                                [ 80%]
+tests/test_chart.py .                                                    [100%]
+
+============================== 5 passed in 0.04s ===============================
+```
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (50 already formatted).
+- `ruff check .` — **PASS** (`All checks passed!` after the UP031
+  deferral).
+- `mypy flatlib/` — still 2 errors from RECON §4. Type hints are
+  Phase 1; nothing to fix here.
+- `pytest -x` — **5/5 PASS**.
+- Coverage gate skipped (still on the dormant `mayaastrolib` source
+  setting).
+
+### What was tried and discarded
+
+- **Tried** noqa with only `# noqa: E402` on the late recipe
+  imports. Ruff still flagged I001 (import block organisation),
+  because isort wants those imports consolidated with the top of the
+  file. Switched the noqa to `# noqa: E402, I001` to disable both
+  per-line. Cleaner than restructuring the recipe to defeat its
+  teaching style.
+- **Considered** mass-fixing UP031 (`%` → f-string) by hand.
+  Discarded: 23 instances across `flatlib/{angle,aspects,datetime,
+  geopos,object}.py`, `flatlib/predictives/primarydirections.py`,
+  `flatlib/protocols/almutem.py`, and several recipes. The Task 003
+  spec says >10 instances → defer to RUFF-DEBT.md. Deferred. The
+  RUFF-DEBT entry suggests rolling them up with the camelCase →
+  snake_case major-version cleanup.
+- **Considered** renaming `flatlib.props.object` to silence A001.
+  Discarded: it's part of the public API (RECON §8 ¶5) and
+  CONTRIBUTION-PLAN.md says breaking changes need a major version
+  bump. Per-line `noqa` with rationale is the right call.
+- **Considered** adding `strict=True` rather than `strict=False` to
+  the props.py zip calls. Discarded: the existing implicit behaviour
+  is `strict=False`. The lengths *are* equal by construction
+  today (twelve signs × 1/2/4 multipliers), but flipping to
+  `strict=True` would mean a future drift in a constants list raises
+  ValueError silently in module-import order, which would be hard to
+  diagnose. `strict=False` preserves behaviour exactly; tightening
+  to `strict=True` is a separate decision worth its own commit.
+
+### Surprises
+
+- The `ruff check` total was 96 (not the 123 from Task 002's
+  pre-completion checklist). Task 002's count was `ruff check .`
+  against the **unformatted** tree; running `ruff format` first
+  collapses some violations (e.g. lines that wrap onto multiple
+  lines after formatting can dissolve E501s, and some UP/B issues
+  resolve themselves once the AST is canonical). 96 → 47 → 22 → 0
+  with auto-fix + hand-fix + UP031 deferral.
+- `ruff format` reformatted 50 files, not the 54 RECON predicted.
+  Three deletions in 002b (`scripts/*.py`) plus `setup.py` (002) and
+  `README.rst` (002b) account for the gap. The `.broken` rename of
+  `contrib/topical_almuten.py` removes one more file from the scan
+  surface.
+- Per-line `noqa` with rationale is the cleanest way to handle
+  intentional violations. Adding the rationale text in-line means
+  future readers don't need to grep RUFF-DEBT.md to understand
+  why ruff is silenced at that point.
+
+### Follow-ups for later tasks
+
+- **Task 004 (CI + eclipse fix):** the `flatlib/ephem/swe.py`
+  eclipse keyword bug from RECON §8 ¶1 still stands. Task 003
+  intentionally didn't touch it. Pre-conditions for Task 004 are
+  now in place: ruff is green, so the CI lint step will pass.
+- **Task 005 (rename):** the `class object` A001 noqa in
+  `flatlib/props.py` will need to move to whatever the new file path
+  becomes after the rename. Mechanical.
+- **Future major-version cleanup:** UP031 (23 instances) +
+  camelCase → snake_case + the `props.object` rename can all happen
+  together when the public-API contract gets re-cut.
+- **`docs/source/conf.py`:** the Sphinx config still references
+  `project = "flatlib"` — out of Task 003 scope but should be
+  reconciled when docs work begins.
+
+### Definition of done — verified
+
+- [x] `contrib/topical_almuten.py` no longer exists; `.broken` and
+  `.README.md` siblings present.
+- [x] `ruff format --check .` passes cleanly.
+- [x] `ruff check .` passes cleanly (UP031 documented in
+  `docs/RUFF-DEBT.md`).
+- [x] All 5 existing tests still pass.
+- [x] Branch will be pushed to origin (next step).
+- [x] PROJECT-LOG.md has this session entry with concrete numbers.
+- [x] CHANGELOG.md updated under `[Unreleased]`.
+
+---
+
 ## 2026-05-07 — Task 002b: Repository housekeeping
 
 **Session length:** ~25 minutes (single Claude Code session)

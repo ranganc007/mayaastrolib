@@ -69,6 +69,7 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "A", "UP"]
+ignore = ["UP031"]  # see docs/RUFF-DEBT.md
 
 [tool.mypy]
 python_version = "3.10"
