@@ -46,6 +46,27 @@ All notable changes to this project will be documented in this file. Format foll
 - DST-aware timezone handling (e.g. via IANA names like
   `"Europe/Dublin"`) is deliberately deferred. See `docs/IDEAS.md`.
 
+### Added (Dignities thread-safety + ergonomics)
+- `terms_variant` and `faces_variant` keyword-only parameters on
+  `dignities.essential` functions (`term`, `face`, `getInfo`,
+  `isPeregrine`, `score`, `almutem`) for thread-safe variant
+  selection. Defaults to the module-level globals (legacy path).
+- `score(obj)`, `getInfo(obj)`, `isPeregrine(obj)` overloads
+  accepting an Object instance directly. The legacy
+  `(id, sign, lon)` form continues to work; missing args raise
+  `TypeError` with a clear message.
+
+### Deprecated
+- `dignities.essential.setFaces()` and `setTerms()`. Module-level
+  mutable state is not thread-safe. Use the new keyword parameters
+  instead. These setters will be removed in version 1.0.
+
+### Fixed
+- Dignity calculations are now thread-safe when variants are passed
+  as parameters. Previously, two threads computing with different
+  terms variants could corrupt each other's results via shared
+  module-level state.
+
 ## [0.3.0] — 2026-05-07
 
 ### Changed

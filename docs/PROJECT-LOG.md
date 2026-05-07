@@ -6,6 +6,156 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-07 — Task 008: Dignities thread-safety and parameter API
+
+**Session length:** ~30 minutes (single Claude Code session)
+**Branch:** `task-008-dignities-thread-safety`
+**Commits:** see `git log task-008-dignities-thread-safety`
+
+### Audit findings (functions modified)
+
+Every function in `mayaastrolib/dignities/essential.py` that read
+the module-level `TERMS` or `FACES` globals:
+
+- `term(sign, lon)` → adds `*, terms_variant=None`.
+- `face(sign, lon)` → adds `*, faces_variant=None`.
+- `getInfo(sign, lon)` → adds both, threads them to `term` and
+  `face`. Also gains the `getInfo(obj)` overload.
+- `isPeregrine(ID, sign, lon)` → adds both, threads to `getInfo`.
+  Also gains the `isPeregrine(obj)` overload.
+- `score(ID, sign, lon)` → adds both, threads to `getInfo`. Also
+  gains the `score(obj)` overload.
+- `almutem(sign, lon)` → adds both, threads to `score`.
+
+Internal call sites updated:
+
+- `mayaastrolib/tools/chartdynamics.py` — calls `essential.getInfo`
+  via the legacy 2-arg form, which still works without changes
+  (module-level defaults). No edit needed.
+- `mayaastrolib/dignities/accidental.py` — calls
+  `essential.isPeregrine(obj.id, obj.sign, obj.signlon)` — legacy
+  3-arg form, unchanged.
+- `mayaastrolib/protocols/almutem.py` — calls `essential.getInfo`
+  via the legacy 2-arg form, unchanged.
+
+The legacy paths still work because each function defaults
+`terms_variant` / `faces_variant` to `None` and falls back to the
+module globals. Only the new tests exercise the parameter API.
+
+### What was done
+
+1. **Refactored `essential.py`** so every variant-reading function
+   takes `*, terms_variant=None` and/or `*, faces_variant=None`.
+   The keyword-only marker is non-negotiable per the spec — when
+   this becomes a `DignityConfig` in Phase 2, callers using the
+   keywords keep working.
+2. **`_is_object()`** helper detects the new overload's input
+   (anything with `id`, `sign`, `signlon` attributes). Used by
+   `score`, `getInfo`, `isPeregrine`.
+3. **Deprecated `setFaces()` / `setTerms()`** with `DeprecationWarning`
+   pointing callers at the parameter API. Behaviour preserved for
+   backwards compatibility.
+4. **`tests/test_dignities_thread_safety.py`** — 8 tests in 4
+   classes:
+   - `DignityThreadSafetyTests` runs three threads (Egyptian /
+     Tetrabiblos / Lilly) doing 100 score iterations each. Asserts
+     each thread's results are internally consistent and no errors
+     surfaced.
+   - `ScoreOverloadTests` covers `score(obj)`, `getInfo(obj)`,
+     `isPeregrine(obj)` parity with the legacy form, and the
+     `TypeError` raised when the legacy form is called with
+     missing args.
+   - `ParameterApiTests` confirms the variant parameter actually
+     reaches `term()` for all three variants without crashing.
+   - `DeprecatedSettersTests` records warnings.simplefilter('always')
+     output and verifies `setFaces` / `setTerms` emit
+     `DeprecationWarning`. Resets to defaults afterwards so other
+     tests are unaffected.
+
+### Verification
+
+```
+$ .venv-task008/bin/pytest tests/
+======================== 88 passed, 2 warnings in 0.08s ========================
+
+$ for i in 1 2 3 4 5; do .venv-task008/bin/pytest \
+    tests/test_dignities_thread_safety.py::DignityThreadSafetyTests -q; done
+1 passed in 0.02s   (×5 — all green)
+```
+
+88 tests = 80 from Task 007 + 8 new dignities tests. The
+thread-safety test ran 5 times in a row with no flakiness.
+
+The 2 warnings come from the `setFaces` / `setTerms` reset calls
+inside `DeprecatedSettersTests`. Expected — the test deliberately
+fires the deprecated path then resets the global so subsequent
+tests are unaffected.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (74 files left unchanged after
+  format pass).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline.
+- `pytest -x` — **88/88 PASS**.
+- Thread-safety test repeated 5 times — passed every time.
+
+### What was tried and discarded
+
+- **Considered** removing the module-level `setFaces` / `setTerms`
+  immediately. Rejected per the spec — backwards compatibility is
+  preserved and these stay until 1.0. Just deprecated.
+- **Considered** detecting "object-style" calls only by `isinstance`
+  against `mayaastrolib.object.Object`. Discarded: `_is_object()`
+  uses duck typing (`hasattr` for id/sign/signlon) so future Object
+  subclasses or test doubles work without coupling
+  `dignities.essential` to `object.py`. Spec explicitly suggests
+  the duck-typed shape.
+- **Considered** updating internal call sites in
+  `tools/chartdynamics.py`, `dignities/accidental.py`,
+  `protocols/almutem.py` to use the new `getInfo(obj)` /
+  `score(obj)` ergonomic forms. Decided against in this task: the
+  legacy 3-arg form still works, callers don't have a thread-safety
+  concern (none is doing parallel dignity calculations with
+  different variants), and the rewrite is cosmetic, not behavioural.
+  Worth doing in a future ergonomics pass.
+- **The `BLE001` noqa** on the thread test's `except Exception`
+  was unnecessary — that rule isn't in the configured ruff
+  selection (`E, F, I, B, A, UP`). Removed.
+
+### Surprises
+
+- The audit was smaller than expected: only `term` and `face`
+  actually read the globals directly. Everything else (`getInfo`,
+  `score`, `isPeregrine`, `almutem`) reads the globals
+  *transitively* by calling those two. Threading parameters
+  through three call layers was straightforward because each layer
+  already takes the same args.
+- The thread-safety test passed without deflakiness even at 100
+  iterations per thread × 3 threads = 300 simultaneous variant
+  reads. The new parameter API is fundamentally race-free because
+  no shared mutable state is touched on the read path.
+- Internal callers don't need any changes today. The new keyword-only
+  parameters are additive; positional-only callers continue to
+  resolve to the (now-deprecated) module-level globals. This means
+  the change is genuinely zero-risk for existing consumers — the
+  fix is opt-in via the new kwargs.
+
+### Definition of done — verified
+
+- [x] Every function in `dignities/essential.py` that reads `FACES`
+  or `TERMS` accepts the corresponding `*_variant` keyword.
+- [x] `score(obj)`, `getInfo(obj)`, `isPeregrine(obj)` overloads
+  work; legacy 3-arg forms unchanged; missing-arg case raises
+  `TypeError`.
+- [x] `setFaces()` and `setTerms()` emit `DeprecationWarning` but
+  still mutate the globals.
+- [x] Thread-safety test passes 5 times in a row.
+- [x] All 88 tests pass.
+- [x] CHANGELOG updated with Added / Deprecated / Fixed sections.
+
+---
+
 ## 2026-05-07 — Task 007: Datetime ergonomics
 
 **Session length:** ~25 minutes (single Claude Code session)
