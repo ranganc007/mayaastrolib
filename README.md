@@ -1,3 +1,12 @@
+> **Note:** This is `mayaastrolib` — a fork of [flatangle/flatlib](https://github.com/flatangle/flatlib).
+> The original `flatlib` is no longer actively maintained. This fork modernises the codebase
+> (Python 3.10+, type hints, modern tooling) and unifies Western and Vedic astrology in a
+> single library. See [docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md) for details.
+>
+> Original copyright João Ventura, MIT licensed. Fork modifications copyright Rangan C., 2026.
+
+---
+
 # flatlib
 
 Flatlib is a python library for Traditional Astrology.
