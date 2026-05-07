@@ -1,9 +1,9 @@
 """
-    Author: João Ventura <flatangleweb@gmail.com>
-    
-    
-    This recipe shows sample code for calculating the dates
-    of the previous and next solar and lunar eclipses.
+Author: João Ventura <flatangleweb@gmail.com>
+
+
+This recipe shows sample code for calculating the dates
+of the previous and next solar and lunar eclipses.
 
 """
 
@@ -12,7 +12,7 @@ from flatlib.ephem import ephem
 
 
 # Build a Datetime object
-date = Datetime('2016/10/11', '12:00', '+00:00')
+date = Datetime("2016/10/11", "12:00", "+00:00")
 
 # Get the date of the maximum phase of the next global lunar eclipse
 lunar_eclipse = ephem.nextLunarEclipse(date)

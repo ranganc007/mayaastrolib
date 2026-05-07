@@ -4,7 +4,6 @@ from flatlib import angle
 
 
 class AngleTests(unittest.TestCase):
-
     def setUp(self):
         pass
 

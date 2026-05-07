@@ -1,11 +1,11 @@
 """
-    This file is part of flatlib - (C) FlatAngle
-    Author: João Ventura (flatangleweb@gmail.com)
-    
+This file is part of flatlib - (C) FlatAngle
+Author: João Ventura (flatangleweb@gmail.com)
 
-    This module provides useful functions for 
-    handling profections.
-    
+
+This module provides useful functions for
+handling profections.
+
 """
 
 import math
@@ -14,10 +14,10 @@ from flatlib.ephem import ephem
 
 
 def compute(chart, date, fixedObjects=False):
-    """ Returns a profection chart for a given
+    """Returns a profection chart for a given
     date. Receives argument 'fixedObjects' to
     fix chart objects in their natal locations.
-    
+
     """
 
     sun = chart.getObject(const.SUN)

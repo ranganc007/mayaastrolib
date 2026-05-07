@@ -7,10 +7,9 @@ from flatlib.geopos import GeoPos
 
 
 class ChartTests(unittest.TestCase):
-
     def setUp(self):
-        self.date = Datetime('2015/03/13', '17:00', '+00:00')
-        self.pos = GeoPos('38n32', '8w54')
+        self.date = Datetime("2015/03/13", "17:00", "+00:00")
+        self.pos = GeoPos("38n32", "8w54")
 
     def test_solar_return_hsys(self):
         """Solar return charts must maintain original house system."""

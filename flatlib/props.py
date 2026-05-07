@@ -1,19 +1,19 @@
 """
-    This file is part of flatlib - (C) FlatAngle
-    Author: João Ventura (flatangleweb@gmail.com)
-    
+This file is part of flatlib - (C) FlatAngle
+Author: João Ventura (flatangleweb@gmail.com)
 
-    This module defines some properties of Traditional Astrology core
-    elements.
-    
-    It defines qualities of temperaments, orbs and genders of planets,
-    if a house is cardinal, angular or succedent, among others.
-    
-    To keep things simple, properties are divided in types, such as 
-    base properties, planet properties, house properties, etc. Each 
-    property type is defined as a lowercased python class so that we 
-    can mimic different namespaces in a single python module.
-    
+
+This module defines some properties of Traditional Astrology core
+elements.
+
+It defines qualities of temperaments, orbs and genders of planets,
+if a house is cardinal, angular or succedent, among others.
+
+To keep things simple, properties are divided in types, such as
+base properties, planet properties, house properties, etc. Each
+property type is defined as a lowercased python class so that we
+can mimic different namespaces in a single python module.
+
 """
 
 from . import const
@@ -23,49 +23,29 @@ from . import const
 #   Base Properties   #
 # ------------------- #
 
+
 class base:
     # The four elements
-    elements = [
-        const.FIRE,
-        const.EARTH,
-        const.AIR,
-        const.WATER
-    ]
+    elements = [const.FIRE, const.EARTH, const.AIR, const.WATER]
 
     # The four temperaments
-    temperaments = [
-        const.CHOLERIC,
-        const.MELANCHOLIC,
-        const.SANGUINE,
-        const.PHLEGMATIC
-    ]
+    temperaments = [const.CHOLERIC, const.MELANCHOLIC, const.SANGUINE, const.PHLEGMATIC]
 
     # Genders
-    genders = [
-        const.MASCULINE,
-        const.FEMININE
-    ]
+    genders = [const.MASCULINE, const.FEMININE]
 
     # Factions
-    factions = [
-        const.DIURNAL,
-        const.NOCTURNAL
-    ]
+    factions = [const.DIURNAL, const.NOCTURNAL]
 
     # Sun seasons
-    sunseasons = [
-        const.SPRING,
-        const.SUMMER,
-        const.AUTUMN,
-        const.WINTER
-    ]
+    sunseasons = [const.SPRING, const.SUMMER, const.AUTUMN, const.WINTER]
 
     # Element to Temperament
     elementTemperament = {
         const.FIRE: const.CHOLERIC,
         const.EARTH: const.MELANCHOLIC,
         const.AIR: const.SANGUINE,
-        const.WATER: const.PHLEGMATIC
+        const.WATER: const.PHLEGMATIC,
     }
 
     # Temperament to Element
@@ -73,7 +53,7 @@ class base:
         const.CHOLERIC: const.FIRE,
         const.MELANCHOLIC: const.EARTH,
         const.SANGUINE: const.AIR,
-        const.PHLEGMATIC: const.WATER
+        const.PHLEGMATIC: const.WATER,
     }
 
     # Qualities of elements
@@ -81,7 +61,7 @@ class base:
         const.FIRE: [const.HOT, const.DRY],
         const.EARTH: [const.COLD, const.DRY],
         const.AIR: [const.HOT, const.HUMID],
-        const.WATER: [const.COLD, const.HUMID]
+        const.WATER: [const.COLD, const.HUMID],
     }
 
     # Qualities of temperaments
@@ -89,7 +69,7 @@ class base:
         const.CHOLERIC: [const.HOT, const.DRY],
         const.MELANCHOLIC: [const.COLD, const.DRY],
         const.SANGUINE: [const.HOT, const.HUMID],
-        const.PHLEGMATIC: [const.COLD, const.HUMID]
+        const.PHLEGMATIC: [const.COLD, const.HUMID],
     }
 
     # Moon Phase Elements
@@ -97,7 +77,7 @@ class base:
         const.MOON_FIRST_QUARTER: const.AIR,
         const.MOON_SECOND_QUARTER: const.FIRE,
         const.MOON_THIRD_QUARTER: const.EARTH,
-        const.MOON_LAST_QUARTER: const.WATER
+        const.MOON_LAST_QUARTER: const.WATER,
     }
 
     # Sun Season Elements
@@ -105,13 +85,14 @@ class base:
         const.SPRING: const.AIR,
         const.SUMMER: const.FIRE,
         const.AUTUMN: const.EARTH,
-        const.WINTER: const.WATER
+        const.WINTER: const.WATER,
     }
 
 
 # ------------------- #
 #   Sign Properties   #
 # ------------------- #
+
 
 class sign:
     _signs = const.LIST_SIGNS
@@ -144,36 +125,24 @@ class sign:
         const.SAGITTARIUS: const.SIGN_MODERATELY_FERTILE,
         const.CAPRICORN: const.SIGN_MODERATELY_STERILE,
         const.AQUARIUS: const.SIGN_MODERATELY_STERILE,
-        const.PISCES: const.SIGN_FERTILE
+        const.PISCES: const.SIGN_FERTILE,
     }
 
     # Sign number
     number = dict((sign, i + 1) for (i, sign) in enumerate(_signs))
 
     # Sign figure properties
-    figureBestial = [
-        const.ARIES,
-        const.TAURUS,
-        const.LEO,
-        const.SAGITTARIUS,
-        const.CAPRICORN
-    ]
+    figureBestial = [const.ARIES, const.TAURUS, const.LEO, const.SAGITTARIUS, const.CAPRICORN]
 
-    figureHuman = [
-        const.GEMINI,
-        const.VIRGO,
-        const.LIBRA,
-        const.AQUARIUS
-    ]
+    figureHuman = [const.GEMINI, const.VIRGO, const.LIBRA, const.AQUARIUS]
 
-    figureWild = [
-        const.LEO
-    ]
+    figureWild = [const.LEO]
 
 
 # --------------------- #
 #   Object Properties   #
 # --------------------- #
+
 
 class object:
     # Mean daily motions
@@ -192,7 +161,7 @@ class object:
         const.CHIRON: 0.00001,
         const.NORTH_NODE: 13.1833,
         const.SOUTH_NODE: 13.1833,
-        const.SYZYGY: 0.0
+        const.SYZYGY: 0.0,
     }
 
     # Object orbs
@@ -212,7 +181,7 @@ class object:
         const.NORTH_NODE: 12,
         const.SOUTH_NODE: 12,
         const.SYZYGY: 0,
-        const.PARS_FORTUNA: 0
+        const.PARS_FORTUNA: 0,
     }
 
     # Planet elements
@@ -223,7 +192,7 @@ class object:
         const.SUN: const.FIRE,
         const.VENUS: const.AIR,
         const.MERCURY: const.EARTH,
-        const.MOON: const.WATER
+        const.MOON: const.WATER,
     }
 
     # Planet temperaments
@@ -234,7 +203,7 @@ class object:
         const.SUN: const.CHOLERIC,
         const.VENUS: const.SANGUINE,
         const.MERCURY: const.MELANCHOLIC,
-        const.MOON: const.PHLEGMATIC
+        const.MOON: const.PHLEGMATIC,
     }
 
     # Planet genders
@@ -245,7 +214,7 @@ class object:
         const.SUN: const.MASCULINE,
         const.VENUS: const.FEMININE,
         const.MERCURY: const.NEUTRAL,
-        const.MOON: const.FEMININE
+        const.MOON: const.FEMININE,
     }
 
     # Planet factions
@@ -256,7 +225,7 @@ class object:
         const.SUN: const.DIURNAL,
         const.VENUS: const.NOCTURNAL,
         const.MERCURY: const.NEUTRAL,
-        const.MOON: const.NOCTURNAL
+        const.MOON: const.NOCTURNAL,
     }
 
     # Sign joy of planets
@@ -267,7 +236,7 @@ class object:
         const.SUN: const.LEO,
         const.VENUS: const.TAURUS,
         const.MERCURY: const.VIRGO,
-        const.MOON: const.CANCER
+        const.MOON: const.CANCER,
     }
 
     # House joy of planets
@@ -278,13 +247,14 @@ class object:
         const.SUN: const.HOUSE9,
         const.VENUS: const.HOUSE5,
         const.MERCURY: const.HOUSE1,
-        const.MOON: const.HOUSE3
+        const.MOON: const.HOUSE3,
     }
 
 
 # -------------------- #
 #   House Properties   #
 # -------------------- #
+
 
 class house:
     _houses = const.LIST_HOUSES
@@ -298,13 +268,21 @@ class house:
 
     # Houses above and below horizon
     aboveHorizon = [
-        const.HOUSE7, const.HOUSE8, const.HOUSE9,
-        const.HOUSE10, const.HOUSE11, const.HOUSE12
+        const.HOUSE7,
+        const.HOUSE8,
+        const.HOUSE9,
+        const.HOUSE10,
+        const.HOUSE11,
+        const.HOUSE12,
     ]
 
     belowHorizon = [
-        const.HOUSE1, const.HOUSE2, const.HOUSE3,
-        const.HOUSE4, const.HOUSE5, const.HOUSE6
+        const.HOUSE1,
+        const.HOUSE2,
+        const.HOUSE3,
+        const.HOUSE4,
+        const.HOUSE5,
+        const.HOUSE6,
     ]
 
 
@@ -312,32 +290,33 @@ class house:
 #   Aspect Properties   #
 # --------------------- #
 
+
 class aspect:
     # Names
     name = {
         # Major Aspects
-        const.NO_ASPECT: 'None',
-        const.CONJUNCTION: 'Conjunction',
-        const.SEXTILE: 'Sextile',
-        const.SQUARE: 'Square',
-        const.TRINE: 'Trine',
-        const.OPPOSITION: 'Opposition',
-
+        const.NO_ASPECT: "None",
+        const.CONJUNCTION: "Conjunction",
+        const.SEXTILE: "Sextile",
+        const.SQUARE: "Square",
+        const.TRINE: "Trine",
+        const.OPPOSITION: "Opposition",
         # Minor Aspects
-        const.SEMISEXTILE: 'Semisextile',
-        const.SEMIQUINTILE: 'Semiquintile',
-        const.SEMISQUARE: 'Semisquare',
-        const.QUINTILE: 'Quintile',
-        const.SESQUIQUINTILE: 'Sesquiquintile',
-        const.SESQUISQUARE: 'Sesquisquare',
-        const.BIQUINTILE: 'Biquintile',
-        const.QUINCUNX: 'Quincunx'
+        const.SEMISEXTILE: "Semisextile",
+        const.SEMIQUINTILE: "Semiquintile",
+        const.SEMISQUARE: "Semisquare",
+        const.QUINTILE: "Quintile",
+        const.SESQUIQUINTILE: "Sesquiquintile",
+        const.SESQUISQUARE: "Sesquisquare",
+        const.BIQUINTILE: "Biquintile",
+        const.QUINCUNX: "Quincunx",
     }
 
 
 # ------------------------- #
 #   Fixed Star Properties   #
 # ------------------------- #
+
 
 class fixedStar:
     pass
@@ -346,6 +325,7 @@ class fixedStar:
 # ------------------------- #
 #   House Sys. Properties   #
 # ------------------------- #
+
 
 class houseSystem:
     pass

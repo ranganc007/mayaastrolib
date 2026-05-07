@@ -1,12 +1,12 @@
 """
-    This file is part of flatlib - (C) FlatAngle
-    Author: João Ventura (flatangleweb@gmail.com)
-    
+This file is part of flatlib - (C) FlatAngle
+Author: João Ventura (flatangleweb@gmail.com)
 
-    This module provides useful functions for 
-    handling solar and lunar returns.
-    It only handles solar returns for now.
-    
+
+This module provides useful functions for
+handling solar and lunar returns.
+It only handles solar returns for now.
+
 """
 
 from flatlib import const
@@ -15,9 +15,9 @@ from flatlib.chart import Chart
 
 
 def _computeChart(chart, date):
-    """ Internal function to return a new chart for
+    """Internal function to return a new chart for
     a specific date using properties from old chart.
-    
+
     """
     pos = chart.pos
     hsys = chart.hsys
@@ -26,9 +26,9 @@ def _computeChart(chart, date):
 
 
 def nextSolarReturn(chart, date):
-    """ Returns the solar return of a Chart
+    """Returns the solar return of a Chart
     after a specific date.
-    
+
     """
     sun = chart.getObject(const.SUN)
     srDate = ephem.nextSolarReturn(date, sun.lon)
@@ -36,9 +36,9 @@ def nextSolarReturn(chart, date):
 
 
 def prevSolarReturn(chart, date):
-    """ Returns the solar return of a Chart
+    """Returns the solar return of a Chart
     before a specific date.
-    
+
     """
     sun = chart.getObject(const.SUN)
     srDate = ephem.prevSolarReturn(date, sun.lon)

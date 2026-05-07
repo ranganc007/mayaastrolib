@@ -1,9 +1,9 @@
 """
-    Author: João Ventura <flatangleweb@gmail.com>
-    
-    
-    This recipe shows sample code for handling the 
-    primary directions.
+Author: João Ventura <flatangleweb@gmail.com>
+
+
+This recipe shows sample code for handling the
+primary directions.
 
 """
 
@@ -15,8 +15,8 @@ from flatlib.predictives import primarydirections
 
 
 # Build a chart for a date and location
-date = Datetime('2015/03/13', '17:00', '+00:00')
-pos = GeoPos('38n32', '8w54')
+date = Datetime("2015/03/13", "17:00", "+00:00")
+pos = GeoPos("38n32", "8w54")
 chart = Chart(date, pos)
 
 # MC will be used for calculating arcs
@@ -36,15 +36,17 @@ print(arc)  # 56.74266
 
 # Create Primary Directions class
 from flatlib.predictives.primarydirections import PrimaryDirections
+
 pd = PrimaryDirections(chart)
 
 # Get arcs
 arc = pd.getArc(pd.N(const.MARS), pd.N(const.MERCURY))
-print(arc['arcm'])  # 56.74266 (arc in-mundo)
-print(arc['arcz'])  # 56.17347 (arc in-zodiaco)
+print(arc["arcm"])  # 56.74266 (arc in-mundo)
+print(arc["arcz"])  # 56.17347 (arc in-zodiaco)
 
 # Create Primary Directions table class
 from flatlib.predictives.primarydirections import PDTable
+
 pd = PDTable(chart, const.MAJOR_ASPECTS)
 pd.byPromissor(const.MARS)  # List all directions by promissor
 pd.bySignificator(const.MERCURY)  # List all directions by significator
