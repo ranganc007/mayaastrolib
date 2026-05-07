@@ -5,8 +5,12 @@
 """
 
 import os
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
-__version__ = '0.2.3'
+try:
+    __version__ = _pkg_version("mayaastrolib")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
 
 # Library and resource paths
 PATH_LIB = os.path.dirname(__file__) + os.sep
