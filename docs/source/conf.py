@@ -44,7 +44,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "flatlib"
-copyright = "2015, João Ventura"
+copyright = "2015, João Ventura"  # noqa: A001 — Sphinx convention requires this exact name
 author = "João Ventura"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -113,7 +113,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa: E402 — Sphinx config style: optional theme import lives near its usage
 
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 

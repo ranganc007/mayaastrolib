@@ -98,18 +98,18 @@ class sign:
 
     # Modes
     _modes = [const.CARDINAL, const.FIXED, const.MUTABLE]
-    mode = dict(zip(_signs, _modes * 4))
+    mode = dict(zip(_signs, _modes * 4, strict=False))
 
     # Sun Season
     _sunseasons = [[season] * 3 for season in base.sunseasons]
     _sunseasons = sum(_sunseasons, [])
-    sunseason = dict(zip(_signs, _sunseasons))
+    sunseason = dict(zip(_signs, _sunseasons, strict=False))
 
     # Simple properties
-    gender = dict(zip(_signs, base.genders * 6))
-    faction = dict(zip(_signs, base.factions * 6))
-    element = dict(zip(_signs, base.elements * 3))
-    temperament = dict(zip(_signs, base.temperaments * 3))
+    gender = dict(zip(_signs, base.genders * 6, strict=False))
+    faction = dict(zip(_signs, base.factions * 6, strict=False))
+    element = dict(zip(_signs, base.elements * 3, strict=False))
+    temperament = dict(zip(_signs, base.temperaments * 3, strict=False))
 
     # Fertilities
     fertility = {
@@ -143,7 +143,7 @@ class sign:
 # --------------------- #
 
 
-class object:
+class object:  # noqa: A001 — public API; renaming is a breaking change deferred to a future major version
     # Mean daily motions
     meanMotion = {
         const.NO_PLANET: 0,
@@ -260,10 +260,10 @@ class house:
 
     # House conditions
     _conditions = [const.ANGULAR, const.SUCCEDENT, const.CADENT]
-    condition = dict(zip(_houses, _conditions * 4))
+    condition = dict(zip(_houses, _conditions * 4, strict=False))
 
     # House genders
-    gender = dict(zip(_houses, base.genders * 4))
+    gender = dict(zip(_houses, base.genders * 4, strict=False))
 
     # Houses above and below horizon
     aboveHorizon = [

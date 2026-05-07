@@ -42,11 +42,11 @@ MOD_MOON = "Moon"
 def singleFactor(factors, chart, factor, obj, aspect=None):
     """ " Single factor for the table."""
 
-    objID = obj if type(obj) == str else obj.id
+    objID = obj if isinstance(obj, str) else obj.id
     res = {"factor": factor, "objID": objID, "aspect": aspect}
 
     # For signs (obj as string) return sign element
-    if type(obj) == str:
+    if isinstance(obj, str):
         res["element"] = props.sign.element[obj]
 
     # For Sun return sign and sunseason element

@@ -49,8 +49,8 @@ def getHouses(jd, lat, lon, hsys):
     houses, angles = swe.sweHouses(jd, lat, lon, hsys)
     for house in houses:
         _signInfo(house)
-    for angle in angles:
-        _signInfo(angle)
+    for ang in angles:
+        _signInfo(ang)
     return (houses, angles)
 
 

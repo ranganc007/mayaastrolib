@@ -28,10 +28,10 @@ class GenericList:
 
     """
 
-    def __init__(self, values=[]):
+    def __init__(self, values=None):
         """Builds a Generic List from a list of objects."""
         self.content = {}
-        for obj in values:
+        for obj in values or []:
             self.content[obj.id] = obj
 
     def add(self, obj):

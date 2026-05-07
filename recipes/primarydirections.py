@@ -34,7 +34,7 @@ arc = primarydirections.getArc(prom, sig, mc, pos, zerolat=False)
 print(arc)  # 56.74266
 
 # Create Primary Directions class
-from flatlib.predictives.primarydirections import PrimaryDirections
+from flatlib.predictives.primarydirections import PrimaryDirections  # noqa: E402, I001
 
 pd = PrimaryDirections(chart)
 
@@ -44,7 +44,7 @@ print(arc["arcm"])  # 56.74266 (arc in-mundo)
 print(arc["arcz"])  # 56.17347 (arc in-zodiaco)
 
 # Create Primary Directions table class
-from flatlib.predictives.primarydirections import PDTable
+from flatlib.predictives.primarydirections import PDTable  # noqa: E402, I001
 
 pd = PDTable(chart, const.MAJOR_ASPECTS)
 pd.byPromissor(const.MARS)  # List all directions by promissor

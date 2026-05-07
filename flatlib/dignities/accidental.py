@@ -249,7 +249,7 @@ class AccidentalDignity:
         """
         mrs = self.reMutualReceptions()
         res = []
-        for ID, receptions in mrs.items():
+        for _ID, receptions in mrs.items():
             for pair in receptions:
                 if pair[0] == pair[1]:
                     res.append(pair[0])
@@ -321,7 +321,7 @@ class AccidentalDignity:
         else:
             sepCondition = sep["id"] in IDs
             appCondition = app["id"] in IDs
-            return sepCondition == appCondition == True
+            return sepCondition is True and appCondition is True
 
     def isAuxilied(self):
         """Returns if the object is separating and applying to

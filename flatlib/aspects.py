@@ -279,7 +279,7 @@ class Aspect:
 
     def mutualAspect(self):
         """Returns if both object are within aspect orb."""
-        return self.active.inOrb == self.passive.inOrb == True
+        return self.active.inOrb is True and self.passive.inOrb is True
 
     def mutualMovement(self):
         """Returns if both objects are mutually applying or
