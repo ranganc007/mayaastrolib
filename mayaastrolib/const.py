@@ -246,6 +246,24 @@ MAJOR_ASPECTS = [0, 60, 90, 120, 180]
 MINOR_ASPECTS = [30, 36, 45, 72, 108, 135, 144, 150]
 ALL_ASPECTS = MAJOR_ASPECTS + MINOR_ASPECTS
 
+# Human-readable names keyed by aspect angle.
+# Keep keys aligned with MAJOR_ASPECTS + MINOR_ASPECTS above.
+ASPECT_NAMES = {
+    0: "Conjunction",
+    30: "Semi-Sextile",
+    36: "Semi-Quintile",
+    45: "Semi-Square",
+    60: "Sextile",
+    72: "Quintile",
+    90: "Square",
+    108: "Sesqui-Quintile",
+    120: "Trine",
+    135: "Sesquiquadrate",
+    144: "Bi-Quintile",
+    150: "Quincunx",
+    180: "Opposition",
+}
+
 # === Some Lists === */
 
 LIST_SIGNS = [
@@ -296,6 +314,64 @@ LIST_OBJECTS_TRADITIONAL = [
 ]
 
 LIST_SEVEN_PLANETS = [SUN, MOON, MERCURY, VENUS, MARS, JUPITER, SATURN]
+
+# ----------------------------------------------------------------------
+# Standard object lists (added in Task 009)
+#
+# Convenience groupings for common consumer use cases. Pure references —
+# adding objects to a chart still requires Chart(IDs=...). The library's
+# default ephemeris call set (LIST_OBJECTS_TRADITIONAL) is unchanged.
+# ----------------------------------------------------------------------
+
+# All ten "modern" planets — Sun through Pluto
+LIST_MODERN_PLANETS = [
+    SUN,
+    MOON,
+    MERCURY,
+    VENUS,
+    MARS,
+    JUPITER,
+    SATURN,
+    URANUS,
+    NEPTUNE,
+    PLUTO,
+]
+
+# Modern Western default — modern planets, lunar nodes, Chiron
+LIST_TROPICAL_DEFAULT = LIST_MODERN_PLANETS + [
+    NORTH_NODE,
+    SOUTH_NODE,
+    CHIRON,
+]
+
+# Vedic / sidereal default — seven traditional planets + Rahu, Ketu.
+# Classical Vedic does not use Uranus/Neptune/Pluto.
+LIST_VEDIC_DEFAULT = [
+    SUN,
+    MOON,
+    MERCURY,
+    VENUS,
+    MARS,
+    JUPITER,
+    SATURN,
+    NORTH_NODE,
+    SOUTH_NODE,
+]
+
+# The two luminaries
+LIST_LIGHTS = [SUN, MOON]
+
+# Personal planets — fast cycles, individual personality
+LIST_PERSONAL_PLANETS = [SUN, MOON, MERCURY, VENUS, MARS]
+
+# Social planets — generational but personally felt
+LIST_SOCIAL_PLANETS = [JUPITER, SATURN]
+
+# Transpersonal / outer planets — generational, slow-moving
+LIST_TRANSPERSONAL = [URANUS, NEPTUNE, PLUTO]
+
+# Lunar nodes — mean nodes by default (the library's existing default)
+LIST_LUNAR_NODES = [NORTH_NODE, SOUTH_NODE]
 
 LIST_HOUSES = [
     HOUSE1,
