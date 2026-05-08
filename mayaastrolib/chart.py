@@ -308,9 +308,27 @@ class Chart:
     # === Solar returns === #
 
     def solarReturn(self, year):
-        """Returns this chart's solar return for a
-        given year.
+        """Return this chart's solar return falling in calendar ``year``.
 
+        The search anchors at January 1, 00:00 of ``year`` (in this
+        chart's UTC offset) and walks forward to the first moment the
+        Sun's ecliptic longitude matches its natal value. Because each
+        calendar year contains exactly one such conjunction, this is
+        equivalent to "the birthday-equivalent moment in ``year``"
+        regardless of whether the natal birthday falls early or late
+        in the year.
+
+        Mapping to age: ``solarReturn(year)`` for a person born in
+        ``natal_year`` returns the ``(year − natal_year)``-th return
+        — the 42nd birthday return for a 1980 birth and ``year=2022``,
+        regardless of birth month. Verified via concrete tests in
+        ``docs/AUDIT-INVESTIGATIONS.md`` (Item 16).
+
+        Args:
+            year: The calendar year in which the solar return falls.
+
+        Returns:
+            A new :class:`Chart` for the solar-return moment.
         """
         sun = self.getObject(const.SUN)
         date = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
