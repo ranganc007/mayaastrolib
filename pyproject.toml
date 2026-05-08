@@ -39,6 +39,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "mypy",
+    "skyfield>=1.46",  # tests/golden/generate_fixtures.py — MIT, dev-only
 ]
 
 [project.urls]
