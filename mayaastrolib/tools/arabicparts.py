@@ -168,8 +168,14 @@ def partLon(ID, chart):
     return c + b - a
 
 
-def getPart(ID, chart):
-    """Returns an Arabic Part."""
+def _getPart_impl(ID, chart):
+    """Compute an Arabic part — internal implementation.
+
+    Called by both the deprecated :func:`getPart` wrapper and by
+    :meth:`mayaastrolib.chart.Chart.arabicPart`. Splitting it out
+    avoids the deprecation warning firing when the Chart method is
+    used.
+    """
     base = GenericObject()
     base.id = ID
     base.type = const.OBJ_ARABIC_PART
@@ -177,3 +183,22 @@ def getPart(ID, chart):
     obj.id = ID
     obj.type = const.OBJ_ARABIC_PART
     return obj
+
+
+def getPart(ID, chart):
+    """[DEPRECATED] Compute an Arabic part.
+
+    Use :meth:`mayaastrolib.chart.Chart.arabicPart` instead, which
+    reads at the call site and is discoverable on ``chart.``
+    autocomplete. Will be removed in version 1.0.
+    """
+    import warnings
+
+    warnings.warn(
+        "tools.arabicparts.getPart(ID, chart) is deprecated. "
+        "Use chart.arabicPart(ID) instead. "
+        "Will be removed in version 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _getPart_impl(ID, chart)
