@@ -302,6 +302,27 @@ class House(GenericObject):
         super().__init__()
         self.type = const.OBJ_HOUSE
         self.size = 30.0
+        # Cached at construction in fromDict() via _set_num_from_id().
+        # Initialised to 0 so attribute access never raises before id is set.
+        self._num = 0
+
+    @classmethod
+    def fromDict(cls, _dict):
+        """Build a House and cache its number from the id."""
+        obj = super().fromDict(_dict)
+        obj._set_num_from_id()
+        return obj
+
+    def _set_num_from_id(self):
+        """Resolve self._num via list lookup so we don't parse the id string.
+
+        Falls back to 0 if the id isn't a recognised house — defensive
+        against future id-format changes or mislabelled houses.
+        """
+        try:
+            self._num = const.LIST_HOUSES.index(self.id) + 1
+        except ValueError:
+            self._num = 0
 
     def __str__(self):
         string = super().__str__()[:-1]
@@ -311,8 +332,13 @@ class House(GenericObject):
 
     @property_with_method_compat
     def num(self):
-        """Returns the number of this house [1..12]."""
-        return int(self.id[5:])
+        """Returns the number of this house [1..12].
+
+        Resolved via :data:`mayaastrolib.const.LIST_HOUSES` once at
+        construction (see :meth:`fromDict`) and cached on
+        ``self._num``. No string parsing at access time.
+        """
+        return self._num
 
     @property_with_method_compat
     def condition(self):
