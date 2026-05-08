@@ -9,6 +9,8 @@ and Fixed-Stars.
 
 """
 
+import warnings
+
 from . import angle, const, props, utils
 from ._compat import property_with_method_compat
 
@@ -67,25 +69,116 @@ class GenericObject:
 
     # === Functions === #
 
+    def with_longitude(self, lon, *, preserve_speed=False):
+        """Return a new object instance at the given longitude.
+
+        This is a coordinate transform — it does NOT recompute orbital
+        state from ephemeris.
+
+        On :class:`Object` subclasses (which carry ``lonspeed`` /
+        ``latspeed``), the default behaviour clears those speeds to
+        ``None``, signalling that orbital dynamics are undefined for the
+        new position. Methods that depend on speed
+        (``movement`` / ``isRetrograde`` / ``isFast``) return ``None``
+        for such objects. Pass ``preserve_speed=True`` when the new
+        position meaningfully shares dynamics with the original — for
+        example, antiscia, where the reflected point moves with the
+        original planet.
+
+        On :class:`GenericObject`, :class:`House`, and :class:`FixedStar`
+        (no speed attributes), ``preserve_speed`` has no effect.
+
+        Args:
+            lon: New longitude in degrees. Normalised to [0, 360).
+            preserve_speed: If True, keep original ``lonspeed`` /
+                ``latspeed``. Defaults to False.
+
+        Returns:
+            A new instance of the same class. The original is not
+            modified.
+        """
+        new = self.copy()
+        new.lon = angle.norm(lon)
+        new.signlon = new.lon % 30
+        new.sign = const.LIST_SIGNS[int(new.lon / 30.0)]
+        if not preserve_speed:
+            if hasattr(new, "lonspeed"):
+                new.lonspeed = None
+            if hasattr(new, "latspeed"):
+                new.latspeed = None
+        return new
+
     def relocate(self, lon):
-        """Relocates this object to a new longitude."""
+        """[DEPRECATED] In-place relocate. Use ``with_longitude(lon)`` instead.
+
+        ``relocate()`` mutates ``lon`` / ``signlon`` / ``sign`` but
+        leaves any ``lonspeed`` / ``latspeed`` attributes stale, which
+        causes downstream code to read the original object's speed
+        even though the new position is symbolic. For antiscia, use
+        :meth:`antiscion` / :meth:`cantiscion`. For arbitrary
+        repositioning, use :meth:`with_longitude`. Will be removed in
+        version 1.0.
+        """
+        warnings.warn(
+            "Object.relocate(lon) mutates in place and leaves speed "
+            "attributes stale, which causes is_retrograde() and movement "
+            "to return wrong answers. Use obj.with_longitude(lon) for a "
+            "new Object, or obj.antiscion() / obj.cantiscion() for "
+            "reflection. Will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.lon = angle.norm(lon)
         self.signlon = self.lon % 30
         self.sign = const.LIST_SIGNS[int(self.lon / 30.0)]
 
+    def antiscion(self):
+        """Return the antiscion of this object — a new instance reflected
+        across the 0° Cancer / 0° Capricorn axis.
+
+        Antiscia preserve dynamics: the reflected point moves with the
+        original planet. The returned object has the same speed
+        attributes as ``self``.
+        """
+        new = self.with_longitude(360 - self.lon + 180, preserve_speed=True)
+        new.type = const.OBJ_GENERIC
+        return new
+
+    def cantiscion(self):
+        """Return the contra-antiscion of this object — a new instance
+        reflected across the 0° Aries / 0° Libra axis.
+
+        See :meth:`antiscion` for semantics. Cantiscia preserve dynamics.
+        """
+        new = self.with_longitude(360 - self.lon, preserve_speed=True)
+        new.type = const.OBJ_GENERIC
+        return new
+
     def antiscia(self):
-        """Returns antiscia object."""
-        obj = self.copy()
-        obj.type = const.OBJ_GENERIC
-        obj.relocate(360 - obj.lon + 180)
-        return obj
+        """[DEPRECATED] Use :meth:`antiscion` instead.
+
+        Returns the same antiscion object. Will be removed in 1.0.
+        """
+        warnings.warn(
+            "Object.antiscia() is deprecated. Use obj.antiscion() instead. "
+            "Will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.antiscion()
 
     def cantiscia(self):
-        """Returns contra-antiscia object."""
-        obj = self.copy()
-        obj.type = const.OBJ_GENERIC
-        obj.relocate(360 - obj.lon)
-        return obj
+        """[DEPRECATED] Use :meth:`cantiscion` instead.
+
+        Returns the same cantiscion object. Will be removed in 1.0.
+        """
+        warnings.warn(
+            "Object.cantiscia() is deprecated. Use obj.cantiscion() instead. "
+            "Will be removed in version 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.cantiscion()
 
 
 # -------------------- #
@@ -108,7 +201,8 @@ class Object(GenericObject):
 
     def __str__(self):
         string = super().__str__()[:-1]
-        return "%s %s>" % (string, angle.toString(self.lonspeed))
+        speed = "—" if self.lonspeed is None else angle.toString(self.lonspeed)
+        return "%s %s>" % (string, speed)
 
     # === Properties === #
 
@@ -124,10 +218,16 @@ class Object(GenericObject):
 
     @property_with_method_compat
     def movement(self):
-        """Returns if this object is direct, retrograde
-        or stationary.
+        """Returns if this object is direct, retrograde or stationary.
 
+        Returns ``None`` for symbolic positions where ``lonspeed`` is
+        undefined (e.g. profected planets — see
+        :meth:`mayaastrolib.chart.Chart.profected`). The
+        ``property_with_method_compat`` wrapper passes ``None`` through
+        unwrapped so ``obj.movement is None`` works.
         """
+        if self.lonspeed is None:
+            return None
         if abs(self.lonspeed) < 0.0003:
             return const.STATIONARY
         elif self.lonspeed > 0:
@@ -153,19 +253,37 @@ class Object(GenericObject):
     # === Functions === #
 
     def isDirect(self):
-        """Returns if this object is in direct motion."""
+        """Returns if this object is in direct motion, or ``None`` for
+        symbolic positions with undefined speed.
+        """
+        if self.lonspeed is None:
+            return None
         return self.movement == const.DIRECT
 
     def isRetrograde(self):
-        """Returns if this object is in retrograde motion."""
+        """Returns if this object is in retrograde motion, or ``None``
+        for symbolic positions with undefined speed.
+        """
+        if self.lonspeed is None:
+            return None
         return self.movement == const.RETROGRADE
 
     def isStationary(self):
-        """Returns if this object is stationary."""
+        """Returns if this object is stationary, or ``None`` for
+        symbolic positions with undefined speed.
+        """
+        if self.lonspeed is None:
+            return None
         return self.movement == const.STATIONARY
 
     def isFast(self):
-        """Returns if this object is in fast motion."""
+        """Returns if this object is in fast motion.
+
+        Returns ``None`` for symbolic positions where ``lonspeed`` is
+        undefined.
+        """
+        if self.lonspeed is None:
+            return None
         return abs(self.lonspeed) >= self.meanMotion
 
 
