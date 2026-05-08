@@ -6,6 +6,98 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 015: GeoPos input validation
+
+**Session length:** ~15 minutes (single Claude Code session)
+**Branch:** `task-015-geopos-validation`
+**Commits:** see `git log task-015-geopos-validation`
+
+### What was done
+
+Added explicit range validation to `GeoPos.__init__` after the
+existing `toFloat()` coercion. Closes the bug surfaced in
+`docs/REVIEW-2026-05-08.md` where `GeoPos('200n00', '0w00')`
+silently produced a chart with `lat=200.0`.
+
+### Validation location
+
+`mayaastrolib/geopos.py:79–86` (after `ruff format`):
+
+```python
+if not -90.0 <= self.lat <= 90.0:
+    raise ValueError(f"Latitude must be in [-90, 90]; got {self.lat}")
+if not -180.0 <= self.lon <= 180.0:
+    raise ValueError(f"Longitude must be in [-180, 180]; got {self.lon}")
+```
+
+Validation runs after `toFloat()` returns a numeric value, so
+both string-input (`"200n00"`) and direct-numeric (`200.0`)
+paths are checked. `toFloat` itself was untouched.
+
+### Coverage on `geopos.py`: 69% → 72%
+
+The platform review predicted 69% → 90%+. Honest result:
+**+3 percentage points only.** The 12 statements I added are
+all covered by the new tests, but the original uncovered
+lines weren't validation-related — they were unrelated public
+helpers (`toList`, `toString` at module level; `slists`,
+`strings`, `__str__` on `GeoPos`).
+
+Per-line residual gaps after this task (using the post-
+`ruff format` line numbers):
+
+```
+mayaastrolib/geopos.py     36     10    72%   46, 54-58, 94, 98, 101-102
+```
+
+- Line 46: module-level `toList(value)` helper — not used in tests
+- Lines 54-58: module-level `toString(value, mode)` helper —
+  not used in tests
+- Lines 94, 98, 101-102: `GeoPos.slists()`, `GeoPos.strings()`,
+  `GeoPos.__str__` bodies — also not used in tests
+
+These are genuine pre-existing coverage gaps, but they are NOT
+validation-related. Per Task 015 spec ("document any such
+residual gaps but don't try to close them in this task"),
+left in place. A small follow-up task could add roundtrip
+tests (`GeoPos -> slists -> strings -> str`) and push
+coverage to ~95%.
+
+### Numeric input
+
+`toFloat()` accepts both strings and numbers (per its docstring:
+"Accepts angles and strings such as '12W30:00'"). I added a
+"Numeric inputs" section to the test file with three cases
+(valid float, lat out of range as float, lon out of range as
+float). All pass — the validation is path-agnostic by design
+(it runs after coercion).
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (after one auto-format on
+  `geopos.py` which collapsed two-line raises to one-line).
+- `ruff check .` — **PASS**.
+- `mypy mayaastrolib/` — 2 errors, identical to baseline.
+- `pytest -x` — **201/201 PASS** (was 186; +15 new from
+  `test_geopos_validation.py`).
+- No existing tests broke (no fixture was using a bogus
+  placeholder GeoPos).
+
+### Files touched
+
+- `mayaastrolib/geopos.py` — 8-line validation block added.
+- `tests/test_geopos_validation.py` — new file, 15 tests.
+- `docs/KNOWN-BUGS.md` — new "Resolved" entry above the
+  eclipse one.
+- `CHANGELOG.md` — entry under `[Unreleased] Fixed`.
+
+### Per saved feedback rule: merge to development
+
+Per `memory/feedback_task_branch_workflow.md`: ff-only merge
+to `development`, push, delete branch on origin and locally.
+
+---
+
 ## 2026-05-08 — REVIEW-2026-05-08.md cleanup pass
 
 Tightened Complexity Hotspots (one actionable target —

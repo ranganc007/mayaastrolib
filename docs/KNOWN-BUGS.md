@@ -2,6 +2,29 @@
 
 ## Resolved
 
+### `GeoPos` accepted out-of-range latitude / longitude
+
+**Discovered:** 2026-05-08 platform review (see
+`docs/REVIEW-2026-05-08.md` — Reliability and test gaps, item 2).
+**Fixed:** Task 015.
+**Affected:** `mayaastrolib/geopos.py::GeoPos.__init__`.
+
+`GeoPos('200n00', '0w00')` returned an instance with `lat=200.0`
+without raising. Any chart constructed with this `GeoPos` produced
+mathematically nonsensical output that didn't visibly fail. The
+library's defenses against bad input were accidental (`int()` cast
+on garbage strings happens to raise; `swisseph.calc_ut` raises on
+unknown bodies); range validation was missing.
+
+After Task 015, `GeoPos.__init__` validates `lat ∈ [-90, 90]` and
+`lon ∈ [-180, 180]` after float coercion, raising `ValueError` with
+the offending value in the message. Boundaries are inclusive (poles
+and antimeridian are valid).
+
+Regression tests: `tests/test_geopos_validation.py` (15 cases
+covering valid boundaries, out-of-range strings, just-past-boundary
+inputs, and numeric input paths).
+
 ### Eclipse functions used wrong keyword argument
 
 **Discovered:** Task 001 recon (see RECON.md §8 ¶1)

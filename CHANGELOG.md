@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Fixed (Task 015 — GeoPos input validation)
+- `GeoPos.__init__` now validates that latitude ∈ [-90, 90] and
+  longitude ∈ [-180, 180], raising `ValueError` with the offending
+  value if out of range. Previously, out-of-range coordinates
+  (e.g. `GeoPos('200n00', '0w00')`) silently produced charts with
+  mathematically nonsensical output. Surfaced by the platform
+  review (`docs/REVIEW-2026-05-08.md`); regression tests in
+  `tests/test_geopos_validation.py`.
+
 ### Added (Predictives as Chart methods — Task 013)
 - `Chart.solarReturn(year=N)` extended to also accept
   `target_date=D` for "next solar return after this datetime"
