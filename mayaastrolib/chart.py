@@ -110,16 +110,25 @@ class Chart:
         return self.angles.get(ID)
 
     def get(self, ID):
-        """Returns an object, house or angle
-        from the chart.
+        """Return the object, house, or angle with the given ID.
 
+        Dispatches by list membership against the canonical lists in
+        :mod:`mayaastrolib.const` rather than by string-prefix matching,
+        so future ID format changes (e.g. ``"House1"`` → ``"H1"``) only
+        require updating the list, not the dispatch.
+
+        Args:
+            ID: An ID string from ``const.LIST_HOUSES``,
+                ``const.LIST_ANGLES``, or any object ID.
+
+        Returns:
+            The matching House, angle, or Object.
         """
-        if ID.startswith("House"):
+        if ID in const.LIST_HOUSES:
             return self.getHouse(ID)
-        elif ID in const.LIST_ANGLES:
+        if ID in const.LIST_ANGLES:
             return self.getAngle(ID)
-        else:
-            return self.getObject(ID)
+        return self.getObject(ID)
 
     def houseOf(self, obj):
         """Return the House containing obj, or None if obj is not in any house.
