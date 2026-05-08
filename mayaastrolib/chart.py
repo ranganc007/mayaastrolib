@@ -20,9 +20,13 @@ There are also methods to access fixed stars.
 
 """
 
+import copy as _copy
+import math
+
 from . import angle, const, utils
 from .datetime import Datetime
 from .ephem import ephem
+from .lists import GenericList, HouseList, ObjectList
 
 # ------------------ #
 #    Chart Class     #
@@ -39,6 +43,11 @@ class Chart:
         Optional arguments are:
         - hsys: house system
         - IDs: list of objects to include
+        - is_symbolic: True if this chart represents derived/symbolic
+          positions (e.g. profections). Default False.
+        - symbolic_kind: a string identifying the kind of symbolic
+          chart, e.g. ``"profection"``. Default None. Only meaningful
+          when ``is_symbolic=True``.
 
         """
         # Handle optional arguments
@@ -48,9 +57,16 @@ class Chart:
         self.date = date
         self.pos = pos
         self.hsys = hsys
+        self.is_symbolic = kwargs.get("is_symbolic", False)
+        self.symbolic_kind = kwargs.get("symbolic_kind", None)
         self.objects = ephem.getObjectList(IDs, date, pos)
         self.houses, self.angles = ephem.getHouses(date, pos, hsys)
         self._link_objects_to_houses()
+
+    def __repr__(self):
+        if self.is_symbolic:
+            return f"<{type(self).__name__} ({self.symbolic_kind}) {self.date}>"
+        return f"<{type(self).__name__} {self.date}>"
 
     def _link_objects_to_houses(self):
         """Stamp `obj.house` on every Object and `house.objects` on every House.
@@ -72,6 +88,8 @@ class Chart:
         chart.date = self.date
         chart.pos = self.pos
         chart.hsys = self.hsys
+        chart.is_symbolic = getattr(self, "is_symbolic", False)
+        chart.symbolic_kind = getattr(self, "symbolic_kind", None)
         chart.objects = self.objects.copy()
         chart.houses = self.houses.copy()
         chart.angles = self.angles.copy()
@@ -199,6 +217,84 @@ class Chart:
             return const.MOON_THIRD_QUARTER
         else:
             return const.MOON_LAST_QUARTER
+
+    # === Symbolic charts === #
+
+    def _copy_for_symbolic(self, symbolic_kind):
+        """Return a deep-copied chart with the symbolic flag set.
+
+        Internal helper for :meth:`profected` and any future symbolic
+        derivatives. Uses ``copy.deepcopy`` so callers can mutate the
+        returned chart's objects/houses/angles without aliasing into
+        the natal.
+        """
+        new = _copy.deepcopy(self)
+        new.is_symbolic = True
+        new.symbolic_kind = symbolic_kind
+        return new
+
+    def _years_to(self, target_date):
+        """Return the rotation angle (degrees) for a profection from
+        ``self.date`` to ``target_date``.
+
+        Combines integer years (30° each) with the fractional sub-year
+        rotation, mirroring the existing
+        :func:`mayaastrolib.predictives.profections.compute` math so
+        that ``Chart.profected(target_date=...)`` produces identical
+        longitudes to the legacy API.
+        """
+        sun = self.getObject(const.SUN)
+        prevSr = ephem.prevSolarReturn(target_date, sun.lon)
+        nextSr = ephem.nextSolarReturn(target_date, sun.lon)
+        sub_year = 30 * (target_date.jd - prevSr.jd) / (nextSr.jd - prevSr.jd)
+        age = math.floor((target_date.jd - self.date.jd) / 365.25)
+        return 30 * age + sub_year
+
+    def profected(self, years=None, target_date=None):
+        """Return a profected chart — natal positions rotated forward by
+        one sign per year of age.
+
+        Profections are a symbolic predictive technique. The returned
+        chart's planetary positions do NOT represent where the planets
+        actually are at the target date — they are natal positions
+        rotated by N×30°. Therefore, dynamics-derived attributes like
+        ``obj.movement`` and ``obj.isRetrograde()`` return ``None`` for
+        the profected chart's planets.
+
+        Args:
+            years: Age in whole or fractional years. The profected chart
+                rotates by ``years × 30°`` modulo 360. Mutually
+                exclusive with ``target_date``.
+            target_date: A :class:`Datetime`. The rotation is derived
+                using the same math as
+                :func:`mayaastrolib.predictives.profections.compute`,
+                including the sub-year solar-return interpolation.
+                Mutually exclusive with ``years``.
+
+        Returns:
+            A new :class:`Chart` with ``is_symbolic=True`` and
+            ``symbolic_kind="profection"``. Planet ``lonspeed`` and
+            ``latspeed`` are ``None``.
+
+        Raises:
+            ValueError: if both ``years`` and ``target_date`` are
+                provided, or neither is.
+        """
+        if (years is None) == (target_date is None):
+            raise ValueError(
+                "Pass exactly one of years= or target_date=",
+            )
+        if target_date is not None:
+            rotation = self._years_to(target_date)
+        else:
+            rotation = (years % 12) * 30
+
+        new = self._copy_for_symbolic(symbolic_kind="profection")
+        new.objects = ObjectList([obj.with_longitude(obj.lon + rotation) for obj in new.objects])
+        new.houses = HouseList([house.with_longitude(house.lon + rotation) for house in new.houses])
+        new.angles = GenericList([a.with_longitude(a.lon + rotation) for a in new.angles])
+        new._link_objects_to_houses()
+        return new
 
     # === Solar returns === #
 
