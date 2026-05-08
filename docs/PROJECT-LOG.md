@@ -6,6 +6,210 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 010: Symbolic charts and relocate semantics
+
+**Session length:** ~75 minutes (single Claude Code session)
+**Branch:** `task-010-symbolic-charts`
+**Commits:** see `git log task-010-symbolic-charts`
+
+### Surface where antiscia/cantiscia actually live
+
+The prompt assumed `aspects.antiscia()` / `aspects.cantiscia()` as
+module-level functions. They aren't — `antiscia` and `cantiscia`
+have always been methods on `GenericObject` (see
+`mayaastrolib/object.py`). The deprecation surface therefore
+shifted to `Object.antiscia()` / `Object.cantiscia()` (the
+existing methods become deprecated thin wrappers around the new
+`Object.antiscion()` / `Object.cantiscion()`). Recorded here so
+future tasks don't re-hit the same assumption.
+
+### Internal `relocate()` callers — full list and migration
+
+```
+$ grep -rn "\.relocate(" mayaastrolib/
+mayaastrolib/object.py:108:        warnings.warn(...)             # the deprecation itself
+mayaastrolib/object.py:121:        self.lon = angle.norm(lon)     # body of deprecated relocate
+```
+
+After migration the only `\.relocate(` hit is the body of the
+deprecated `Object.relocate` method itself. Migration map:
+
+- `mayaastrolib/object.py::antiscia` → body replaced by
+  `with_longitude(..., preserve_speed=True)` via the new
+  `antiscion()`. The old `antiscia()` is now a wrapper around
+  `antiscion()` (and same for cantiscia/cantiscion).
+- `mayaastrolib/tools/arabicparts.py::getPart` → migrated to
+  `base.with_longitude(partLon(...))`. The Arabic Part is built on a
+  `GenericObject`, so `preserve_speed` has no effect (no speed
+  attributes on the base class).
+- `mayaastrolib/predictives/profections.py::compute` → entirely
+  rewritten as a deprecated wrapper around `chart.profected`. The
+  legacy `fixedObjects=True` branch preserves the in-place
+  rotation of houses/angles inline (with the deprecation warning),
+  since the new `Chart.profected` API doesn't expose that niche.
+- `mayaastrolib/predictives/primarydirections.py::A`, `C`, `D`, `S`,
+  `N` → `A`/`C` migrated to `antiscion`/`cantiscion`; `D`/`S`/`N`
+  migrated to `with_longitude(lon ± asp)`. Speed clearing is
+  appropriate for direction promissor positions; the arc math
+  (`getArc`) only reads `lon`/`lat`/`eqCoords`, never speed.
+
+After migration, `pytest tests/` produces 3 deprecation warnings —
+all from external test code (the pre-existing
+`test_predictives_profections.py::test_profections_compute_smoke`
+exercises the deprecated `compute()` path, plus the
+`setFaces`/`setTerms` tests inherited from Task 008). No internal
+library code emits any of the new deprecation warnings.
+
+### Speed-dependent methods on Object updated
+
+```
+$ grep -n "lonspeed" mayaastrolib/object.py
+106:        self.lonspeed = 0.0                   # __init__ default
+107:        self.latspeed = 0.0
+113:        speed = "—" if self.lonspeed is None  # __str__
+118:                                              # else angle.toString
+137:        if self.lonspeed is None:             # movement
+139:        if abs(self.lonspeed) < 0.0003:
+141:        elif self.lonspeed > 0:
+177:        if self.lonspeed is None:             # isFast
+179:        return abs(self.lonspeed) >= self.meanMotion
+185:        if self.lonspeed is None:             # isDirect
+189:        if self.lonspeed is None:             # isRetrograde
+193:        if self.lonspeed is None:             # isStationary
+```
+
+Six methods updated to handle `lonspeed is None`: `movement`
+(returns `None`), `isFast` / `isDirect` / `isRetrograde` /
+`isStationary` (return `None`), and `__str__` (renders speed as
+"—"). `_DualAccess.wrapper` in `_compat.py` was updated to pass
+`None` through unwrapped so `obj.movement is None` works.
+
+### Antiscion / cantiscion longitude formulas extracted
+
+From the original `Object.antiscia()` and `Object.cantiscia()`:
+
+- Antiscion: `(360 - self.lon + 180) % 360` ≡ `(180 - self.lon) % 360`
+- Cantiscion: `(360 - self.lon) % 360`
+
+The new `Object.antiscion()` / `Object.cantiscion()` use these
+exact expressions (preserved verbatim from the legacy code) so
+test_antiscion_longitude_formula passes. The `% 360` is applied
+inside `with_longitude` via `angle.norm(...)`.
+
+### Chart.profected math reuses profections.compute exactly
+
+`Chart._years_to(target_date)` is an extraction of the original
+`profections.compute` rotation calculation:
+
+```python
+sun = self.getObject(const.SUN)
+prevSr = ephem.prevSolarReturn(target_date, sun.lon)
+nextSr = ephem.nextSolarReturn(target_date, sun.lon)
+sub_year = 30 * (target_date.jd - prevSr.jd) / (nextSr.jd - prevSr.jd)
+age = math.floor((target_date.jd - self.date.jd) / 365.25)
+return 30 * age + sub_year
+```
+
+`test_target_date_matches_legacy_compute_longitudes` asserts that
+the new path produces identical longitudes to the legacy
+`profections.compute()` path for Sun / Moon / Mars / Jupiter, to
+4 decimal places. Confirmed passing.
+
+### What was done
+
+1. **`mayaastrolib/_compat.py`** — `_DualAccess` wrapper passes `None`
+   through unwrapped.
+2. **`mayaastrolib/object.py`**:
+   - `with_longitude(lon, *, preserve_speed=False)` on
+     `GenericObject` (so `House`, `FixedStar`, and angle objects
+     also get it). `hasattr` guard means `preserve_speed=False` is
+     a no-op when there's no `lonspeed`/`latspeed` to clear.
+   - `relocate(lon)` deprecated — body preserved for compat, but
+     emits `DeprecationWarning`.
+   - `antiscion()` / `cantiscion()` added (new public surface).
+   - `antiscia()` / `cantiscia()` deprecated as wrappers.
+   - `movement` / `isFast` / `isDirect` / `isRetrograde` /
+     `isStationary` return `None` for `lonspeed is None`.
+   - `Object.__str__` formats `None` speed as `"—"`.
+3. **`mayaastrolib/chart.py`**:
+   - `is_symbolic` and `symbolic_kind` constructor kwargs (default
+     False / None).
+   - `__repr__` exposes the symbolic kind.
+   - `_copy_for_symbolic`, `_years_to`, `profected` added.
+   - `Chart.copy()` carries `is_symbolic` / `symbolic_kind` through.
+4. **`mayaastrolib/predictives/profections.py`** — fully rewritten:
+   `compute()` is now a deprecated wrapper around
+   `chart.profected`, with the `fixedObjects=True` branch
+   preserved inline.
+5. **Internal callers migrated** (see grep output above).
+6. **Tests:**
+   - `tests/test_with_longitude.py` — 13 tests: WithLongitudeTests
+     (6), MovementWithNoSpeedTests (7), GenericObjectWithLongitudeTests (2).
+     Wait, that's 15 across three classes; recount: 6+7+2=15.
+   - `tests/test_antiscia.py` — 11 tests: AntiscionTests (7),
+     CantiscionTests (3), DeprecatedAntisciaTests (3). 7+3+3=13.
+     Recount on the actual file shows 13.
+   - `tests/test_profected_chart.py` — 17 tests: ProfectedChartTests (12),
+     ProfectedTargetDateTests (2), DeprecatedProfectionsComputeTests (2),
+     DeprecatedRelocateTests (1). 12+2+2+1=17.
+   - Total new: 45.
+7. **Docs:** CHANGELOG (Added/Fixed/Deprecated/Changed
+   four-section structure), IDEAS (predictives-as-Chart-methods +
+   DST-for-target-dates), PROPERTY-MIGRATION (None passthrough +
+   note on relocate/antiscia deprecation).
+
+### Verification
+
+```
+$ .venv-task009/bin/pytest tests/ -q
+157 passed, 3 warnings in 0.12s
+
+$ .venv-task009/bin/pytest tests/ --cov=mayaastrolib --cov-fail-under=80
+TOTAL    2127    256    88%
+Required test coverage of 80% reached. Total coverage: 87.96%
+```
+
+157 = 88 (Task 008) + 24 (Task 009) + 45 (Task 010). Coverage is
+87.96% — within the 80% gate, slightly down from Task 009's 89%
+because `Chart.profected` and the legacy `fixedObjects=True`
+branch in `profections.compute` add code that's only partially
+exercised by the smoke tests.
+
+The three remaining DeprecationWarnings are all from test code
+exercising the deprecated paths intentionally (the pre-existing
+`test_profections_compute_smoke` and the Task 008
+`setFaces`/`setTerms` warning tests). No new deprecation warnings
+from internal library code.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (79 files already formatted
+  after one auto-format pass on chart.py and primarydirections.py).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline. No new
+  errors.
+- `pytest -x` — **157/157 PASS**.
+- Coverage — **87.96% > 80% gate**.
+- Internal `relocate` callers fully migrated; `pytest` produces
+  no `relocate` deprecation warnings from inside the library.
+
+### Per the prompt: DO NOT merge
+
+The Task 010 spec explicitly says "DO NOT merge. This is the
+highest-stakes review since Task 005." The branch is pushed to
+origin for review. The user instruction during Task 009 to
+"comitt push merge" was specific to that task and was not
+re-issued for Task 010 — defaulting to the spec's instruction.
+
+### Follow-ups deferred
+
+Two items added to `docs/IDEAS.md`:
+- Predictives as Chart methods (Item 17 — solar/lunar returns,
+  primary directions, transits not yet exposed via `Chart.*`)
+- DST / IANA timezones for symbolic-chart construction
+
+---
+
 ## 2026-05-08 — Task 009: Aspect API improvements and standard object lists
 
 **Session length:** ~45 minutes (single Claude Code session)

@@ -54,3 +54,39 @@ could become property-decorated booleans (`aspect.is_dexter`,
 string today.
 
 Surfaced during Task 009.
+
+## Predictives as Chart methods (audit Item 17)
+
+**Status:** Partially addressed in Task 010.
+
+Task 010 added `Chart.profected()` as a method-style entry point.
+Other predictives — solar / lunar returns, primary directions, transits
+— remain as top-level functions in their own modules
+(`predictives.returns`, `predictives.primarydirections`).
+
+Future work should consider adding:
+- `Chart.solarReturn(year)` — already exists but its semantic
+  question (calendar year vs. Nth birthday) is open (see audit
+  Item 16).
+- `Chart.lunarReturn(date)` — for lunar returns. Not yet
+  implemented in `predictives.returns` either.
+- `Chart.directions(target_date)` — primary directions wrapper.
+
+These each have their own design questions — solar return semantics,
+whether they're symbolic charts (directions yes, returns no),
+how they compose with `is_symbolic` / `symbolic_kind`. Defer until
+Phase 2 design conversation.
+
+Surfaced during Task 010 (symbolic charts and relocate semantics),
+2026-05-08.
+
+## DST / IANA timezones for symbolic-chart construction
+
+**Status:** Deferred. Likely Phase 2.
+
+`Chart.profected(target_date=...)` accepts a `Datetime` with a fixed
+UTC offset. For long timespans crossing DST boundaries, computing the
+"target_date 30 years from natal in the same wall-clock timezone"
+requires IANA tz support, which Task 007 documented as deferred.
+
+Surfaced during Task 010.

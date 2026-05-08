@@ -4,6 +4,65 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Symbolic charts and relocate semantics — Task 010)
+- `Object.with_longitude(lon, *, preserve_speed=False)` — returns a new
+  Object at the given longitude. By default clears `lonspeed` /
+  `latspeed` to `None`, signalling that orbital dynamics are undefined
+  for the new (symbolic) position. Pass `preserve_speed=True` when the
+  new position meaningfully shares dynamics with the original (e.g.
+  antiscia). Available on `GenericObject` (and therefore `Object`,
+  `House`, `FixedStar`); `preserve_speed` is a no-op on classes
+  without speed attributes.
+- `Object.antiscion()` and `Object.cantiscion()` — return new objects
+  representing the antiscion / contra-antiscion positions.
+  Implemented as `with_longitude(..., preserve_speed=True)`.
+- `Chart.profected(years=N)` and `Chart.profected(target_date=D)` —
+  return a profected chart with `is_symbolic=True`,
+  `symbolic_kind="profection"`, and properly cleared planet speeds.
+  Mutually exclusive args; `ValueError` if both or neither given.
+- `Chart.is_symbolic` (bool) and `Chart.symbolic_kind` (str) — flag
+  whether a chart represents derived positions rather than
+  computed-from-ephemeris ones. Default `False` / `None` for natal
+  charts. `Chart.__repr__` surfaces the flag for visibility.
+- `Object.movement`, `Object.isFast`, `Object.isDirect`,
+  `Object.isRetrograde`, `Object.isStationary` now return `None` when
+  `lonspeed is None` (symbolic positions). Previously they would
+  return a bool computed from a stale or zero speed, masking the
+  symbolic nature of the position.
+
+### Fixed
+- Profected charts no longer report stale natal speed / retrograde
+  state. Previously `profections.compute()` rotated planet longitudes
+  via in-place `relocate()` but left `lonspeed` / `latspeed`
+  unchanged, so `isRetrograde()` on a profected chart returned the
+  natal answer. The new `chart.profected()` correctly clears
+  speed-derived attributes for symbolic positions, and
+  `profections.compute()` now delegates to it (see Changed below).
+
+### Deprecated
+- `Object.relocate(lon)` — in-place mutation that leaves speeds
+  stale. Use `obj.with_longitude(lon)` instead. Will be removed in
+  version 1.0.
+- `Object.antiscia()` and `Object.cantiscia()` — use
+  `obj.antiscion()` / `obj.cantiscion()`. Will be removed in 1.0.
+- `predictives.profections.compute(chart, date)` — use
+  `chart.profected(target_date=date)`. Will be removed in 1.0.
+
+### Changed (behaviour)
+- `predictives.profections.compute(chart, date)` (the default
+  `fixedObjects=False` path) now returns a chart with
+  `is_symbolic=True` and cleared speeds, by delegating to
+  `chart.profected(target_date=date)`. Callers that read
+  `is_retrograde()` / `movement` from the result will now see `None`
+  where they previously got the natal answer. This is the bug fix
+  referenced under Fixed. The legacy `fixedObjects=True` branch is
+  preserved for compatibility but emits the same deprecation warning.
+- `_DualAccess` (the property/method compat wrapper from Task 006)
+  passes `None` through unwrapped so `obj.movement is None` works.
+  Tradeoff: calling `obj.movement()` on a symbolic object raises
+  `TypeError` instead of emitting a `DeprecationWarning`. Symbolic
+  objects are new in this task; no existing code does this.
+
 ### Added (Aspect API and standard lists — Task 009)
 - `Aspect.name` — human-readable aspect name
   (e.g. `"Trine"`, `"Square"`, `"Sextile"`).

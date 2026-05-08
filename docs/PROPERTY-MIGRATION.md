@@ -27,6 +27,21 @@ The conversion fixes that bug class without breaking existing code.
 
 12 methods total.
 
+## Task 010 update: None passthrough on `_DualAccess`
+
+`_DualAccess` (the wrapper that powers `property_with_method_compat`)
+originally wrapped every value, including `None`, so that
+`obj.thing()` could still emit `DeprecationWarning`. Task 010 added a
+None passthrough: if the underlying value is `None`, the property
+returns `None` directly, unwrapped. This is required so that
+`obj.movement is None` works — a check that's now meaningful for
+symbolic-chart objects whose speed-derived attributes are undefined.
+
+Tradeoff: calling `obj.movement()` on a symbolic object raises
+`TypeError("'NoneType' object is not callable")` instead of emitting
+the deprecation warning. Symbolic objects are new in Task 010; no
+existing code does this, and the new code never should.
+
 ## Methods NOT converted
 
 | Class | Method | Reason |
@@ -35,7 +50,7 @@ The conversion fixes that bug class without breaking existing code.
 | `Object.isPlanet`, `Object.isDirect`, `Object.isRetrograde`, `Object.isStationary`, `Object.isFast` | These have `is` prefix — they read like predicates and the convention is to keep them as methods. |
 | `House.isAboveHorizon`, `House.inHouse`, `House.hasObject` | `is` / `has` / `in` prefix — predicates, not getters. |
 | `FixedStar.aspects` | Takes an argument; not a getter. |
-| `Object.relocate`, `Object.antiscia`, `Object.cantiscia` | Have side effects or transform the object — semantically methods. |
+| `Object.relocate`, `Object.antiscia`, `Object.cantiscia` | Have side effects or transform the object — semantically methods. As of Task 010, all three are deprecated and slated for 1.0 removal. Migrate to `obj.with_longitude(lon)` / `obj.antiscion()` / `obj.cantiscion()`. |
 | `Object.eqCoords` | Takes an argument (`zerolat`). |
 | `GenericObject.copy` | Constructs a new object — semantically a method. |
 
