@@ -6,6 +6,34 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — REVIEW-2026-05-08.md cleanup pass
+
+Tightened Complexity Hotspots (one actionable target —
+`AccidentalDignity.getScoreProperties` — kept up front; `haiz`,
+`_aspectProperties`, and `getList` demoted to a single
+"reviewed and judged acceptable" paragraph, explicit that they
+are not refactor recommendations).
+
+Tightened Future Considerations (removed three already-tracked
+items: PyPI release, Vedic Phase 2, the 1.0 sweep — each is
+either in `README.md`, in `docs/IDEAS.md`, or implicit in every
+deprecation entry). Reframed the Pars Fortuna / Syzygy item as
+an open question about default-list composition rather than a
+proposed `lazy_extras=True` flag, with an explicit warning
+about the downstream coupling.
+
+Recalibrated Task 014's effort estimate from "single evening"
+to "two sessions" — agreed with the user's framing that
+reference-data selection (resolving astro.com / Astro-Databank
+/ Hand-tables disagreements at the arc-minute level, picking a
+source-of-truth) is the actual hard part of golden-fixture
+work, not the test code itself.
+
+Document is still local; user to review and commit (or push
+back further) on their own.
+
+---
+
 ## 2026-05-08 — Task 013: Predictives as Chart methods
 
 **Session length:** ~30 minutes (single Claude Code session)
