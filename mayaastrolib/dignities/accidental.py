@@ -275,7 +275,7 @@ class AccidentalDignity:
             otherObj = self.chart.getObject(otherID)
             asp = aspects.getAspect(self.obj, otherObj, aspList)
 
-            if asp.type == const.NO_ASPECT:
+            if asp is None:
                 continue
             elif asp.type == const.CONJUNCTION:
                 res.append(asp.type)

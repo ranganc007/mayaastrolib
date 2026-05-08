@@ -98,6 +98,8 @@ class ChartDynamics:
         for elem in valid:
             objB = self.chart.getObject(elem["id"])
             asp = aspects.getAspect(objA, objB, aspList)
+            if asp is None:
+                continue
             role = asp.getRole(objA.id)
             if role["inOrb"]:
                 movement = role["movement"]

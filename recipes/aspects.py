@@ -21,6 +21,9 @@ chart = Chart(date, pos)
 sun = chart.get(const.SUN)
 moon = chart.get(const.MOON)
 
-# Get the aspect
+# Get the aspect — returns None if no major aspect exists within orb
 aspect = aspects.getAspect(sun, moon, const.MAJOR_ASPECTS)
-print(aspect)  # <Moon Sun 90 Applicative +00:24:30>
+if aspect is not None:
+    print(aspect)  # <Moon Sun 90 Applicative +00:24:30>
+else:
+    print("No major aspect between Sun and Moon")
