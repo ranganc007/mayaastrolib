@@ -293,10 +293,30 @@ class Object(GenericObject):
 
 
 class House(GenericObject):
-    """This class represents a generic house cusp."""
+    """A house cusp.
 
-    # The traditional house offset
-    _OFFSET = -5.0
+    The class implements the traditional **5° rule** in
+    :meth:`inHouse` and :meth:`hasObject`: a longitude within 5°
+    *before* a cusp is considered to belong to the house starting
+    *at* that cusp, not the previous house. This is a long-standing
+    convention in Hellenistic, Medieval, and modern Western
+    astrology — the rationale being that house influences "come
+    early" relative to their nominal cusps.
+
+    See :data:`_CUSP_TOLERANCE_DEG`. Configurability is recorded as
+    a Phase 2 IDEA in `docs/IDEAS.md` (`Item 15`); the 5° default
+    is hard-coded for now because the design surface (per-chart,
+    per-house, per-house-system?) is not yet settled.
+    """
+
+    # Degrees a longitude may precede a cusp and still count as
+    # belonging to the house starting at that cusp. See class
+    # docstring. Negative because the math in `inHouse` adds it to
+    # `self.lon` to shift the comparison anchor 5° earlier.
+    _CUSP_TOLERANCE_DEG = -5.0
+    # Backwards-compatible alias kept for any external caller that
+    # learned the old name. Slated for removal in 1.0.
+    _OFFSET = _CUSP_TOLERANCE_DEG
 
     def __init__(self):
         super().__init__()
@@ -360,8 +380,13 @@ class House(GenericObject):
         return self.id in props.house.aboveHorizon
 
     def inHouse(self, lon):
-        """Returns if a longitude belongs to this house."""
-        dist = angle.distance(self.lon + House._OFFSET, lon)
+        """Return True if the longitude ``lon`` falls inside this house.
+
+        The house is taken to span ``[cusp − 5°, cusp + 25°)`` — i.e.
+        it includes the 5° band immediately before its named cusp,
+        per the traditional 5° rule. See the class docstring.
+        """
+        dist = angle.distance(self.lon + House._CUSP_TOLERANCE_DEG, lon)
         return dist < self.size
 
     def hasObject(self, obj):
