@@ -76,6 +76,14 @@ class GeoPos:
     def __init__(self, lat, lon):
         self.lat = toFloat(lat)
         self.lon = toFloat(lon)
+        # Validate after coercion: bad-but-parseable inputs (e.g.
+        # "200n00") otherwise silently produce mathematically
+        # nonsensical charts. Boundaries inclusive: ±90 lat (poles)
+        # and ±180 lon (antimeridian) are valid.
+        if not -90.0 <= self.lat <= 90.0:
+            raise ValueError(f"Latitude must be in [-90, 90]; got {self.lat}")
+        if not -180.0 <= self.lon <= 180.0:
+            raise ValueError(f"Longitude must be in [-180, 180]; got {self.lon}")
 
     def slists(self):
         """Return lat/lon as signed lists."""
