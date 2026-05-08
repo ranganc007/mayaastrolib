@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Aspect API and standard lists — Task 009)
+- `Aspect.name` — human-readable aspect name
+  (e.g. `"Trine"`, `"Square"`, `"Sextile"`).
+- `const.ASPECT_NAMES` — `dict[int, str]` mapping every canonical
+  aspect angle (`MAJOR_ASPECTS + MINOR_ASPECTS`) to its name.
+- `Aspect.activeObj` and `Aspect.passiveObj` — references to the
+  original `Object` instances. Use these when you need per-planet
+  properties (`movement`, `house`, `element`, etc.) from an Aspect.
+  The legacy `Aspect.active` / `Aspect.passive` `AspectObject`
+  snapshots are kept unchanged for backwards compatibility — note
+  that `aspect.active.movement` is *aspect-relative*
+  (Applicative / Separative / Exact), while
+  `aspect.activeObj.movement` is *planet-relative*
+  (Direct / Retrograde / Stationary). The two are distinct.
+- Standard object lists in `mayaastrolib.const`:
+  - `LIST_MODERN_PLANETS` — Sun through Pluto
+  - `LIST_TROPICAL_DEFAULT` — modern planets + nodes + Chiron
+  - `LIST_VEDIC_DEFAULT` — seven planets + Rahu + Ketu
+  - `LIST_LIGHTS` — Sun, Moon
+  - `LIST_PERSONAL_PLANETS` — Sun, Moon, Mercury, Venus, Mars
+  - `LIST_SOCIAL_PLANETS` — Jupiter, Saturn
+  - `LIST_TRANSPERSONAL` — Uranus, Neptune, Pluto
+  - `LIST_LUNAR_NODES` — North Node, South Node
+- Documentation page `docs/OBJECT-LISTS.md` describing the lists and
+  guidance on when to use which.
+
+### Changed
+- `aspects.getAspect(obj1, obj2, aspList)` now returns `None` when no
+  aspect exists within orb. Previously it returned a sentinel `Aspect`
+  with `type == const.NO_ASPECT`. Internal call sites in
+  `dignities/accidental.py`, `tools/chartdynamics.py`, and the
+  `recipes/aspects.py` example were updated to handle `None`.
+
+### Deprecated
+- `aspects.getAspectOrSentinel()` — preserves the pre-Task-009
+  sentinel-returning behaviour. Use `getAspect()` instead. Will be
+  removed in version 1.0.
+
 ### Added
 - `Chart.houseOf(obj)` returns the house containing an object. Accepts
   either an Object instance or a planet ID string.

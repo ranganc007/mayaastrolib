@@ -6,6 +6,154 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 009: Aspect API improvements and standard object lists
+
+**Session length:** ~45 minutes (single Claude Code session)
+**Branch:** `task-009-aspect-api-and-lists`
+**Commits:** see `git log task-009-aspect-api-and-lists`
+
+### Decision: keep `Aspect.active` / `Aspect.passive` as `AspectObject`; add `activeObj` / `passiveObj`
+
+The prompt offered two paths: (a) keep the `AspectObject` snapshot and
+add `activeObj` / `passiveObj` for the full `Object`, or (b) replace
+`active` / `passive` with the full `Object` and expose the snapshot as
+`activeSnapshot` / `passiveSnapshot`.
+
+I picked (a). Reason: the `AspectObject.movement` and
+`Object.movement` attributes share a name but mean different things
+— aspect-relative `Applicative / Separative / Exact / NoMovement` on
+the `AspectObject` versus planet-relative
+`Direct / Retrograde / Stationary` on the full `Object`. Three
+internal callers depend on the aspect-relative semantics:
+
+- `mayaastrolib/tools/chartdynamics.py:101` — reads
+  `asp.getRole(objA.id)["movement"]` (delegates to `AspectObject`)
+- `mayaastrolib/dignities/accidental.py:284` — reads `asp.movement`
+  (the Aspect's own derived movement, sourced from
+  `self.active.movement`)
+- `mayaastrolib/aspects.py::Aspect.movement` itself — reads
+  `self.active.movement`
+
+Path (b) would silently change the semantics of every one of these
+without any type or test failure. The additive path costs us a slightly
+busier surface (`active` and `activeObj`) but preserves the established
+contract. Migration path to a cleaner API is a 1.0 sweep.
+
+### Decision: `getAspect` returns `None`; add `getAspectOrSentinel` as the deprecated path
+
+Followed the prompt's first option (rename + deprecate) rather than the
+fallback (opt-in parameter). Cleaner public surface; the deprecation
+warning gives any consumer a single, clear migration target.
+
+### grep output: every internal `getAspect()` call site
+
+```
+$ grep -rn "getAspect(" mayaastrolib/ tests/ recipes/
+mayaastrolib/aspects.py:222:def getAspect(obj1, obj2, aspList):
+mayaastrolib/aspects.py:251:def getAspectOrSentinel(obj1, obj2, aspList):
+mayaastrolib/dignities/accidental.py:276:    asp = aspects.getAspect(self.obj, otherObj, aspList)
+mayaastrolib/tools/chartdynamics.py:100:    asp = aspects.getAspect(objA, objB, aspList)
+recipes/aspects.py:25:aspect = aspects.getAspect(sun, moon, const.MAJOR_ASPECTS)
+```
+
+All three non-self call sites updated to handle `None`:
+
+- `dignities/accidental.py` — replaced `asp.type == const.NO_ASPECT`
+  with `asp is None`. Logic preserved: skip when no aspect, append on
+  conjunction, only-applicative-or-exact otherwise.
+- `tools/chartdynamics.py` — added an `if asp is None: continue` guard
+  before the `asp.getRole(...)` call. The previous code would have
+  crashed with `AttributeError` on the new `None` return, but in
+  practice the call was preceded by `validAspects()` so a no-aspect
+  result was unlikely. The guard is correctness, not behaviour change.
+- `recipes/aspects.py` — wrapped the `print(aspect)` in an
+  `if aspect is not None:` guard with an explanatory else branch.
+
+### Object constants — all present
+
+Verified via inspection of `mayaastrolib/const.py`: all of `SUN`,
+`MOON`, `MERCURY`, `VENUS`, `MARS`, `JUPITER`, `SATURN`, `URANUS`,
+`NEPTUNE`, `PLUTO`, `CHIRON`, `NORTH_NODE`, `SOUTH_NODE` exist as
+string constants. No additions or removals from the new list constants
+were necessary.
+
+### `ASPECT_NAMES` coverage
+
+The illustrative mapping in the prompt missed two minor-aspect angles
+that the library actually defines: `36` (Semi-Quintile / Decile, the
+`SEMIQUINTILE` constant) and `108` (Sesqui-Quintile / Tredecile, the
+`SESQUIQUINTILE` constant). Added both, so the test
+`test_aspect_names_covers_all_canonical_angles` passes for the full
+`MAJOR_ASPECTS + MINOR_ASPECTS` set.
+
+### What was done
+
+1. **`mayaastrolib/const.py`** — added `ASPECT_NAMES` mapping (13 entries)
+   plus eight new `LIST_*` constants (`LIST_MODERN_PLANETS`,
+   `LIST_TROPICAL_DEFAULT`, `LIST_VEDIC_DEFAULT`, `LIST_LIGHTS`,
+   `LIST_PERSONAL_PLANETS`, `LIST_SOCIAL_PLANETS`, `LIST_TRANSPERSONAL`,
+   `LIST_LUNAR_NODES`).
+2. **`mayaastrolib/aspects.py`**:
+   - `Aspect.__init__` now accepts optional `activeObj=` / `passiveObj=`
+     kwargs and stores them; old positional construction path
+     unchanged.
+   - `Aspect.name` property returning `ASPECT_NAMES.get(self.type,
+     "No Aspect")`.
+   - `getAspect` returns `None` on miss; on hit, threads
+     `activeObj` / `passiveObj` through to the new `Aspect`.
+   - `getAspectOrSentinel` added — emits `DeprecationWarning`,
+     preserves the legacy sentinel-on-miss behaviour for callers who
+     can't migrate yet.
+3. **Internal callers updated** to handle `None` (see grep output
+   above).
+4. **`recipes/aspects.py`** — `if aspect is not None:` guard.
+5. **Tests:**
+   - `tests/test_aspect_api.py` — 11 tests across 4 classes covering
+     `Aspect.name`, `ASPECT_NAMES`, `activeObj` fidelity (the original
+     bug — accessing `Object.movement` through an Aspect), `getAspect`
+     None return, and the deprecation warning on
+     `getAspectOrSentinel`.
+   - `tests/test_object_lists.py` — 13 tests covering the new
+     constants and Chart construction smoke tests for each list.
+6. **Docs:** `docs/OBJECT-LISTS.md` (new), `CHANGELOG.md` (Unreleased
+   entries for Added / Changed / Deprecated), `docs/IDEAS.md` (two
+   new entries: camelCase sweep and aspect direction/condition
+   semantic properties — both surfaced during this task).
+
+### Verification
+
+```
+$ .venv-task009/bin/pytest tests/ -q
+112 passed, 2 warnings in 0.10s
+
+$ .venv-task009/bin/pytest tests/ --cov=mayaastrolib --cov-fail-under=80
+TOTAL    2054    225    89%
+Required test coverage of 80% reached. Total coverage: 89.05%
+```
+
+112 = 88 (Task 008 baseline) + 24 (this task: 11 aspect + 13 list).
+Coverage rose from 86% to 89%. The 2 warnings are still the
+`setFaces / setTerms` deprecation tests from Task 008.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (76 files already formatted).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to documented baseline
+  (`props.py:105` sum type, `predictives/primarydirections.py:98`
+  var-annotated). No new errors.
+- `pytest -x` — **112/112 PASS**.
+- Coverage — **89.05% > 80% gate**.
+
+### Follow-ups deferred
+
+Two items added to `docs/IDEAS.md`:
+- camelCase → snake_case sweep across the public API (1.0 cleanup).
+- `Aspect.direction` / `Aspect.condition` as semantic boolean
+  properties (`is_dexter`, `is_associate`).
+
+---
+
 ## 2026-05-07 — Task 008: Dignities thread-safety and parameter API
 
 **Session length:** ~30 minutes (single Claude Code session)

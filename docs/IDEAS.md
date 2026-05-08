@@ -25,3 +25,32 @@ Surfaced during Task 007 (datetime ergonomics), 2026-05-07.
 `Datetime.from_iso("2015-03-13T17:00+00:00")` would be useful for JSON-driven webapps and API consumers. Lower priority than `from_pydatetime` because most callers already have a `datetime.datetime`.
 
 Surfaced during Task 007.
+
+## camelCase → snake_case sweep across the public API
+
+**Status:** Deferred. Bundle with the 1.0 cleanup.
+
+The public API still uses camelCase (`getAspect`, `getRole`, `houseOf`,
+`isDirect`, `isPlanet`, etc.) inherited from upstream flatlib. PEP 8
+prefers snake_case. A sweeping rename is too disruptive to ship as a
+patch — it touches every recipe, test, and downstream consumer.
+
+Plan: combine with the property/shim removals already scheduled for 1.0
+and the UP031 percent-format sweep. Land all three as a single
+"camelCase → snake_case + property cleanup" task so consumers only need
+to migrate once.
+
+Surfaced during Task 009 (aspect API improvements), 2026-05-08.
+
+## Aspect direction / orientation as semantic properties
+
+**Status:** Deferred.
+
+`Aspect.direction` is a string (`"Dexter"` / `"Sinister"`) and
+`Aspect.condition` is a string (`"Associate"` / `"Dissociate"`). These
+could become property-decorated booleans (`aspect.is_dexter`,
+`aspect.is_associate`) for ergonomic checks, parallel to
+`Object.is_direct()`. Low priority; consumers can equality-check the
+string today.
+
+Surfaced during Task 009.
