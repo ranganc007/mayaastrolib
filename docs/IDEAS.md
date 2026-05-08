@@ -90,3 +90,32 @@ UTC offset. For long timespans crossing DST boundaries, computing the
 requires IANA tz support, which Task 007 documented as deferred.
 
 Surfaced during Task 010.
+
+## Configurable cusp tolerance (audit Item 15)
+
+**Status:** Investigated in Task 012, deferred for design.
+**See:** `docs/AUDIT-INVESTIGATIONS.md` Item 15 for findings.
+
+The 5° cusp tolerance hard-coded as `House._CUSP_TOLERANCE_DEG`
+(formerly `_OFFSET = -5.0`) is a defensible default but some
+authors prefer 3° or 7°, and some apply the rule only to angular
+cusps rather than to all 12. Making it configurable is reasonable
+future work, but the design surface is open: per-`Chart`,
+per-`House`, per-house-system? Not enough user demand right now to
+pick. Defer until Phase 2 or until a consumer asks.
+
+Surfaced during Task 012, 2026-05-08.
+
+## solarReturnByAge companion (audit Item 16)
+
+**Status:** Investigated in Task 012, deferred — low priority.
+**See:** `docs/AUDIT-INVESTIGATIONS.md` Item 16 for findings.
+
+`Chart.solarReturn(year)` works correctly for every realistic case
+(verified by concrete tests). A `solarReturnByAge(years)` companion
+that disambiguates by counting forward from the natal date would
+be a small ergonomic addition but isn't required — the existing
+API already gives the right answer when consumers map age to year
+themselves.
+
+Surfaced during Task 012, 2026-05-08.

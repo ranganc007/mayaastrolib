@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Documentation (Task 012 — audit investigations)
+- `docs/AUDIT-INVESTIGATIONS.md` (new) — investigation findings for
+  audit Items 15 (`House._OFFSET`) and 16 (`solarReturn(year)`
+  semantics). Both items resolved as DOCUMENT actions; no behaviour
+  change.
+- `House._OFFSET` renamed to `House._CUSP_TOLERANCE_DEG` with a
+  full docstring explaining the traditional **5° rule** (a longitude
+  within 5° before a cusp belongs to the house starting at that
+  cusp). The `_OFFSET` name is preserved as a backwards-compatible
+  alias and slated for removal in 1.0. `House.inHouse` docstring
+  expanded to make the `[cusp − 5°, cusp + 25°)` span explicit.
+- `Chart.solarReturn(year)` docstring expanded — clarifies that
+  the search anchors at January 1 of the target year and that the
+  result is the calendar-year-anchored return, which equals the
+  birthday-equivalent moment for any natal date. Concrete test
+  cases preserved in `docs/AUDIT-INVESTIGATIONS.md`.
+- `docs/IDEAS.md` records two Phase 2 follow-ups:
+  configurable cusp tolerance, and a `solarReturnByAge(years)`
+  companion. Both deferred — current behaviour is correct.
+
 ### Changed (internal — Task 011)
 - `Chart.get(ID)` now dispatches by list membership against
   `const.LIST_HOUSES` and `const.LIST_ANGLES` rather than by

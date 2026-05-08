@@ -6,6 +6,124 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 012: Audit investigations (Items 15 and 16)
+
+**Session length:** ~25 minutes (single Claude Code session)
+**Branch:** `task-012-audit-investigations`
+**Commits:** see `git log task-012-audit-investigations`
+
+### Outcome at a glance
+
+Both audit items resolved as **DOCUMENT** actions. Investigation
+showed both behaviours are correct as-is and just need clearer
+documentation. No behaviour changes. Two Phase 2 follow-ups
+recorded in `docs/IDEAS.md` for if/when user demand surfaces.
+
+### Item 15 findings
+
+`House._OFFSET = -5.0` is the traditional **5° rule**: a longitude
+within 5° before a cusp belongs to the house starting at that cusp.
+Math at `mayaastrolib/object.py:364`:
+
+```python
+dist = angle.distance(self.lon + House._OFFSET, lon)  # _OFFSET == -5.0
+return dist < self.size                               # size == 30.0
+```
+
+Equivalent to: house spans `[cusp − 5°, cusp + 25°)`. Used
+unconditionally for all house systems. Recommended action:
+**DOCUMENT** — rename `_OFFSET` → `_CUSP_TOLERANCE_DEG` with full
+docstring; keep `_OFFSET` as a backwards-compatible alias slated for
+1.0 removal.
+
+### Item 16 findings
+
+`Chart.solarReturn(year)` anchors at Jan 1 of `year` (in natal's
+UTC offset) and forward-searches for the first sun-conjunct-natal-
+sun moment. Concrete tests with both mid-year and late-year
+birthdays:
+
+```
+$ .venv-task009/bin/python -c "..."
+Jun 1980 birth -> solarReturn(2022): <2022/06/15 15:25:26 00:00:00>
+Dec 1980 birth -> solarReturn(2022): <2022/12/15 16:54:20 00:00:00>
+Dec 1980 birth -> solarReturn(2021): <2021/12/15 11:01:19 00:00:00>
+Jun 1980 birth -> solarReturn(1980): <1980/06/15 12:00:02 00:00:00>
+Dec 1980 birth -> solarReturn(1980): <1980/12/15 11:59:59 00:00:00>
+```
+
+Every case matches user expectations. The audit's framing
+("January 1 anchor cuts off late-December births") doesn't
+manifest because the forward search from Jan 1 still hits the
+December birthday in the same calendar year. Recommended action:
+**DOCUMENT** — expand the docstring to make the calendar-year
+semantic explicit so future auditors don't re-raise the same
+concern.
+
+### Surface where the verbatim recommended actions live
+
+`docs/AUDIT-INVESTIGATIONS.md` carries the full investigation, code
+references, and concrete test outputs. The "Recommended action"
+sections of each item there are the canonical record.
+
+### What was done
+
+1. **`docs/AUDIT-INVESTIGATIONS.md`** (new) — 130 lines, both items
+   investigated, with `grep` output, math walkthrough, concrete
+   test cases, and recommended actions.
+2. **`mayaastrolib/object.py`**:
+   - Renamed `House._OFFSET` → `House._CUSP_TOLERANCE_DEG`. The
+     old name preserved as a class-level alias for compat;
+     scheduled for 1.0 removal.
+   - Added a full class docstring on `House` describing the 5°
+     rule and pointing at `IDEAS.md` for the configurability
+     question.
+   - Expanded `House.inHouse` docstring with the
+     `[cusp − 5°, cusp + 25°)` span.
+3. **`mayaastrolib/chart.py`**:
+   - Expanded `Chart.solarReturn` docstring — calendar-year
+     anchored semantic, age-mapping note, pointer to
+     `AUDIT-INVESTIGATIONS.md`.
+4. **`docs/IDEAS.md`** — two Phase 2 entries:
+   - Configurable cusp tolerance (per-Chart, per-House, per-system?)
+   - `solarReturnByAge(years)` companion (low priority)
+5. **CHANGELOG** — Documentation section for Task 012; no behaviour
+   changes.
+
+### Verification
+
+```
+$ .venv-task009/bin/pytest tests/ -q
+168 passed, 3 warnings in 0.15s
+```
+
+168 tests still pass. No new tests added (per spec — Part 4 only
+applies if Part 3 produced functional code changes; this task was
+documentation-only).
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (80 files already formatted).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline. No new.
+- `pytest -x` — **168/168 PASS**.
+
+### Per saved feedback rule: merge to development and clean up
+
+Per the standing instruction
+(`memory/feedback_task_branch_workflow.md`), this overrides the
+prompt's "DO NOT merge" line: ff-only merge to `development`,
+push, delete branch on origin and locally.
+
+### Out of scope confirmed
+
+- Task 013 (Item 17 — predictives as Chart methods) is a separate
+  prompt file already dropped; will be handled next.
+- The Phase 2 design conversations (configurable cusp tolerance,
+  `solarReturnByAge`) live in IDEAS.md; not started here.
+
+---
+
 ## 2026-05-08 — Task 011: Chart dispatch and House numbering cleanup
 
 **Session length:** ~20 minutes (single Claude Code session)
