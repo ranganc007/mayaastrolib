@@ -6,6 +6,59 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Re-review (post-Task 016)
+
+Closure-tracking review against `docs/REVIEW-2026-05-08.md`
+(the original platform review at commit `a5bcc92`). Output
+written to `docs/REVIEW-2026-05-08-followup.md` at commit
+`743e538` on branch `task-followup-review`.
+
+**Closure summary:**
+
+- **3 of 3 concrete next-task recommendations shipped:**
+  Task 014 (golden fixtures, Skyfield-anchored — closes the
+  headline reliability gap), Task 015 (GeoPos validation —
+  closes the silent-bad-chart bug), Task 016 (fixstar_mag
+  caching — 144× measured speedup).
+- **1 partial closure:** Task 015 hit `geopos.py` 72%
+  coverage rather than the 90%+ predicted, because the other
+  uncovered lines were unrelated pre-existing helpers
+  (`toList` / `toString` / `slists` / `strings` / `__str__`).
+  Documented honestly in Task 015's PROJECT-LOG.
+- **8 items deferred to `docs/IDEAS.md` (in canonical lot):**
+  no movement, all still appropriate parking.
+- **5 items still pending (in active code) — process gap:**
+  the parent review's "Future considerations" was never
+  migrated to IDEAS.md, so the items are parked in the review
+  document only. Suggested next move #1 in the followup
+  document is to migrate them.
+
+**3 new findings since 2026-05-08:**
+
+- N1 — process gap (Future Considerations not in IDEAS.md)
+- N2 — `swisseph.fixstar2_ut` may have similar parsing cost
+  (low priority, defer to IDEAS if reported)
+- N3 — `LIST_VEDIC_DEFAULT` produces tropical positions until
+  Phase 2 ayanamsa ships (currently honest, doc update worth
+  doing alongside Phase 2)
+
+**Phase 2 readiness verdict: start now, with one architectural
+decision to settle first.** The layered ephem stack is the
+right seam for ayanamsa; the `Chart.is_symbolic` / `symbolic_kind`
+machinery and `Object.with_longitude` primitive both extend
+naturally. Tropical hardcoding is small (~20 LOC of changes to
+`swe.py`). The open question — per-Chart sidereal mode vs.
+module-level config — needs the Phase 2 spec to settle, since
+it affects thread-safety similar to the `setTerms`/`setFaces`
+issue Task 008 fixed.
+
+Document NOT auto-merged per re-review prompt's "DO NOT merge
+automatically" instruction. Surfacing to user; the standing
+build-task merge rule does not apply because this is a meta-
+review, not a `task-NNN-*` branch.
+
+---
+
 ## 2026-05-08 — Task 016: Cache fixstar_mag lookups
 
 **Session length:** ~15 minutes (single Claude Code session)
