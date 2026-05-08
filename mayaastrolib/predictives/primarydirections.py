@@ -164,27 +164,25 @@ class PrimaryDirections:
 
     def A(self, ID):
         """Returns the Antiscia of an object."""
-        obj = self.chart.getObject(ID).antiscia()
+        obj = self.chart.getObject(ID).antiscion()
         ID = "A_%s" % (ID)
         return self.G(ID, obj.lat, obj.lon)
 
     def C(self, ID):
         """Returns the CAntiscia of an object."""
-        obj = self.chart.getObject(ID).cantiscia()
+        obj = self.chart.getObject(ID).cantiscion()
         ID = "C_%s" % (ID)
         return self.G(ID, obj.lat, obj.lon)
 
     def D(self, ID, asp):
         """Returns the dexter aspect of an object."""
-        obj = self.chart.getObject(ID).copy()
-        obj.relocate(obj.lon - asp)
+        obj = self.chart.getObject(ID).with_longitude(self.chart.getObject(ID).lon - asp)
         ID = "D_%s_%s" % (ID, asp)
         return self.G(ID, obj.lat, obj.lon)
 
     def S(self, ID, asp):
         """Returns the sinister aspect of an object."""
-        obj = self.chart.getObject(ID).copy()
-        obj.relocate(obj.lon + asp)
+        obj = self.chart.getObject(ID).with_longitude(self.chart.getObject(ID).lon + asp)
         ID = "S_%s_%s" % (ID, asp)
         return self.G(ID, obj.lat, obj.lon)
 
@@ -193,8 +191,8 @@ class PrimaryDirections:
         of an object.
 
         """
-        obj = self.chart.get(ID).copy()
-        obj.relocate(obj.lon + asp)
+        src = self.chart.get(ID)
+        obj = src.with_longitude(src.lon + asp)
         ID = "N_%s_%s" % (ID, asp)
         return self.G(ID, obj.lat, obj.lon)
 

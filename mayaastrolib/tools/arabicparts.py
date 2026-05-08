@@ -170,8 +170,10 @@ def partLon(ID, chart):
 
 def getPart(ID, chart):
     """Returns an Arabic Part."""
-    obj = GenericObject()
+    base = GenericObject()
+    base.id = ID
+    base.type = const.OBJ_ARABIC_PART
+    obj = base.with_longitude(partLon(ID, chart))
     obj.id = ID
     obj.type = const.OBJ_ARABIC_PART
-    obj.relocate(partLon(ID, chart))
     return obj
