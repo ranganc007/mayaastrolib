@@ -219,10 +219,49 @@ def isAspecting(obj1, obj2, aspList):
 
 
 def getAspect(obj1, obj2, aspList):
-    """Returns an Aspect object for the aspect between two
-    objects considering a list of possible aspect types.
+    """Return the Aspect between two objects, or None if no aspect exists.
 
+    Args:
+        obj1: First object.
+        obj2: Second object.
+        aspList: List of aspect angles to consider (e.g. const.MAJOR_ASPECTS).
+
+    Returns:
+        An Aspect instance whose ``activeObj`` / ``passiveObj`` reference
+        the original Object instances, or ``None`` if no aspect within
+        orb exists.
+
+    Note:
+        This previously returned a sentinel Aspect with
+        ``type == const.NO_ASPECT``. The legacy behaviour is available via
+        :func:`getAspectOrSentinel` but is deprecated and will be removed
+        in version 1.0. Migrate ``if asp.exists():`` and
+        ``if asp.type == const.NO_ASPECT:`` checks to
+        ``if asp is not None:`` / ``if asp is None:``.
     """
+    ap = _getActivePassive(obj1, obj2)
+    aspDict = _aspectDict(ap["active"], ap["passive"], aspList)
+    if not aspDict:
+        return None
+    aspProp = _aspectProperties(ap["active"], ap["passive"], aspDict)
+    return Aspect(aspProp, activeObj=ap["active"], passiveObj=ap["passive"])
+
+
+def getAspectOrSentinel(obj1, obj2, aspList):
+    """[DEPRECATED] Return the Aspect, or a sentinel with ``type == NO_ASPECT``.
+
+    This preserves the pre-Task-009 behaviour of :func:`getAspect`. Use
+    :func:`getAspect` instead, which returns ``None`` when no aspect
+    exists. This function will be removed in version 1.0.
+    """
+    import warnings
+
+    warnings.warn(
+        "getAspectOrSentinel() is deprecated. Use getAspect(), which returns "
+        "None when no aspect exists. This function will be removed in 1.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     ap = _getActivePassive(obj1, obj2)
     aspDict = _aspectDict(ap["active"], ap["passive"], aspList)
     if not aspDict:
@@ -232,7 +271,7 @@ def getAspect(obj1, obj2, aspList):
             "separation": 0,
         }
     aspProp = _aspectProperties(ap["active"], ap["passive"], aspDict)
-    return Aspect(aspProp)
+    return Aspect(aspProp, activeObj=ap["active"], passiveObj=ap["passive"])
 
 
 # ---------------- #
@@ -255,12 +294,35 @@ class Aspect:
     """This class represents an aspect with all
     its properties.
 
+    The ``active`` and ``passive`` attributes are :class:`AspectObject`
+    snapshots that carry the *aspect-relative* movement
+    (Applicative/Separative/Exact). The ``activeObj`` / ``passiveObj``
+    attributes added in Task 009 reference the original :class:`Object`
+    instances, giving callers access to per-planet properties like
+    ``movement`` (Direct/Retrograde/Stationary), ``house``, ``element``,
+    etc. Note the name collision: ``aspect.active.movement`` is
+    aspect-relative, while ``aspect.activeObj.movement`` is planet-relative.
     """
 
-    def __init__(self, properties):
+    def __init__(self, properties, activeObj=None, passiveObj=None):
         self.__dict__.update(properties)
         self.active = AspectObject(self.active)
         self.passive = AspectObject(self.passive)
+        # Original Object references (Task 009). May be None for sentinel
+        # Aspects constructed via the legacy getAspectOrSentinel path when
+        # no aspect exists.
+        self.activeObj = activeObj
+        self.passiveObj = passiveObj
+
+    @property
+    def name(self):
+        """Human-readable aspect name (e.g. ``"Trine"``, ``"Square"``).
+
+        Returns ``"No Aspect"`` for sentinel Aspects with ``type ==
+        const.NO_ASPECT`` (only produced by :func:`getAspectOrSentinel`,
+        which is deprecated).
+        """
+        return const.ASPECT_NAMES.get(self.type, "No Aspect")
 
     def exists(self):
         """Returns if this aspect is valid."""
