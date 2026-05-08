@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Predictives as Chart methods — Task 013)
+- `Chart.solarReturn(year=N)` extended to also accept
+  `target_date=D` for "next solar return after this datetime"
+  searches. Existing positional `solarReturn(2022)` calls keep
+  working unchanged. Mutually exclusive args; `ValueError` if
+  both or neither given.
+- `Chart.directions()` — returns a
+  :class:`mayaastrolib.predictives.primarydirections.PrimaryDirections`
+  for this chart. Direct instantiation of the class remains
+  supported and is *not* deprecated; this method is a
+  discoverable Chart-level entry point. See PROJECT-LOG for the
+  decision rationale.
+- `Chart.arabicPart(part_id)` — convenience for
+  :func:`mayaastrolib.tools.arabicparts.getPart`. Reads at the
+  call site and shows up on `chart.` autocomplete.
+- `Chart.planetaryHour(date=None)` — returns the planetary
+  :class:`HourTable` for the chart's location at the given
+  moment (defaults to the chart's date). Underlying
+  :func:`getHourTable` remains available for date-and-position
+  use without a chart.
+
+### Deprecated
+- `mayaastrolib.tools.arabicparts.getPart(ID, chart)` — use
+  `chart.arabicPart(ID)` instead. Will be removed in 1.0.
+  Implementation moved to private `_getPart_impl` so the chart
+  method doesn't trip the warning. `recipes/arabicparts.py`
+  updated to the new API.
+
+### Notes (no change)
+- `mayaastrolib.predictives.primarydirections.PrimaryDirections`
+  remains a public class with no deprecation. Both
+  `chart.directions()` and `PrimaryDirections(chart)` stay fully
+  supported.
+- `mayaastrolib.predictives.returns.nextSolarReturn` /
+  `prevSolarReturn` remain undeprecated — they are useful
+  primitives that take a chart + date pair and don't fit the
+  "method on Chart" wrapper pattern as cleanly.
+- `mayaastrolib.tools.planetarytime.getHourTable` /
+  `getNow` / etc. remain undeprecated — they have legitimate
+  date-and-position uses without requiring a chart.
+
 ### Documentation (Task 012 — audit investigations)
 - `docs/AUDIT-INVESTIGATIONS.md` (new) — investigation findings for
   audit Items 15 (`House._OFFSET`) and 16 (`solarReturn(year)`

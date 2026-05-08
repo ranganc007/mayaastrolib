@@ -6,6 +6,133 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 013: Predictives as Chart methods
+
+**Session length:** ~30 minutes (single Claude Code session)
+**Branch:** `task-013-predictives-as-methods`
+**Commits:** see `git log task-013-predictives-as-methods`
+
+### Surface mismatches with the prompt
+
+The spec assumed a top-level `predictives.returns.solarReturn(chart, year)`
+function to deprecate. **It does not exist.** `predictives/returns.py`
+has only `nextSolarReturn(chart, date)` and `prevSolarReturn(chart, date)` —
+date-anchored ephemeris primitives that take a chart and a Datetime,
+not a year. There is no module-level `solarReturn(chart, year)` to
+deprecate. The only `solarReturn` in the codebase is already
+`Chart.solarReturn(year)` (an upstream-flatlib method, docstring
+expanded by Task 012).
+
+So the work for solar returns shifted from "wrap and deprecate" to
+"extend the existing Chart method." The new `target_date=` kwarg
+covers the date-anchored case without disturbing the year-positional
+call shape.
+
+There is **no `lunarReturn`** in `predictives/returns.py` either
+(the module's docstring even says "It only handles solar returns
+for now"). Skipped per spec — no new functionality in this task.
+
+### Decisions
+
+**`PrimaryDirections(chart)` is *not* deprecated.** A class isn't a
+function — direct instantiation is a Python convention people expect
+to keep working. `chart.directions()` is purely additive: a
+discoverable entry point for new users. Both call shapes stay fully
+supported. Followed the spec's recommendation here.
+
+**`tools.planetarytime.getHourTable(date, pos)` is *not* deprecated.**
+It takes a date and a position, *not* a chart. There are legitimate
+non-chart use cases ("what's the planetary hour right now in
+Dublin?"). The new `Chart.planetaryHour(date=None)` is a thin
+convenience that defaults to the chart's date and uses `self.pos`.
+The primitive stays.
+
+**Only `tools.arabicparts.getPart(ID, chart)` got the rename-and-deprecate
+treatment.** Implementation moved to `_getPart_impl(ID, chart)`;
+`getPart` becomes a thin wrapper that emits `DeprecationWarning` and
+calls the impl. `Chart.arabicPart` calls `_getPart_impl` directly so
+it doesn't trip the warning.
+
+### What was done
+
+1. **`mayaastrolib/chart.py`**:
+   - `Chart.solarReturn` extended with `target_date=` kwarg. Mutually
+     exclusive with `year=`; `ValueError` if both or neither given.
+     Backwards-compatible with positional `solarReturn(2022)`.
+   - New `Chart.directions()` returning `PrimaryDirections(self)`.
+     Lazy import to avoid circular dep at module load.
+   - New `Chart.arabicPart(part_id)` calling `_getPart_impl` directly
+     (no warning).
+   - New `Chart.planetaryHour(date=None)` calling `getHourTable`,
+     defaulting to `self.date`.
+2. **`mayaastrolib/tools/arabicparts.py`**:
+   - Implementation renamed `getPart` → `_getPart_impl`.
+   - `getPart` reintroduced as a deprecated wrapper that calls
+     `_getPart_impl` after emitting `DeprecationWarning`.
+3. **`recipes/arabicparts.py`** — migrated from
+   `arabicparts.getPart(arabicparts.PARS_SPIRIT, chart)` to
+   `chart.arabicPart(arabicparts.PARS_SPIRIT)`. Comment notes the
+   legacy path still works but warns.
+4. **`tests/test_chart_predictives.py`** — 18 tests in 5 classes:
+   - `ChartSolarReturnTests` (8) — year=, year-positional,
+     not-symbolic, real speed, target_date= mode, anchor semantics,
+     ValueError on bad arg combos.
+   - `ChartDirectionsTests` (2) — returns PrimaryDirections; the
+     instance's `chart` attribute is `self`.
+   - `ChartArabicPartTests` (3) — Pars Fortuna returns Object,
+     no DeprecationWarning fires from the chart-method path,
+     longitudes match the legacy getPart.
+   - `ChartPlanetaryHourTests` (3) — returns HourTable, default
+     date is chart's, accepts override.
+   - `DeprecatedGetPartTests` (2) — getPart emits
+     DeprecationWarning; still returns correct part.
+5. **CHANGELOG** — Added/Deprecated sections for Task 013, plus
+   "Notes (no change)" listing what stays public-and-undeprecated
+   so reviewers can see the deliberate non-changes.
+
+### Internal callers verified clean
+
+```
+$ grep -rn "arabicparts\.getPart\|\.getPart(" mayaastrolib/ recipes/
+mayaastrolib/tools/arabicparts.py:198:    "tools.arabicparts.getPart(ID, chart) is deprecated. "
+```
+
+The only remaining occurrence is the deprecation message itself.
+The recipe was migrated. The library no longer self-calls the
+deprecated path. (The single test in
+`tests/test_tools_arabicparts.py` that exercises `getPart` exists
+to verify the deprecation warning fires — left untouched.)
+
+### Verification
+
+```
+$ .venv-task009/bin/pytest tests/ -q
+186 passed, 4 warnings in 0.14s
+```
+
+186 = 168 (Task 012 baseline) + 18 (this task). The four warnings
+are: the existing test_tools_arabicparts.py exercising the now-
+deprecated getPart; the test_predictives_profections.py exercising
+the deprecated profections.compute (Task 010); and the Task 008
+setFaces/setTerms warning tests. None from internal library code.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (81 files already formatted).
+- `ruff check .` — **PASS** (`All checks passed!`).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline. No new.
+- `pytest -x` — **186/186 PASS**.
+- `grep -rn "\.getPart(" mayaastrolib/` — only the deprecation
+  message remains as a hit.
+
+### Per saved feedback rule: merge to development and clean up
+
+Per the standing instruction
+(`memory/feedback_task_branch_workflow.md`): ff-only merge to
+`development`, push, delete branch on origin and locally.
+
+---
+
 ## 2026-05-08 — Task 012: Audit investigations (Items 15 and 16)
 
 **Session length:** ~25 minutes (single Claude Code session)
