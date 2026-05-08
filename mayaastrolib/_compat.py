@@ -94,6 +94,12 @@ def property_with_method_compat(func):
     @property
     @functools.wraps(func)
     def wrapper(self):
-        return _DualAccess(func(self), self)
+        value = func(self)
+        # Pass None through unwrapped so `obj.x is None` checks work.
+        # Used by symbolic-chart Objects whose speed-derived attributes
+        # are undefined (Task 010).
+        if value is None:
+            return None
+        return _DualAccess(value, self)
 
     return wrapper
