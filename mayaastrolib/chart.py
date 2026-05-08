@@ -307,30 +307,114 @@ class Chart:
 
     # === Solar returns === #
 
-    def solarReturn(self, year):
-        """Return this chart's solar return falling in calendar ``year``.
+    def solarReturn(self, year=None, target_date=None):
+        """Return this chart's solar return for a calendar year or near a date.
 
-        The search anchors at January 1, 00:00 of ``year`` (in this
-        chart's UTC offset) and walks forward to the first moment the
-        Sun's ecliptic longitude matches its natal value. Because each
-        calendar year contains exactly one such conjunction, this is
-        equivalent to "the birthday-equivalent moment in ``year``"
-        regardless of whether the natal birthday falls early or late
-        in the year.
+        A solar return is a real chart computed from ephemeris for the
+        moment the Sun returns to its natal longitude. Unlike a profected
+        chart it is *not* symbolic — the planets carry real speeds and
+        dynamics.
 
-        Mapping to age: ``solarReturn(year)`` for a person born in
-        ``natal_year`` returns the ``(year − natal_year)``-th return
-        — the 42nd birthday return for a 1980 birth and ``year=2022``,
-        regardless of birth month. Verified via concrete tests in
-        ``docs/AUDIT-INVESTIGATIONS.md`` (Item 16).
+        Two modes, mutually exclusive:
+
+        - ``year=N``: anchors at January 1, 00:00 of ``year`` (in this
+          chart's UTC offset) and walks forward to the first Sun
+          conjunction. Each calendar year contains exactly one such
+          moment, so this is equivalent to "the birthday-equivalent
+          moment in ``year``" for any natal date. Verified concretely
+          in ``docs/AUDIT-INVESTIGATIONS.md`` (Item 16).
+        - ``target_date=D``: walks forward from ``D`` to the next Sun
+          conjunction. Useful when you want the SR active at a known
+          moment without computing the year yourself.
 
         Args:
             year: The calendar year in which the solar return falls.
+            target_date: A :class:`Datetime` to search forward from.
 
         Returns:
-            A new :class:`Chart` for the solar-return moment.
+            A new :class:`Chart` for the SR moment.
+            ``is_symbolic`` is ``False``.
+
+        Raises:
+            ValueError: if both ``year`` and ``target_date`` are passed,
+                or neither.
         """
+        if (year is None) == (target_date is None):
+            raise ValueError("Pass exactly one of year= or target_date=")
         sun = self.getObject(const.SUN)
-        date = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
-        srDate = ephem.nextSolarReturn(date, sun.lon)
+        if year is not None:
+            anchor = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
+        else:
+            anchor = target_date
+        srDate = ephem.nextSolarReturn(anchor, sun.lon)
         return Chart(srDate, self.pos, hsys=self.hsys)
+
+    # === Other predictives and tools (Task 013) === #
+
+    def directions(self):
+        """Return a :class:`PrimaryDirections` instance for this chart.
+
+        Primary directions are a symbolic predictive technique mapping
+        natal angular relationships forward through time via the
+        semi-arc method. The returned object exposes methods for
+        computing specific directions and timing tables.
+
+        Direct instantiation via
+        :class:`mayaastrolib.predictives.primarydirections.PrimaryDirections`
+        remains supported and is *not* deprecated; this method is
+        purely a discoverable Chart-level entry point. Use whichever
+        reads better at the call site.
+
+        Returns:
+            A :class:`PrimaryDirections` instance.
+        """
+        from .predictives.primarydirections import PrimaryDirections
+
+        return PrimaryDirections(self)
+
+    def arabicPart(self, part_id):
+        """Compute an Arabic part (lot) for this chart.
+
+        Args:
+            part_id: A part constant from
+                :mod:`mayaastrolib.tools.arabicparts` (for example,
+                :data:`PARS_FORTUNA`, :data:`PARS_SPIRIT`).
+
+        Returns:
+            A :class:`GenericObject` placed at the part's longitude
+            with type ``OBJ_ARABIC_PART``.
+
+        Example:
+            >>> from mayaastrolib.tools import arabicparts
+            >>> fortuna = chart.arabicPart(arabicparts.PARS_FORTUNA)
+        """
+        from .tools.arabicparts import _getPart_impl
+
+        return _getPart_impl(part_id, self)
+
+    def planetaryHour(self, date=None):
+        """Return the planetary :class:`HourTable` for this chart.
+
+        Convenience wrapper around
+        :func:`mayaastrolib.tools.planetarytime.getHourTable`. The
+        underlying function takes a date and a position; this method
+        defaults to this chart's date and uses ``self.pos``.
+
+        Args:
+            date: A :class:`Datetime`. Defaults to the chart's own date.
+
+        Returns:
+            An :class:`HourTable` instance covering the diurnal and
+            nocturnal hour sequences for the requested moment.
+
+        Note:
+            ``getHourTable(date, pos)`` is *not* deprecated — it
+            remains useful for date+location queries that don't need
+            a chart (e.g. "what's the planetary hour right now in
+            Dublin").
+        """
+        from .tools.planetarytime import getHourTable
+
+        if date is None:
+            date = self.date
+        return getHourTable(date, self.pos)
