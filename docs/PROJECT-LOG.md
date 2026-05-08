@@ -6,6 +6,150 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 011: Chart dispatch and House numbering cleanup
+
+**Session length:** ~20 minutes (single Claude Code session)
+**Branch:** `task-011-chart-dispatch-cleanup`
+**Commits:** see `git log task-011-chart-dispatch-cleanup`
+
+### Audit-flagged smells found and fixed
+
+```
+$ grep -rn 'startswith("House"\|startswith("h\|\[5:\]' mayaastrolib/ tests/ recipes/
+mayaastrolib/object.py:315:        return int(self.id[5:])
+mayaastrolib/chart.py:117:        if ID.startswith("House"):
+```
+
+Only the two flagged occurrences. No other code in the repo parses
+house IDs by string position.
+
+### Decision: Cache `_num` via `House.fromDict` override
+
+`House` instances are constructed by `GenericObject.fromDict`, which
+does `cls()` then `__dict__.update(_dict)`. The `id` is set via the
+dict update *after* `__init__`, so `__init__` can't compute `_num`
+yet. Three options considered:
+
+a. Override `__init__` to take `id` as an arg — breaks every existing
+   `House.fromDict` call site in the ephemeris stack.
+b. Move the cache into the property: `LIST_HOUSES.index(self.id)+1`.
+   Eliminates the magic offset but doesn't actually cache; recomputes
+   per access.
+c. Override `House.fromDict` to compute `_num` after `__dict__.update`
+   sets `id`. Caches once; preserves the existing construction path.
+
+Picked (c). The property `num` returns `self._num`. `__init__` sets
+`self._num = 0` defensively so attribute access never raises before
+`fromDict` finishes. `_set_num_from_id` falls back to 0 on
+`ValueError` if id isn't in `LIST_HOUSES` — robust against future
+mislabelled houses.
+
+### Before / after
+
+**Chart.get** (`mayaastrolib/chart.py:117`):
+
+```python
+# before
+if ID.startswith("House"):
+    return self.getHouse(ID)
+elif ID in const.LIST_ANGLES:
+    return self.getAngle(ID)
+else:
+    return self.getObject(ID)
+
+# after
+if ID in const.LIST_HOUSES:
+    return self.getHouse(ID)
+if ID in const.LIST_ANGLES:
+    return self.getAngle(ID)
+return self.getObject(ID)
+```
+
+**House.num** (`mayaastrolib/object.py:315`):
+
+```python
+# before
+@property_with_method_compat
+def num(self):
+    return int(self.id[5:])
+
+# after
+def __init__(self):
+    super().__init__()
+    self.type = const.OBJ_HOUSE
+    self.size = 30.0
+    self._num = 0  # cached in fromDict
+
+@classmethod
+def fromDict(cls, _dict):
+    obj = super().fromDict(_dict)
+    obj._set_num_from_id()
+    return obj
+
+def _set_num_from_id(self):
+    try:
+        self._num = const.LIST_HOUSES.index(self.id) + 1
+    except ValueError:
+        self._num = 0
+
+@property_with_method_compat
+def num(self):
+    return self._num
+```
+
+### No callers use method-style `.num()`
+
+```
+$ grep -rn "\.num()" mayaastrolib/ tests/ recipes/
+(no matches)
+```
+
+So even though `_DualAccess` continues to support the deprecated
+method-style call, nothing exercises it. Safe.
+
+### What was done
+
+1. **`mayaastrolib/chart.py`** — `Chart.get` rewritten to use
+   `const.LIST_HOUSES` and `const.LIST_ANGLES` membership checks.
+2. **`mayaastrolib/object.py`** — `House.fromDict` override added,
+   `_set_num_from_id` helper, `__init__` initialises `_num = 0`,
+   property returns cached value.
+3. **`tests/test_chart_dispatch.py`** — 11 tests in 2 classes:
+   - `ChartDispatchTests` (6) — dispatch by every house in
+     `LIST_HOUSES`, every angle in `LIST_ANGLES`, every traditional
+     object id, plus the regression case for Item 13.
+   - `HouseNumTests` (5) — int type, position-in-list match,
+     House5/House12 spot checks, and a truthiness regression
+     (Task 006 _DualAccess passthrough must still wrap a real int).
+4. **CHANGELOG / PROJECT-LOG** — Changed (internal) entry; this
+   journal page.
+
+### Verification
+
+```
+$ .venv-task009/bin/pytest tests/ -q
+168 passed, 3 warnings in 0.13s
+```
+
+168 = 157 (Task 010 baseline) + 11 (this task). Three deprecation
+warnings unchanged (existing tests exercising deprecated paths).
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (80 files already formatted).
+- `ruff check .` — **PASS**.
+- `mypy mayaastrolib/` — 2 errors, identical to baseline.
+- `pytest -x` — **168/168 PASS**.
+
+### Per saved feedback rule: merge to development and clean up
+
+Per the standing instruction saved 2026-05-08
+(`memory/feedback_task_branch_workflow.md`), this overrides the
+prompt's "DO NOT merge" line: ff-only merge to `development`, push,
+delete branch on origin and locally.
+
+---
+
 ## 2026-05-08 — Task 010: Symbolic charts and relocate semantics
 
 **Session length:** ~75 minutes (single Claude Code session)

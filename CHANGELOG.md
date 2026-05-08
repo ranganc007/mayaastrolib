@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (internal — Task 011)
+- `Chart.get(ID)` now dispatches by list membership against
+  `const.LIST_HOUSES` and `const.LIST_ANGLES` rather than by
+  string-prefix matching on `"House"`. No user-facing behaviour
+  change; eliminates a brittleness if house IDs ever change format.
+- `House.num` is now resolved from `const.LIST_HOUSES` once at
+  construction (in `House.fromDict`) and cached on `self._num`,
+  rather than parsed from `int(self.id[5:])` at access time.
+  No user-facing behaviour change; eliminates the magic
+  `len("House")` offset.
+
 ### Added (Symbolic charts and relocate semantics — Task 010)
 - `Object.with_longitude(lon, *, preserve_speed=False)` — returns a new
   Object at the given longitude. By default clears `lonspeed` /
