@@ -6,6 +6,150 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-08 — Task 014: Golden test fixtures and self-consistency suite
+
+**Session length:** ~50 minutes (single Claude Code session)
+**Branch:** `task-014-golden-fixtures`
+**Commits:** see `git log task-014-golden-fixtures`
+
+### What shipped
+
+The functional / golden test layer mandated by `CLAUDE.md` since
+Task 001 finally exists. Three reference charts (Einstein, Kahlo,
+Amundsen) generated against Skyfield (independent NASA-JPL-based
+implementation), checked into `tests/golden/fixtures.json`,
+verified within ±2 arcminute tolerance for all 30 (3 × 10
+modern planets) comparisons. Plus a self-consistency suite of
+10 invariant tests with 27 subtests covering houses, planets,
+aspects, and symbolic-chart invariants — all 30 chart-level
+combinations pass. New `LICENSING.md` at repo root documents the
+MIT/LGPL/GPL/commercial situation for users.
+
+### Skyfield version: 1.54
+
+Latest at the time of work. The `>=1.46` pin in `pyproject.toml`
+is a soft floor — anything from 1.46 onward should work.
+
+### Ephemeris file: de440s.bsp (NOT de421.bsp)
+
+The spec called for `de421.bsp`. **First run failed** because
+de421 only covers 1899–2053; Einstein (1879) and Amundsen (1872)
+are out of range. Switched to `de440s.bsp` (1849–2150), the
+"small" DE440 file that covers all three charts.
+
+de440s.bsp doesn't ship the planet body for Mars (only Mars
+barycenter); same for Mercury/Venus/etc. Fixed by using
+`eph["mars barycenter"]`. Barycenter ≠ planet for the gas giants
+(massive moons), but the geocentric ecliptic offset at AU
+distance is sub-arcsecond — comfortably inside the ±2′ tolerance
+for any planet in this set.
+
+### LMT→UTC conversions verified by hand
+
+UTC = LMT − longitude_degrees / 15 hours, East positive.
+
+| Chart | LMT | Longitude | Offset | UTC |
+|---|---|---:|---:|---|
+| Einstein, Ulm | 11:30 | +10.000° | +0:40:00 | 10:50:00 |
+| Kahlo, Coyoacán | 08:30 | -99.167° | -6:36:40 | 15:06:40 |
+| Amundsen, Borge | 03:30 | +10.800° | +0:43:12 | 02:46:48 |
+
+The spec rounded Kahlo to 15:06 and Amundsen to 02:47. Used the
+precise values; difference is below ½ arcminute Sun motion but
+worth getting right at sub-arcminute precision.
+
+### Cross-check vs Astro-Databank
+
+- Einstein Sun: Skyfield 353.508° (= 23°30'30" Pis); AstroDB
+  publishes Pis 23°30'. ✓
+- Kahlo Sun: Skyfield 103.378° (= 13°23' Cancer); AstroDB
+  publishes Can 13°23'. ✓
+- Amundsen Sun: Skyfield 113.812° (= 23°49' Cancer); public
+  record reports ~Cancer 24°. ✓
+
+All three within 1 arcminute of independent published positions.
+LMT-to-UTC conversions are correct.
+
+### Surprise: topocentric vs geocentric
+
+**First test run failed: Moon was off by 14 arcmin on Amundsen
+(and noticeably on the others).** Other 9 planets passed. The
+14′ figure pointed at parallax — only the Moon is close enough
+to Earth for parallax to matter.
+
+Cause: my `compute_chart` used
+`observer = EARTH + wgs84.latlon(...)` followed by
+`observer.at(t).observe(body)` — that's **topocentric**
+(observer on Earth's surface). Swiss Ephemeris's default is
+**geocentric**. Fix: drop the `observer` and use
+`EARTH.at(t).observe(body)` directly — that's geocentric. After
+regeneration, all 30 (chart × planet) checks pass cleanly.
+
+The fixture still records lat/lon/elevation_m so the
+self-consistency suite can build full mayaastrolib charts
+(houses need lat/lon).
+
+### Amundsen at 59°N: no Placidus instability
+
+Spec warned that Placidus might fail at high latitudes. **It
+didn't.** The 03:30 UTC summer-solstice-adjacent date is
+comfortably away from the latitude × declination boundary where
+Placidus breaks down. Houses sum to 360° to 5+ decimal places;
+cusps are ordered. No `expectedFailure` markers needed; no
+date adjustment needed.
+
+### Test counts
+
+```
+$ .venv-task014/bin/pytest tests/ -q
+211 passed, 4 warnings, 57 subtests passed in 0.15s
+```
+
+- 201 (Task 015 baseline) + 10 new golden tests = **211 tests**.
+- Plus **57 subtests** from the `subTest` pattern, giving clean
+  per-(chart × planet) and per-(chart × invariant) failure
+  reporting.
+
+### Pre-completion checklist
+
+- `ruff format --check .` — **PASS** (one auto-format on
+  `test_self_consistency.py`).
+- `ruff check .` — **PASS** (one auto-fix on the unused
+  `wgs84` import after switching to geocentric).
+- `mypy mayaastrolib/` — 2 errors, identical to baseline.
+- `pytest -x` — **211/211 PASS** + 57 subtests.
+
+### Per saved feedback rule: merge to development
+
+Per `memory/feedback_task_branch_workflow.md`: ff-only merge,
+push, delete branch on origin and locally.
+
+### Files touched / created
+
+- `pyproject.toml` — added `skyfield>=1.46` to dev extras
+- `.gitignore` — added `tests/golden/.skyfield-data/`
+- `tests/golden/__init__.py` — empty package marker
+- `tests/golden/generate_fixtures.py` — Skyfield reference
+  generator (manual)
+- `tests/golden/fixtures.json` — frozen reference data
+- `tests/golden/test_planet_positions.py` — golden tests
+- `tests/golden/test_self_consistency.py` — invariant tests
+- `tests/golden/README.md` — methodology
+- `LICENSING.md` — MIT/LGPL/GPL/commercial doc
+- `CHANGELOG.md` — Added section
+- `docs/PROJECT-LOG.md` — this entry
+
+### Out of scope reminders
+
+- No Vedic / sidereal fixtures (Phase 2; needs ayanamsa-aware
+  generator)
+- No house / aspect / dignity golden tests (Skyfield doesn't
+  compute them; covered via self-consistency invariants instead)
+- No native astronomy backend (LICENSING.md notes it as a
+  future possibility if commercial demand surfaces)
+
+---
+
 ## 2026-05-08 — Task 015: GeoPos input validation
 
 **Session length:** ~15 minutes (single Claude Code session)

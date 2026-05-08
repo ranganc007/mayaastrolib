@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 014 — golden test fixtures)
+- Golden test suite at `tests/golden/`:
+  - `test_planet_positions.py` — verifies mayaastrolib planet
+    positions against frozen Skyfield references for three charts
+    (Einstein, Kahlo, Amundsen). Tolerance ±2 arcminutes per
+    `CLAUDE.md`. Closes the long-standing reliability gap
+    surfaced by the platform review.
+  - `test_self_consistency.py` — invariant tests for houses
+    (sum to 360°, ordered cusps), planets (lon/signlon in range,
+    obj.house set), aspects (orb non-negative, name in
+    `ASPECT_NAMES.values()`), and symbolic charts (profected
+    houses still span 360°, profected planets have None speed).
+    Independent of any external reference.
+  - `generate_fixtures.py` — Skyfield-based fixture generator,
+    run manually by maintainers. Uses `de440s.bsp` (1849–2150)
+    so all three charts are in range. Geocentric output to
+    match Swiss Ephemeris.
+  - `fixtures.json` — frozen reference data, committed.
+  - `README.md` — methodology doc covering reference choice,
+    LMT→UTC conversions, when to regenerate.
+- `LICENSING.md` at repo root — clarifies the
+  MIT-mayaastrolib + LGPL-pyswisseph + GPL/commercial-Swiss-Eph
+  situation for users planning closed-source commercial use.
+- `skyfield>=1.46` added to `[project.optional-dependencies] dev`
+  — test infrastructure only, never installed for runtime.
+
 ### Fixed (Task 015 — GeoPos input validation)
 - `GeoPos.__init__` now validates that latitude ∈ [-90, 90] and
   longitude ∈ [-180, 180], raising `ValueError` with the offending
