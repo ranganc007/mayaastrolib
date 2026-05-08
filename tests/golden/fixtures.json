@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Albert Einstein",
+    "date_utc": "1879-03-14T10:50:00",
+    "location": {
+      "lat": 48.4,
+      "lon": 10.0,
+      "elevation_m": 478
+    },
+    "rodden_rating": "AA",
+    "source": "Astro-Databank",
+    "expected_positions": {
+      "Sun": 353.5082672432039,
+      "Moon": 254.53316664868927,
+      "Mercury": 3.144902998059404,
+      "Venus": 16.985652513868207,
+      "Mars": 296.91460255587066,
+      "Jupiter": 327.4842190387672,
+      "Saturn": 4.189893210227107,
+      "Uranus": 151.28857923992845,
+      "Neptune": 37.87197960632514,
+      "Pluto": 54.72557033597229
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Frida Kahlo",
+    "date_utc": "1907-07-06T15:06:40",
+    "location": {
+      "lat": 19.333,
+      "lon": -99.167,
+      "elevation_m": 2240
+    },
+    "rodden_rating": "AA",
+    "source": "Astro-Databank",
+    "expected_positions": {
+      "Sun": 103.37617025084445,
+      "Moon": 59.71680940460462,
+      "Mercury": 126.33530926839914,
+      "Venus": 84.33988492471633,
+      "Mars": 283.39444941446635,
+      "Jupiter": 110.43570593253826,
+      "Saturn": 357.4466681039559,
+      "Uranus": 280.6133720223863,
+      "Neptune": 102.39678481980573,
+      "Pluto": 83.74608512330553
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Roald Amundsen",
+    "date_utc": "1872-07-16T02:46:48",
+    "location": {
+      "lat": 59.383,
+      "lon": 10.8,
+      "elevation_m": 5
+    },
+    "rodden_rating": "B",
+    "source": "Public biographical record",
+    "expected_positions": {
+      "Sun": 113.81032113852888,
+      "Moon": 232.28711448500587,
+      "Mercury": 134.7357699554636,
+      "Venus": 113.76931361145134,
+      "Mars": 97.88372508394775,
+      "Jupiter": 127.09761157225225,
+      "Saturn": 287.50422180298517,
+      "Uranus": 121.01628353420269,
+      "Neptune": 26.278685610052392,
+      "Pluto": 50.61298505683969
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  }
+]
