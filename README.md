@@ -28,7 +28,16 @@ print(sun)
 
 ## Documentation
 
-The original flatlib documentation lives at [http://flatlib.readthedocs.org/](http://flatlib.readthedocs.org/) and is largely still applicable — substitute `flatlib` with `mayaastrolib` in the import paths. Fork-specific documentation will follow.
+Fork-specific documentation (start here):
+
+- **[docs/FAQ.md](docs/FAQ.md)** — plain-English Q&A: what the library is, what it computes, what it does **not** do, threading, accuracy, licensing.
+- **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** — guided walkthrough from "what does this library do?" through the calculation pipeline to the package layout and gotchas.
+- **[docs/BIRTH-CHART-PRIMER.md](docs/BIRTH-CHART-PRIMER.md)** — how a birth chart is calculated (six stages), what the twelve houses traditionally mean, and what each planet conventionally signifies in each house (a 10×12 reference grid).
+- **[docs/PROPERTY-MIGRATION.md](docs/PROPERTY-MIGRATION.md)** — method-to-property API migration and 1.0 removal plan.
+- **[docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md)** — why this fork exists.
+- **[docs/KNOWN-BUGS.md](docs/KNOWN-BUGS.md)** — tracked bugs and fixes (e.g. pyswisseph 2.x eclipse keyword).
+
+The original flatlib documentation at [http://flatlib.readthedocs.org/](http://flatlib.readthedocs.org/) is largely still applicable — substitute `flatlib` with `mayaastrolib` in import paths.
 
 ## Installation
 

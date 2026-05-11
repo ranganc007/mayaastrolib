@@ -66,7 +66,7 @@ Before declaring any task complete, run in this order and confirm all pass:
 
 1. `ruff format --check .`
 2. `ruff check .`
-3. `mypy flatlib/` (directory is `flatlib/` until the rename task runs)
+3. `mypy mayaastrolib/`
 4. `pytest -x` (stop on first failure)
 5. `pytest --cov=mayaastrolib --cov-fail-under=80`
 6. Update `docs/PROJECT-LOG.md` with: date, task ID, what was done,
@@ -98,25 +98,40 @@ These should not be modified without explicit instruction:
 <!-- AUTO-MANAGED: project-description -->
 ## Current codebase state
 
-Last updated by Task 002b housekeeping (2026-05-07, branch `task-002b-housekeeping`).
+Last updated by Task 016 fixstar_mag caching (2026-05-08, branch `development`).
 
-- **Package name:** still `flatlib/` — rename to `mayaastrolib/` is Task 005, not yet done
-- **pyproject.toml:** EXISTS — PEP 621, setuptools backend; single source of truth for version (0.2.6), ruff, mypy, pytest, and coverage config. `pythonpath = ["."]` added in Task 002b.
-- **setup.py:** DELETED — build system is pyproject.toml only
-- **requirements.txt:** DELETED — runtime dep (`pyswisseph>=2.10.3.2`) and dev extras (`pytest`, `pytest-cov`, `ruff`, `mypy`) live in pyproject.toml
-- **README.rst:** DELETED — `README.md` is canonical; wired via `pyproject.toml [project] readme`
-- **scripts/:** DELETED — `scripts/build.py`, `scripts/clean.py`, `scripts/utils.py` removed
-- **CHANGELOG.md:** CREATED at repo root (Keep-a-Changelog format; [Unreleased] + [0.2.6])
-- **Version:** 0.2.6 unified via `importlib.metadata.version("mayaastrolib")` in `flatlib/__init__.py`; RECON mismatch resolved
-- **Dev venv:** create with `python3 -m venv .venv-<taskname>` then `pip install -e ".[dev]"`. Bare `pytest tests/` also works without editable install (via `pythonpath = ["."]`).
-- **Python locally:** 3.14.3 only — install 3.12 via pyenv before Task 004 to match CI matrix (3.10–3.12)
-- **Test baseline:** 5 tests, all pass (verified in both editable and bare-pythonpath flows); 34% coverage — below 80% target by design
-- **Lint state:** `ruff format --check` ~52 files need formatting; `ruff check` ~25 violations (rule set E/F/I/B/A/UP). Both addressed in Task 003.
-- **mypy:** 2 errors with `--ignore-missing-imports` (pyswisseph has no stubs) — unchanged from RECON
-- **Coverage target (`--cov=mayaastrolib`):** dormant until Task 005 renames the package directory from `flatlib/`
-- **Known latent bug:** `recipes/eclipses.py` uses `backward=` kwarg; pyswisseph 2.10 requires `backwards=` — crashes at runtime (candidate for Task 002a hotfix)
-- **Dep graph:** clean DAG, no cycles; `dignities.essential` is the most-imported module
-- **Next task:** Task 003 — `ruff format` / `ruff check` cleanup
+- **Package name:** `mayaastrolib/` — rename from `flatlib/` completed in Task 005. Canonical import: `from mayaastrolib import ...`. The `flatlib/` directory still exists as a compatibility shim (emits `DeprecationWarning`; will be removed in 1.0).
+- **Version:** 0.3.0 — unified via `importlib.metadata.version("mayaastrolib")` in `pyproject.toml`.
+- **pyproject.toml:** EXISTS — PEP 621, setuptools backend; single source of truth for version, ruff, mypy, pytest, and coverage config. `pythonpath = ["."]` set. UP031 in `[tool.ruff.lint] ignore`.
+- **setup.py:** DELETED — build system is pyproject.toml only.
+- **requirements.txt:** DELETED — runtime dep (`pyswisseph>=2.10.3.2`) and dev extras live in pyproject.toml `[dev]` extras.
+- **README.rst:** DELETED — `README.md` is canonical.
+- **scripts/:** DELETED — removed in Task 002.
+- **contrib/topical_almuten.py:** ARCHIVED as `contrib/topical_almuten.py.broken` (SyntaxError since 2021, never importable); `topical_almuten.README.md` documents the revival path.
+- **CI:** `.github/workflows/test.yml` EXISTS — GitHub Actions, matrix Python 3.10/3.11/3.12, runs ruff format check + ruff check + pytest + coverage against `mayaastrolib`.
+- **Dev venv:** `python3 -m venv .venv-<taskname>` then `pip install -e ".[dev]"`. Named per-task (`.venv-task002` through `.venv-task009`; no `.venv-task010` — Tasks 010–013 reused `.venv-task009`; `.venv-task014` created fresh because skyfield needed installing; Tasks 014, 015, and 016 all reused `.venv-task014` — no `.venv-task015` or `.venv-task016` created); all ignored by `.gitignore`.
+- **Python locally:** 3.14.3. CI targets 3.10–3.12.
+- **Tests:** 29 test files, 215 tests, all passing (+4 from Task 016 cache-correctness suite). Coverage ~88% (`--cov=mayaastrolib --cov-fail-under=80`).
+- **Lint state:** `ruff format --check` PASSES. `ruff check` PASSES. UP031 deferred — see `docs/RUFF-DEBT.md`.
+- **mypy:** 2 errors with `--ignore-missing-imports` (pyswisseph has no stubs).
+- **Known bugs:** None open. Eclipse `backward=` kwarg bug fixed in Task 004 (see `docs/KNOWN-BUGS.md`).
+- **Dep graph:** clean DAG, no cycles; `dignities.essential` is the most-imported module.
+- **LICENSING.md:** EXISTS at repo root — documents MIT (mayaastrolib) + LGPL (pyswisseph) + GPL/commercial (Swiss Ephemeris) licensing situation.
+- **Features completed (Tasks 004–016):**
+  - Task 004: Eclipse `backward=` → `backwards=` fix in `ephem/swe.py`; regression test `tests/test_eclipses.py`; CI workflow established (`.github/workflows/test.yml`)
+  - Task 004a: Smoke tests for 12 zero-coverage modules (dignities/predictives/protocols/tools); coverage 34% → 86%
+  - Task 005: Package renamed `flatlib/` → `mayaastrolib/`; flatlib compat shim added
+  - Task 006: `Chart.houseOf()`, `Chart.objectsInHouse()`, `Object.house`, `House.objects`; property migration via `mayaastrolib/_compat.py`; `docs/PROPERTY-MIGRATION.md`
+  - Task 007: `Datetime.from_pydatetime()`, `Datetime.now()`, `Datetime.to_pydatetime()`; DST and ISO 8601 deferred to `docs/IDEAS.md`
+  - Task 008: `dignities.essential` thread-safe via `terms_variant`/`faces_variant` kwargs; `setTerms()`/`setFaces()` deprecated
+  - Task 009: `Aspect.name`, `Aspect.activeObj`/`passiveObj`; `getAspect()` returns `None` (was sentinel); `getAspectOrSentinel()` deprecated (removed in 1.0); `ASPECT_NAMES` dict and 8 standard list constants (`LIST_MODERN_PLANETS`, `LIST_TROPICAL_DEFAULT`, `LIST_VEDIC_DEFAULT`, `LIST_LIGHTS`, `LIST_PERSONAL_PLANETS`, `LIST_SOCIAL_PLANETS`, `LIST_TRANSPERSONAL`, `LIST_LUNAR_NODES`) added to `const.py`; `docs/OBJECT-LISTS.md`
+  - Task 010: `Object.with_longitude(lon, *, preserve_speed=False)` — immutable replacement for in-place `relocate()`; `Object.antiscion()`/`cantiscion()` (new, preserve_speed=True); `Chart.profected(years=N)` / `Chart.profected(target_date=D)` returns symbolic chart; `Chart.is_symbolic` (bool) and `Chart.symbolic_kind` (str); speed-derived methods (`movement`, `isFast`, `isDirect`, `isRetrograde`, `isStationary`) return `None` when `lonspeed is None`; deprecated: `Object.relocate()`, `Object.antiscia()`/`cantiscia()`, `profections.compute()`; fixed: profected charts no longer carry stale natal retrograde state
+  - Task 011: `Chart.get()` dispatches by `const.LIST_HOUSES` / `const.LIST_ANGLES` membership (no more `startswith("House")`); `House.num` cached on `self._num` at `fromDict` time (no more `int(self.id[5:])`); 11 new dispatch tests in `tests/test_chart_dispatch.py`; internal-only refactor, no public API changes
+  - Task 012: Audit investigations (docs-only, no test-count change); Item 15: `House._OFFSET` confirmed as traditional 5° cusp-tolerance rule, renamed to `House._CUSP_TOLERANCE_DEG` with full docstring (old name kept as alias until 1.0); Item 16: `solarReturn(year)` semantics verified correct, docstring expanded; new `docs/AUDIT-INVESTIGATIONS.md`; configurable cusp tolerance and `solarReturnByAge()` deferred to `docs/IDEAS.md`
+  - Task 013: `Chart.solarReturn()` extended with `target_date=` kwarg (`year=` still works); `Chart.directions()` returns `PrimaryDirections(self)` (class NOT deprecated); `Chart.arabicPart(part_id)` calls new private `_getPart_impl`; `Chart.planetaryHour(date=None)` wraps `getHourTable`, defaults to chart date; deprecated: `tools.arabicparts.getPart(ID, chart)`; 18 new tests added
+  - Task 014: golden test fixtures (`tests/golden/`) — Skyfield-anchored planet-position tests for 3 reference charts (Einstein, Kahlo, Amundsen) at ±2 arcmin tolerance, plus self-consistency invariant suite (houses sum to 360°, cusps ordered, planets in valid ranges, profected charts symbolic); `skyfield>=1.46` added as dev-only dep; `LICENSING.md` clarifies the MIT + LGPL + GPL-Swiss-Eph commercial situation; 10 new test methods, 57 subtests; closes the headline reliability gap surfaced by the platform review
+  - Task 015: `GeoPos.__init__` validates `lat ∈ [-90, 90]` and `lon ∈ [-180, 180]` after `toFloat()` coercion; raises `ValueError` with the offending value; closes the silent-bad-chart bug surfaced by the platform review (`docs/REVIEW-2026-05-08.md`); 15 regression tests in `tests/test_geopos_validation.py`; new entry in `docs/KNOWN-BUGS.md` "Resolved"
+  - Task 016: `swisseph.fixstar2_mag` lookups cached per-process via `@functools.cache` on private `mayaastrolib.ephem.swe._fixstar_mag(star)` wrapper; 144x measured speedup on a 35-star pass (M2 / Python 3.14); no public API change; closes the only documented "really slow" path surfaced by the platform review; 4 cache-correctness regression tests in `tests/test_fixstar_mag_cache.py`
 <!-- END AUTO-MANAGED -->
 
 ## Goal anchor
