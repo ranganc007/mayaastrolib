@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 019 — Vedic divisional charts / Shodashavarga)
+- `mayaastrolib/vedic/divisional.py` — full BPHS Shodashavarga.
+- 15 *computed* vargas + D1 (rasi convenience):
+  - **D1** rasi, **D2** hora, **D3** drekkana, **D4** chaturthamsa,
+    **D7** saptamsa, **D9** navamsa, **D10** dasamsa, **D12**
+    dvadasamsa, **D16** shodasamsa, **D20** vimsamsa, **D24**
+    chaturvimsamsa, **D27** bhamsa, **D30** trimsamsa (unequal
+    segments), **D40** khavedamsa, **D45** akshavedamsa,
+    **D60** shastiamsa.
+- Each function takes a sidereal longitude and returns sign index
+  0..11. Pure functions; no Chart, no Datetime, no Ayanamsa.
+- `all_vargas(chart, ayanamsa=...)` — chart-level entry point
+  returning `{varga_name: {planet_id: sign_idx}}`. Handles
+  tropical-or-sidereal input.
+- `VARGA_NAMES` and `SIGN_NAMES` constants exported for
+  downstream display.
+- Internal `_segment(deg, n)` helper uses `int(deg * n / 30)`
+  rather than `int(deg // (30/n))` to avoid the float-imprecision
+  bug at boundaries where `30/9 = 3.333...3335` makes
+  `10.0 // 3.333... = 2` instead of the correct `3`.
+- 25 unit tests in `tests/test_vedic_divisional.py` covering
+  hora, drekkana, navamsa (full Aries progression + Taurus +
+  Gemini starts), trimsamsa (both parities × all 5 segments),
+  dvadasamsa, shastiamsa, and the chart-level `all_vargas`.
+
 ### Added (Task 018 — Vedic nakshatras)
 - `mayaastrolib/vedic/nakshatras.py` — 27-nakshatra arithmetic.
   - `NAKSHATRA_NAMES` — canonical Sanskrit names in BPHS order

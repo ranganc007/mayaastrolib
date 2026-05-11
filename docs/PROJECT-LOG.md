@@ -6,6 +6,40 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 019 — Vedic Divisional Charts (Shodashavarga)
+
+Branch: `task-019-vedic-divisional`. Prompt:
+`prompts/task-019-vedic-divisional.md`. Largest of the four P0
+modules by code volume; smallest by architectural risk (each varga
+is independent).
+
+### What was done
+
+- `mayaastrolib/vedic/divisional.py` — all 16 Shodashavarga
+  functions (D1, D2, D3, D4, D7, D9, D10, D12, D16, D20, D24, D27,
+  D30, D40, D45, D60) plus `all_vargas(chart, ayanamsa=...)`.
+- 25 unit tests in `tests/test_vedic_divisional.py`.
+
+### Verification
+
+- Tests: 259 → 284 (+25). All pass.
+- Coverage: 89.13% → 89.75%. `divisional.py` at near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Surprises / honest notes
+
+- **Float-imprecision bug** at boundaries: `int(deg // (30/9))`
+  for deg=10.0 returns 2 instead of 3, because `30/9 = 3.333…3335`
+  in float. Fixed via `_segment(deg, n) = int(deg * n / 30)`. The
+  navamsa test at lon=10.0° caught this — exactly the kind of
+  boundary the test was designed for.
+- Applied the same robust `_segment` helper to all vargas with
+  non-clean divisors (D7, D9, D10, D12, D16, D27, D45). The
+  clean-divisor vargas (D4=7.5, D20=1.5, D24=1.25, D40=0.75,
+  D60=0.5) keep `int(deg // divisor)` since float is exact there.
+
+---
+
 ## 2026-05-11 — Task 018 — Vedic Nakshatras
 
 Branch: `task-018-vedic-nakshatras`. Prompt:
