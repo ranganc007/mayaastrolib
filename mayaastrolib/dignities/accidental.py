@@ -377,91 +377,82 @@ class AccidentalDignity:
     # === Scores === #
 
     def getScoreProperties(self):
-        """Returns the accidental dignity score of the object
-        as dict.
+        """Returns the accidental dignity score of the object as a dict.
 
+        The bulk of the rules are "+N if flag else 0" (or 0/−M), driven
+        by the table below; the handful that need context (the Sun is
+        excluded, a 3-way split, two interacting flags) are handled
+        inline after the loop.
         """
         obj = self.obj
         score = {}
 
-        # Peregrine
-        isPeregrine = essential.isPeregrine(obj.id, obj.sign, obj.signlon)
-        score["peregrine"] = -5 if isPeregrine else 0
-
-        # Ruler-Ruler and Exalt-Exalt mutual receptions
+        # Peregrine, mutual receptions, house.
+        score["peregrine"] = -5 if essential.isPeregrine(obj.id, obj.sign, obj.signlon) else 0
         mr = self.eqMutualReceptions()
         score["mr_ruler"] = +5 if "ruler" in mr else 0
         score["mr_exalt"] = +4 if "exalt" in mr else 0
-
-        # House scores
         score["house"] = self.houseScore()
 
-        # Joys
-        score["joy_sign"] = +3 if self.inSignJoy() else 0
-        score["joy_house"] = +2 if self.inHouseJoy() else 0
+        # Simple flag rules: (key, flag, plus_if_true, value_if_false).
+        aspBen = self.aspectBenefics()
+        aspMal = self.aspectMalefics()
+        simple_rules = (
+            ("joy_sign", self.inSignJoy(), +3, 0),
+            ("joy_house", self.inHouseJoy(), +2, 0),
+            ("cazimi", self.isCazimi(), +5, 0),
+            ("combust", self.isCombust(), -6, 0),
+            ("under_sun", self.isUnderSun(), -4, 0),
+            ("north_node", self.isConjNorthNode(), -3, 0),
+            ("south_node", self.isConjSouthNode(), -5, 0),
+            ("benefic_asp0", const.CONJUNCTION in aspBen, +5, 0),
+            ("benefic_asp120", const.TRINE in aspBen, +4, 0),
+            ("benefic_asp60", const.SEXTILE in aspBen, +3, 0),
+            ("malefic_asp0", const.CONJUNCTION in aspMal, -5, 0),
+            ("malefic_asp180", const.OPPOSITION in aspMal, -4, 0),
+            ("malefic_asp90", const.SQUARE in aspMal, -3, 0),
+            ("auxilied", self.isAuxilied(), +5, 0),
+            ("surround", self.isSurrounded(), -5, 0),
+        )
+        for key, flag, plus, otherwise in simple_rules:
+            score[key] = plus if flag else otherwise
 
-        # Relations with sun
-        score["cazimi"] = +5 if self.isCazimi() else 0
-        score["combust"] = -6 if self.isCombust() else 0
-        score["under_sun"] = -4 if self.isUnderSun() else 0
-        score["no_under_sun"] = 0
-        if obj.id != const.SUN and not self.sunRelation():
-            score["no_under_sun"] = +5
+        # Context-dependent rules.
 
-        # Light
-        score["light"] = 0
-        if obj.id != const.SUN:
+        # Not "under the sun beams" — only meaningful for non-Sun bodies.
+        score["no_under_sun"] = +5 if (obj.id != const.SUN and not self.sunRelation()) else 0
+
+        # Light — the Sun has no "light" of its own.
+        if obj.id == const.SUN:
+            score["light"] = 0
+        else:
             score["light"] = +1 if self.isAugmentingLight() else -1
 
-        # Orientality
-        score["orientality"] = 0
-        if obj.id in [const.SATURN, const.JUPITER, const.MARS]:
+        # Orientality — diurnal planets favour the east, nocturnal the west.
+        if obj.id in (const.SATURN, const.JUPITER, const.MARS):
             score["orientality"] = +2 if self.isOriental() else -2
-        elif obj.id in [const.VENUS, const.MERCURY, const.MOON]:
+        elif obj.id in (const.VENUS, const.MERCURY, const.MOON):
             score["orientality"] = -2 if self.isOriental() else +2
+        else:
+            score["orientality"] = 0
 
-        # Moon nodes
-        score["north_node"] = -3 if self.isConjNorthNode() else 0
-        score["south_node"] = -5 if self.isConjSouthNode() else 0
-
-        # Direction and speed
-        score["direction"] = 0
-        if obj.id not in [const.SUN, const.MOON]:
+        # Direction and speed — the luminaries are never retrograde.
+        if obj.id in (const.SUN, const.MOON):
+            score["direction"] = 0
+        else:
             score["direction"] = +4 if obj.isDirect() else -5
         score["speed"] = +2 if obj.isFast() else -2
 
-        # Aspects to benefics
-        aspBen = self.aspectBenefics()
-        score["benefic_asp0"] = +5 if const.CONJUNCTION in aspBen else 0
-        score["benefic_asp120"] = +4 if const.TRINE in aspBen else 0
-        score["benefic_asp60"] = +3 if const.SEXTILE in aspBen else 0
-
-        # Aspects to malefics
-        aspMal = self.aspectMalefics()
-        score["malefic_asp0"] = -5 if const.CONJUNCTION in aspMal else 0
-        score["malefic_asp180"] = -4 if const.OPPOSITION in aspMal else 0
-        score["malefic_asp90"] = -3 if const.SQUARE in aspMal else 0
-
-        # Auxily and Surround
-        score["auxilied"] = +5 if self.isAuxilied() else 0
-        score["surround"] = -5 if self.isSurrounded() else 0
-
-        # Voc and Feral
+        # Feral and void — "void of course" only counts if not also feral.
         score["feral"] = -3 if self.isFeral() else 0
         score["void"] = -2 if (self.isVoc() and score["feral"] == 0) else 0
 
-        # Haiz
+        # Haiz — three-way (haiz / contra-haiz / neither).
         haiz = self.haiz()
-        score["haiz"] = 0
-        if haiz == HAIZ:
-            score["haiz"] = +3
-        elif haiz == CHAIZ:
-            score["haiz"] = -2
+        score["haiz"] = +3 if haiz == HAIZ else (-2 if haiz == CHAIZ else 0)
 
-        # Moon via combusta
-        score["viacombusta"] = 0
-        if obj.id == const.MOON and viaCombusta(obj):
-            score["viacombusta"] = -2
+        # Moon in the Via Combusta.
+        score["viacombusta"] = -2 if (obj.id == const.MOON and viaCombusta(obj)) else 0
 
         return score
 

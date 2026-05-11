@@ -125,6 +125,59 @@ class AccidentalDignityTests(unittest.TestCase):
                 ):
                     bool(getattr(ad, method_name)())  # must not raise
 
+    def test_score_properties_regression(self):
+        # Pins getScoreProperties for a fixed chart × planet so the
+        # table-driven refactor (Task 034) — and any future change — is
+        # caught if it alters the numbers.
+        chart = Chart(Datetime("1947/08/15", "00:00", "+05:30"), GeoPos("28n36", "77e12"))
+        expected_totals = {
+            const.SUN: 5,
+            const.MOON: 10,
+            const.MARS: 13,
+            const.JUPITER: -10,
+            const.SATURN: 15,
+            const.MERCURY: -7,
+            const.VENUS: -11,
+        }
+        for pid, expected in expected_totals.items():
+            ad = accidental.AccidentalDignity(chart.getObject(pid), chart)
+            self.assertEqual(ad.score(), expected, f"{pid}")
+            # The full Sun score-properties dict (a stable anchor).
+            if pid == const.SUN:
+                self.assertEqual(
+                    dict(sorted(ad.getScoreProperties().items())),
+                    {
+                        "auxilied": 0,
+                        "benefic_asp0": 5,
+                        "benefic_asp120": 0,
+                        "benefic_asp60": 0,
+                        "cazimi": 0,
+                        "combust": 0,
+                        "direction": 0,
+                        "feral": 0,
+                        "haiz": 0,
+                        "house": 4,
+                        "joy_house": 0,
+                        "joy_sign": 3,
+                        "light": 0,
+                        "malefic_asp0": -5,
+                        "malefic_asp180": 0,
+                        "malefic_asp90": 0,
+                        "mr_exalt": 0,
+                        "mr_ruler": 0,
+                        "no_under_sun": 0,
+                        "north_node": 0,
+                        "orientality": 0,
+                        "peregrine": 0,
+                        "south_node": 0,
+                        "speed": -2,
+                        "surround": 0,
+                        "under_sun": 0,
+                        "viacombusta": 0,
+                        "void": 0,
+                    },
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

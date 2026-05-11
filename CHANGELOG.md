@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (Task 034 — accidental-dignity score-rule refactor)
+- `AccidentalDignity.getScoreProperties` rewritten: the 15 "+N if flag
+  else 0" rules (peregrine excepted) now come from a single
+  `(key, flag, plus, otherwise)` table iterated in one loop; the ~7
+  context-dependent rules (Sun-excluded light/no-under-sun/direction,
+  3-way haiz, the feral↔void interaction, Moon-only via-combusta,
+  orientality's diurnal/nocturnal split) stay inline and clearly
+  commented. **Behaviour is identical** — verified by a regression
+  test that pins the score and the full Sun score-properties dict for a
+  fixed chart. The method dropped from ~88 LOC of scattered assignments
+  to ~55 with the rule values centralised; cyclomatic complexity down
+  considerably. Closes the `getScoreProperties` complexity hotspot from
+  the platform review.
+- New `test_score_properties_regression` in
+  `tests/test_dignities_accidental_factors.py` (the behaviour anchor).
+
 ### Added (Task 033 — per-factor tests for the smoke-only modules)
 - `tests/test_protocols_temperament_factors.py` and
   `tests/test_dignities_accidental_factors.py` — exercise the

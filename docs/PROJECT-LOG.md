@@ -6,6 +6,35 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 034 — AccidentalDignity Score-Rule Refactor
+
+Branch: `task-034-accidental-refactor`. Closes the
+`getScoreProperties` complexity hotspot from the platform review.
+
+### What was done
+
+- `AccidentalDignity.getScoreProperties`: the 15 simple "+N if flag
+  else 0" rules → a `(key, flag, plus, otherwise)` table + one loop;
+  the ~7 context-dependent rules stay inline with clear comments.
+  Behaviour unchanged.
+- Added `test_score_properties_regression` to
+  `tests/test_dignities_accidental_factors.py` — pins the score (Sun 5,
+  Moon 10, Mars 13, Jupiter −10, Saturn 15, Mercury −7, Venus −11) and
+  the full Sun score-properties dict for the 1947-08-15 Delhi chart, so
+  this refactor (and any future one) is caught if it alters the numbers.
+
+### Verification
+
+- Captured the baseline output for all 7 planets *before* refactoring;
+  after the refactor every value matches exactly.
+- Tests: 541 → 542 (+1). All pass. Coverage: 94% → 94.07%.
+- ruff format/check clean. mypy at the documented baseline.
+- `accidental.py` 480 → 471 LOC overall (the method itself ~88 → ~55).
+  The file's bulk is `haiz()` + the receptions methods, not this one;
+  the complexity reduction is the point, not the line count.
+
+---
+
 ## 2026-05-11 — Task 033 — Per-Factor Tests for the Smoke-Only Modules
 
 Branch: `task-033-protocol-factor-tests`. Closes the platform-review
