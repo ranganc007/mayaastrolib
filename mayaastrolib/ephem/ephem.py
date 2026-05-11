@@ -13,6 +13,7 @@ accessing the ephemeris.
 
 """
 
+from mayaastrolib import const
 from mayaastrolib.datetime import Datetime
 from mayaastrolib.lists import FixedStarList, GenericList, HouseList, ObjectList
 from mayaastrolib.object import FixedStar, GenericObject, House, Object
@@ -22,29 +23,67 @@ from . import eph, swe
 # === Objects === #
 
 
-def getObject(ID, date, pos):
-    """Returns an ephemeris object."""
-    obj = eph.getObject(ID, date.jd, pos.lat, pos.lon)
+def getObject(
+    ID,
+    date,
+    pos,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
+    """Returns an ephemeris object.
+
+    See :func:`mayaastrolib.ephem.eph.getObject` for ``zodiac``/``ayanamsa``
+    semantics.
+    """
+    obj = eph.getObject(
+        ID,
+        date.jd,
+        pos.lat,
+        pos.lon,
+        zodiac=zodiac,
+        ayanamsa=ayanamsa,
+    )
     return Object.fromDict(obj)
 
 
-def getObjectList(IDs, date, pos):
+def getObjectList(
+    IDs,
+    date,
+    pos,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
     """Returns a list of objects."""
-    objList = [getObject(ID, date, pos) for ID in IDs]
+    objList = [getObject(ID, date, pos, zodiac=zodiac, ayanamsa=ayanamsa) for ID in IDs]
     return ObjectList(objList)
 
 
 # === Houses and angles === #
 
 
-def getHouses(date, pos, hsys):
+def getHouses(
+    date,
+    pos,
+    hsys,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
     """Returns the lists of houses and angles.
 
     Since houses and angles are computed at the
     same time, this function should be fast.
 
+    See :func:`mayaastrolib.ephem.eph.getObject` for ``zodiac``/``ayanamsa``
+    semantics.
     """
-    houses, angles = eph.getHouses(date.jd, pos.lat, pos.lon, hsys)
+    houses, angles = eph.getHouses(
+        date.jd,
+        pos.lat,
+        pos.lon,
+        hsys,
+        zodiac=zodiac,
+        ayanamsa=ayanamsa,
+    )
     hList = [House.fromDict(house) for house in houses]
     aList = [GenericObject.fromDict(angle) for angle in angles]
     return (HouseList(hList), GenericList(aList))

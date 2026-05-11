@@ -19,23 +19,56 @@ from . import swe, tools
 # === Objects === #
 
 
-def getObject(ID, jd, lat, lon):
-    """Returns an object for a specific date and
-    location.
+def _shift_to_sidereal(lon_value, jd, ayanamsa):
+    """Convert a tropical longitude to sidereal for the given Julian day.
 
+    Used by the PF/Syzygy paths, which compute against tropical Sun/Moon
+    and then shift the result. Avoids cycles by importing lazily.
+    """
+    from mayaastrolib.datetime import Datetime
+    from mayaastrolib.vedic.ayanamsa import to_sidereal
+
+    date_proxy = Datetime.fromJD(jd, "+00:00")
+    return to_sidereal(lon_value, date_proxy, ayanamsa=ayanamsa)
+
+
+def getObject(
+    ID,
+    jd,
+    lat,
+    lon,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
+    """Returns an object for a specific date and location.
+
+    Args:
+        ID: Object ID.
+        jd: Julian Day (UT).
+        lat: Geographic latitude.
+        lon: Geographic longitude.
+        zodiac: ``const.ZODIAC_TROPICAL`` (default) or ``const.ZODIAC_SIDEREAL``.
+        ayanamsa: Used only when ``zodiac == ZODIAC_SIDEREAL``.
     """
     if ID == const.SOUTH_NODE:
-        obj = swe.sweObject(const.NORTH_NODE, jd)
+        obj = swe.sweObject(const.NORTH_NODE, jd, zodiac=zodiac, ayanamsa=ayanamsa)
         obj.update({"id": const.SOUTH_NODE, "lon": angle.norm(obj["lon"] + 180)})
     elif ID == const.PARS_FORTUNA:
+        # Pars Fortuna's diurnal check needs tropical Sun/MC for correct
+        # horizon math. The formula (Asc + Moon - Sun) is offset-invariant,
+        # so we compute tropical then shift the result if needed.
         pflon = tools.pfLon(jd, lat, lon)
+        if zodiac == const.ZODIAC_SIDEREAL:
+            pflon = _shift_to_sidereal(pflon, jd, ayanamsa)
         obj = {"id": ID, "lon": pflon, "lat": 0, "lonspeed": 0, "latspeed": 0}
     elif ID == const.SYZYGY:
+        # Syzygy is a JD-finding iteration; once found, Moon at that
+        # moment is computed in the target zodiac directly.
         szjd = tools.syzygyJD(jd)
-        obj = swe.sweObject(const.MOON, szjd)
+        obj = swe.sweObject(const.MOON, szjd, zodiac=zodiac, ayanamsa=ayanamsa)
         obj["id"] = const.SYZYGY
     else:
-        obj = swe.sweObject(ID, jd)
+        obj = swe.sweObject(ID, jd, zodiac=zodiac, ayanamsa=ayanamsa)
 
     _signInfo(obj)
     return obj
@@ -44,9 +77,23 @@ def getObject(ID, jd, lat, lon):
 # === Houses === #
 
 
-def getHouses(jd, lat, lon, hsys):
+def getHouses(
+    jd,
+    lat,
+    lon,
+    hsys,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
     """Returns lists of houses and angles."""
-    houses, angles = swe.sweHouses(jd, lat, lon, hsys)
+    houses, angles = swe.sweHouses(
+        jd,
+        lat,
+        lon,
+        hsys,
+        zodiac=zodiac,
+        ayanamsa=ayanamsa,
+    )
     for house in houses:
         _signInfo(house)
     for ang in angles:

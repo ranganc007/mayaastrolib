@@ -12,6 +12,7 @@ accessible.
 """
 
 import functools
+import threading
 
 import swisseph
 
@@ -60,13 +61,55 @@ def setPath(path):
     swisseph.set_ephe_path(path)
 
 
+# === Sidereal mode plumbing (Task 017) === #
+
+# pyswisseph's ``set_sid_mode`` mutates process-global state. This lock
+# guards the ``(set_sid_mode, calc_ut)`` pair so concurrent sidereal
+# computations for different ayanamsas don't interleave. Tropical calls
+# pass no ``FLG_SIDEREAL`` flag and bypass this lock entirely.
+_SIDEREAL_CALC_LOCK = threading.Lock()
+
+
+def _sidereal_calc_ut(jd, sweObj, ayanamsa):
+    """Thread-safe sidereal :func:`swisseph.calc_ut` call.
+
+    Resolves the ayanamsa name lazily to avoid an import cycle with
+    :mod:`mayaastrolib.vedic.ayanamsa`.
+    """
+    from mayaastrolib.vedic.ayanamsa import _swe_mode_for
+
+    with _SIDEREAL_CALC_LOCK:
+        swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
+        return swisseph.calc_ut(jd, sweObj, swisseph.FLG_SIDEREAL)
+
+
+def _sidereal_houses_ex(jd, lat, lon, hsys, ayanamsa):
+    """Thread-safe sidereal :func:`swisseph.houses_ex` call."""
+    from mayaastrolib.vedic.ayanamsa import _swe_mode_for
+
+    with _SIDEREAL_CALC_LOCK:
+        swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
+        return swisseph.houses_ex(jd, lat, lon, hsys, swisseph.FLG_SIDEREAL)
+
+
 # === Object functions === #
 
 
-def sweObject(obj, jd):
-    """Returns an object from the Ephemeris."""
+def sweObject(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Returns an object from the Ephemeris.
+
+    Args:
+        obj: Object ID (e.g. ``const.SUN``).
+        jd: Julian Day (UT).
+        zodiac: ``const.ZODIAC_TROPICAL`` (default) or
+            ``const.ZODIAC_SIDEREAL``.
+        ayanamsa: Used only when ``zodiac == ZODIAC_SIDEREAL``.
+    """
     sweObj = SWE_OBJECTS[obj]
-    sweList, flg = swisseph.calc_ut(jd, sweObj)
+    if zodiac == const.ZODIAC_SIDEREAL:
+        sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
+    else:
+        sweList, flg = swisseph.calc_ut(jd, sweObj)
     return {
         "id": obj,
         "lon": sweList[0],
@@ -76,10 +119,16 @@ def sweObject(obj, jd):
     }
 
 
-def sweObjectLon(obj, jd):
-    """Returns the longitude of an object."""
+def sweObjectLon(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Returns the longitude of an object.
+
+    See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
+    """
     sweObj = SWE_OBJECTS[obj]
-    sweList, flg = swisseph.calc_ut(jd, sweObj)
+    if zodiac == const.ZODIAC_SIDEREAL:
+        sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
+    else:
+        sweList, flg = swisseph.calc_ut(jd, sweObj)
     return sweList[0]
 
 
@@ -97,10 +146,16 @@ def sweNextTransit(obj, jd, lat, lon, flag):
 # === Houses and angles === #
 
 
-def sweHouses(jd, lat, lon, hsys):
-    """Returns lists of houses and angles."""
-    hsys = SWE_HOUSESYS[hsys]
-    hlist, ascmc = swisseph.houses(jd, lat, lon, hsys)
+def sweHouses(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Returns lists of houses and angles.
+
+    See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
+    """
+    hsys_b = SWE_HOUSESYS[hsys]
+    if zodiac == const.ZODIAC_SIDEREAL:
+        hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
+    else:
+        hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
     # Add first house to the end of 'hlist' so that we
     # can compute house sizes with an iterator
     hlist += (hlist[0],)
@@ -121,10 +176,13 @@ def sweHouses(jd, lat, lon, hsys):
     return (houses, angles)
 
 
-def sweHousesLon(jd, lat, lon, hsys):
+def sweHousesLon(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
     """Returns lists with house and angle longitudes."""
-    hsys = SWE_HOUSESYS[hsys]
-    hlist, ascmc = swisseph.houses(jd, lat, lon, hsys)
+    hsys_b = SWE_HOUSESYS[hsys]
+    if zodiac == const.ZODIAC_SIDEREAL:
+        hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
+    else:
+        hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
     angles = [ascmc[0], ascmc[1], angle.norm(ascmc[0] + 180), angle.norm(ascmc[1] + 180)]
     return (hlist, angles)
 

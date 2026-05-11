@@ -43,6 +43,11 @@ class Chart:
         Optional arguments are:
         - hsys: house system
         - IDs: list of objects to include
+        - zodiac: ``const.ZODIAC_TROPICAL`` (default) or
+          ``const.ZODIAC_SIDEREAL``. When sidereal, longitudes are
+          shifted by the chosen ayanamsa.
+        - ayanamsa: One of ``const.LIST_AYANAMSAS``. Used only when
+          ``zodiac=ZODIAC_SIDEREAL``. Default ``AYANAMSA_LAHIRI``.
         - is_symbolic: True if this chart represents derived/symbolic
           positions (e.g. profections). Default False.
         - symbolic_kind: a string identifying the kind of symbolic
@@ -53,14 +58,35 @@ class Chart:
         # Handle optional arguments
         hsys = kwargs.get("hsys", const.HOUSES_DEFAULT)
         IDs = kwargs.get("IDs", const.LIST_OBJECTS_TRADITIONAL)
+        zodiac = kwargs.get("zodiac", const.ZODIAC_TROPICAL)
+        ayanamsa = kwargs.get("ayanamsa", const.AYANAMSA_LAHIRI)
+
+        if zodiac not in const.LIST_ZODIACS:
+            raise ValueError(f"Unknown zodiac {zodiac!r}; supported: {const.LIST_ZODIACS}")
+        if ayanamsa not in const.LIST_AYANAMSAS:
+            raise ValueError(f"Unknown ayanamsa {ayanamsa!r}; supported: {const.LIST_AYANAMSAS}")
 
         self.date = date
         self.pos = pos
         self.hsys = hsys
+        self.zodiac = zodiac
+        self.ayanamsa = ayanamsa
         self.is_symbolic = kwargs.get("is_symbolic", False)
         self.symbolic_kind = kwargs.get("symbolic_kind", None)
-        self.objects = ephem.getObjectList(IDs, date, pos)
-        self.houses, self.angles = ephem.getHouses(date, pos, hsys)
+        self.objects = ephem.getObjectList(
+            IDs,
+            date,
+            pos,
+            zodiac=zodiac,
+            ayanamsa=ayanamsa,
+        )
+        self.houses, self.angles = ephem.getHouses(
+            date,
+            pos,
+            hsys,
+            zodiac=zodiac,
+            ayanamsa=ayanamsa,
+        )
         self._link_objects_to_houses()
 
     def __repr__(self):
@@ -88,6 +114,8 @@ class Chart:
         chart.date = self.date
         chart.pos = self.pos
         chart.hsys = self.hsys
+        chart.zodiac = getattr(self, "zodiac", const.ZODIAC_TROPICAL)
+        chart.ayanamsa = getattr(self, "ayanamsa", const.AYANAMSA_LAHIRI)
         chart.is_symbolic = getattr(self, "is_symbolic", False)
         chart.symbolic_kind = getattr(self, "symbolic_kind", None)
         chart.objects = self.objects.copy()
