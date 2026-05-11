@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (Task 027 — zodiac-aware predictives under sidereal mode)
+- `Chart.solarReturn()` and `Chart.profected(target_date=...)` now work
+  correctly on **sidereal** charts. Previously the solar-return search
+  (`ephem.tools.solarReturnJD`) always compared against the *tropical*
+  Sun while the natal-Sun longitude it was given was sidereal — a
+  zodiac mismatch that produced a wrong return moment. `zodiac` and
+  `ayanamsa` now thread through `tools.solarReturnJD` →
+  `eph.nextSolarReturn`/`prevSolarReturn` → `ephem.nextSolarReturn`/
+  `prevSolarReturn`, and `Chart` passes its own `zodiac`/`ayanamsa`.
+  The returned solar-return chart is also built with the same
+  `zodiac`/`ayanamsa` as the natal. Tropical charts are unaffected
+  (the new args default to tropical).
+- `Chart.profected()` already preserved the chart's `zodiac`/`ayanamsa`
+  via `copy.deepcopy`; the `target_date=` path now uses the
+  zodiac-correct solar-return interpolation too.
+- `Chart.directions()` now **raises `NotImplementedError` on a sidereal
+  chart** — primary directions are an equatorial-coordinate technique
+  and the ecliptic-longitude conversion would carry the ayanamsa shift
+  into the right-ascension values. (It's also not a Vedic technique.)
+  Build the chart with the default zodiac for directions.
+- 11 unit tests in `tests/test_sidereal_predictives.py` (sidereal SR
+  returns to natal sidereal Sun; SR/profected inherit zodiac+ayanamsa;
+  birth-year SR ≈ birth; tropical SR/profected/directions unchanged;
+  sidereal `directions()` raises).
+
 ### Added (Task 024b — Tajika Muntha, Lord of Year, Sahams)
 - `mayaastrolib/vedic/tajika.py` extended:
   - `muntha(natal_chart, target_year, ayanamsa=...)` → the Muntha (the

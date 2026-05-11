@@ -72,13 +72,23 @@ def syzygyJD(jd):
     return jd
 
 
-def solarReturnJD(jd, lon, forward=True):
-    """Finds the julian date before or after
-    'jd' when the sun is at longitude 'lon'.
-    It searches forward by default.
+def solarReturnJD(
+    jd,
+    lon,
+    forward=True,
+    zodiac=const.ZODIAC_TROPICAL,
+    ayanamsa=const.AYANAMSA_LAHIRI,
+):
+    """Finds the julian date before or after 'jd' when the sun is at
+    longitude 'lon'. Searches forward by default.
 
+    The ``zodiac``/``ayanamsa`` arguments select which zodiac ``lon``
+    is measured in (and hence which the search compares against) — for
+    a sidereal chart's solar return, pass ``ZODIAC_SIDEREAL`` and the
+    chart's ayanamsa so the natal-Sun longitude and the transiting-Sun
+    longitude are in the same frame.
     """
-    sun = swe.sweObjectLon(const.SUN, jd)
+    sun = swe.sweObjectLon(const.SUN, jd, zodiac=zodiac, ayanamsa=ayanamsa)
     if forward:
         dist = angle.distance(sun, lon)
     else:
@@ -86,7 +96,7 @@ def solarReturnJD(jd, lon, forward=True):
 
     while abs(dist) > MAX_ERROR:
         jd = jd + dist / 0.9833  # Sun mean motion
-        sun = swe.sweObjectLon(const.SUN, jd)
+        sun = swe.sweObjectLon(const.SUN, jd, zodiac=zodiac, ayanamsa=ayanamsa)
         dist = angle.closestdistance(sun, lon)
     return jd
 

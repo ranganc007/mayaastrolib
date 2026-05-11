@@ -6,6 +6,38 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 027 — Zodiac-Aware Predictives Under Sidereal Mode
+
+Branch: `task-027-sidereal-predictives`. Closes the architectural
+limitation flagged in Task 017's CHANGELOG.
+
+### What was done
+
+- Threaded `zodiac`/`ayanamsa` (defaulting to tropical) through
+  `ephem/tools.py::solarReturnJD`, `ephem/eph.py::nextSolarReturn` /
+  `prevSolarReturn`, `ephem/ephem.py::nextSolarReturn` / `prevSolarReturn`.
+- `Chart.solarReturn` and `Chart._years_to` pass `self.zodiac` /
+  `self.ayanamsa`; the SR chart is built with the same zodiac/ayanamsa.
+- `Chart.directions()` raises `NotImplementedError` on a sidereal chart.
+- 11 new tests in `tests/test_sidereal_predictives.py`.
+
+### Verification
+
+- Tests: 450 → 461 (+11). All pass. Coverage: 91.68% → 91.72%.
+- ruff format/check clean. mypy at the documented baseline.
+- Sidereal SR for the 1980 chart, 2024: SR Sun's sidereal lon ==
+  natal Sun's sidereal lon (60.8189°) — confirms the fix.
+- Tropical SR/profected/directions verified unchanged.
+
+### Notes
+
+- `directions()` is rejected on sidereal charts rather than silently
+  converting back to tropical — primary directions need
+  equatorial-derived coordinates and aren't a Vedic technique anyway,
+  so an explicit error is the right call.
+
+---
+
 ## 2026-05-11 — Task 024b — Tajika Muntha / Lord of Year / Sahams
 
 Branch: `task-024b-tajika-balas`. Prompt: none (scoped from the

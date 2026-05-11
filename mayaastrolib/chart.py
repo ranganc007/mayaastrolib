@@ -281,8 +281,18 @@ class Chart:
         longitudes to the legacy API.
         """
         sun = self.getObject(const.SUN)
-        prevSr = ephem.prevSolarReturn(target_date, sun.lon)
-        nextSr = ephem.nextSolarReturn(target_date, sun.lon)
+        prevSr = ephem.prevSolarReturn(
+            target_date,
+            sun.lon,
+            zodiac=self.zodiac,
+            ayanamsa=self.ayanamsa,
+        )
+        nextSr = ephem.nextSolarReturn(
+            target_date,
+            sun.lon,
+            zodiac=self.zodiac,
+            ayanamsa=self.ayanamsa,
+        )
         sub_year = 30 * (target_date.jd - prevSr.jd) / (nextSr.jd - prevSr.jd)
         age = math.floor((target_date.jd - self.date.jd) / 365.25)
         return 30 * age + sub_year
@@ -374,8 +384,19 @@ class Chart:
             anchor = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
         else:
             anchor = target_date
-        srDate = ephem.nextSolarReturn(anchor, sun.lon)
-        return Chart(srDate, self.pos, hsys=self.hsys)
+        srDate = ephem.nextSolarReturn(
+            anchor,
+            sun.lon,
+            zodiac=self.zodiac,
+            ayanamsa=self.ayanamsa,
+        )
+        return Chart(
+            srDate,
+            self.pos,
+            hsys=self.hsys,
+            zodiac=self.zodiac,
+            ayanamsa=self.ayanamsa,
+        )
 
     # === Other predictives and tools (Task 013) === #
 
@@ -395,7 +416,23 @@ class Chart:
 
         Returns:
             A :class:`PrimaryDirections` instance.
+
+        Raises:
+            NotImplementedError: if this chart is sidereal. Primary
+                directions are an equatorial-coordinate technique and
+                the conversion goes through ecliptic longitude; on a
+                sidereal chart the longitudes carry the ayanamsa shift,
+                which would corrupt the right-ascension values. Build
+                the chart with the default (tropical) zodiac for
+                directions. (Primary directions are also not a Vedic
+                technique, so this is rarely wanted on a sidereal chart.)
         """
+        if self.zodiac == const.ZODIAC_SIDEREAL:
+            raise NotImplementedError(
+                "Primary directions require tropical (equatorial-derived) "
+                "coordinates; this chart is sidereal. Rebuild it with the "
+                "default zodiac to use directions()."
+            )
         from .predictives.primarydirections import PrimaryDirections
 
         return PrimaryDirections(self)

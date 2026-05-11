@@ -117,15 +117,19 @@ def getFixedStarList(IDs, date):
 # === Solar returns === #
 
 
-def nextSolarReturn(date, lon):
-    """Returns the next date when sun is at longitude 'lon'."""
-    jd = eph.nextSolarReturn(date.jd, lon)
+def nextSolarReturn(date, lon, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Returns the next date when the sun is at longitude 'lon'.
+
+    See :func:`mayaastrolib.ephem.tools.solarReturnJD` for the
+    ``zodiac``/``ayanamsa`` semantics.
+    """
+    jd = eph.nextSolarReturn(date.jd, lon, zodiac=zodiac, ayanamsa=ayanamsa)
     return Datetime.fromJD(jd, date.utcoffset)
 
 
-def prevSolarReturn(date, lon):
-    """Returns the previous date when sun is at longitude 'lon'."""
-    jd = eph.prevSolarReturn(date.jd, lon)
+def prevSolarReturn(date, lon, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Returns the previous date when the sun is at longitude 'lon'."""
+    jd = eph.prevSolarReturn(date.jd, lon, zodiac=zodiac, ayanamsa=ayanamsa)
     return Datetime.fromJD(jd, date.utcoffset)
 
 

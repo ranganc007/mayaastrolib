@@ -114,14 +114,18 @@ def getFixedStar(ID, jd):
 # === Solar returns === #
 
 
-def nextSolarReturn(jd, lon):
-    """Return the JD of the next solar return."""
-    return tools.solarReturnJD(jd, lon, True)
+def nextSolarReturn(jd, lon, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return the JD of the next solar return.
+
+    See :func:`mayaastrolib.ephem.tools.solarReturnJD` for the
+    ``zodiac``/``ayanamsa`` semantics.
+    """
+    return tools.solarReturnJD(jd, lon, True, zodiac=zodiac, ayanamsa=ayanamsa)
 
 
-def prevSolarReturn(jd, lon):
+def prevSolarReturn(jd, lon, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
     """Returns the JD of the previous solar return."""
-    return tools.solarReturnJD(jd, lon, False)
+    return tools.solarReturnJD(jd, lon, False, zodiac=zodiac, ayanamsa=ayanamsa)
 
 
 # === Sunrise and sunsets === #
