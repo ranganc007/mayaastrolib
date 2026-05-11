@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 020 — Vimshottari Dasha)
+- `mayaastrolib/vedic/dasha.py` — Vimshottari Mahadasha computation.
+  - `vimshottari(chart, target=None, ayanamsa=...)` — main entry
+    point. Returns the full 120-year MD sequence plus, if target
+    given, the MD/AD/Pratyantar active at that moment.
+  - `antardashas(md)` — the 9 Antardashas within a Mahadasha.
+  - `pratyantar_dashas(ad)` — the 9 Pratyantars within an
+    Antardasha.
+  - `DashaPeriod` and `VimshottariResult` are frozen dataclasses.
+- `VIMSHOTTARI_YEARS` constants (Ketu 7 / Venus 20 / Sun 6 / Moon
+  10 / Mars 7 / Rahu 18 / Jupiter 16 / Saturn 19 / Mercury 17 = 120)
+  exposed for downstream use. `DAYS_PER_VIMSHOTTARI_YEAR = 365.25`
+  per BPHS / Muhurta Chintamani convention.
+- 19 unit tests in `tests/test_vedic_dasha.py` covering birth
+  balance (boundary, midpoint), MD sequence (120-year span, lord
+  order, durations), AD nesting (9 ADs sum to MD, Venus AD = 20/120
+  of MD), Pratyantar nesting, current-period lookup
+  (target-at-birth returns first MD; outside-range returns None),
+  and the tropical-vs-sidereal-chart agreement invariant.
+
 ### Added (Task 019 — Vedic divisional charts / Shodashavarga)
 - `mayaastrolib/vedic/divisional.py` — full BPHS Shodashavarga.
 - 15 *computed* vargas + D1 (rasi convenience):
