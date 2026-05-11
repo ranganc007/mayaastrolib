@@ -6,6 +6,38 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 022 — Vedic Sade Sati
+
+Branch: `task-022-vedic-sadesati`. Prompt:
+`prompts/task-022-vedic-sadesati.md`. Small P1 module.
+
+### What was done
+
+- `mayaastrolib/vedic/sadesati.py` — `sade_sati`,
+  `sade_sati_for_year`, `small_panoti`, `saturn_sidereal_sign`,
+  plus the `SadeSatiPhase` frozen dataclass and the internal
+  `_phase_for_diff` / `_normalise_sign` helpers.
+- 22 unit tests in `tests/test_vedic_sadesati.py`.
+
+### Verification
+
+- Tests: 320 → 342 (+22). All pass.
+- Coverage: 90.37% → 90.52%. `sadesati.py` near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Notes
+
+- Saturn sidereal signs pinned in tests (Lahiri): mid-2024 →
+  Aquarius (10), mid-2025 → Pisces (11), 2020-01-01 → Sagittarius
+  (8). These anchor the end-to-end phase tests.
+- The core phase logic (`_phase_for_diff`) is tested directly
+  without the ephemeris — only the position pins depend on
+  swisseph. Keeps the logic test fast and deterministic.
+- Day-precise Sade Sati start/end dates (Saturn ingress search) and
+  remedial recommendations are out of scope — follow-up.
+
+---
+
 ## 2026-05-11 — Task 021 — Vedic Ashtakavarga
 
 Branch: `task-021-vedic-ashtakavarga`. Prompt:

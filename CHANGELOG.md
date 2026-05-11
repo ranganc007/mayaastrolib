@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 022 — Vedic Sade Sati)
+- `mayaastrolib/vedic/sadesati.py` — the ~7.5-year Saturn-over-Moon
+  transit phase detector.
+  - `sade_sati(natal_moon_sign, target, ayanamsa=...)` → frozen
+    `SadeSatiPhase(active, phase, saturn_sign, natal_moon_sign,
+    severity)`. Phases: `"rising"` (Saturn 12th from Moon,
+    moderate), `"peak"` (Saturn in Moon's sign / janma shani,
+    intense), `"setting"` (Saturn 2nd from Moon, mild),
+    `"not-active"`.
+  - `sade_sati_for_year(natal_moon_sign, year, ayanamsa=...)` —
+    checks the year's midpoint (July 1, 12:00 UTC).
+  - `small_panoti(natal_moon_sign, target, ayanamsa=...)` →
+    `"ashtama_shani"` (Saturn 8th from Moon), `"kantaka_shani"`
+    (Saturn 4th from Moon), or `None`.
+  - `saturn_sidereal_sign(target, ayanamsa=...)` — Saturn's
+    sidereal sign index 0..11.
+- `natal_moon_sign` accepts either a sign index (0..11) or a
+  sign-name string. Saturn's geocentric longitude is
+  location-independent at the day level, so no GeoPos is needed.
+- 22 unit tests in `tests/test_vedic_sadesati.py` covering the
+  phase logic directly (no ephemeris), sign normalisation, pinned
+  Saturn sidereal positions (Aquarius mid-2024, Pisces mid-2025,
+  Sagittarius 2020), all four phases, both panotis, and the
+  int-vs-name input equivalence.
+
 ### Added (Task 021 — Vedic Ashtakavarga)
 - `mayaastrolib/vedic/ashtakavarga.py` — the bindu (benefic-point)
   system per BPHS ch. 66.
