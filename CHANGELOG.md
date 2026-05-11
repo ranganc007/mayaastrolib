@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 026 — Vedic Yoga Detection)
+- `mayaastrolib/vedic/yogas.py` — named planetary-combination detection.
+  - `detect_yogas(chart, ayanamsa=...)` → list of frozen
+    `YogaResult(name, sanskrit, planets, description)`. Handles both
+    tropical and sidereal charts.
+  - Detects the 5 Pancha Mahapurusha yogas — **Ruchaka** (Mars),
+    **Bhadra** (Mercury), **Hamsa** (Jupiter), **Malavya** (Venus),
+    **Sasha** (Saturn): the planet in its own or exaltation sign *and*
+    in a kendra — plus **Gaja-Kesari** (Jupiter 1st/4th/7th/10th from
+    the Moon), **Budha-Aditya** (Mercury+Sun same sign), and
+    **Chandra-Mangala** (Moon+Mars same sign).
+  - Kendras are Whole-Sign: `(planet_sign − asc_sign) % 12 + 1 ∈
+    {1, 4, 7, 10}`, regardless of the chart's `hsys` — the Vedic
+    convention.
+  - Classical Vedic dignity tables (`OWN_SIGNS`, `EXALTATION_SIGN`,
+    `DEBILITATION_SIGN`) plus `is_in_own_or_exaltation`,
+    `is_debilitated`, `house_from` helpers exported.
+- 23 unit tests in `tests/test_vedic_yogas.py`: the dignity/house
+  helpers, the core detection logic exercised directly over
+  sign-index dicts (no ephemeris), each yoga's positive and negative
+  cases, the kendra requirement, and the tropical-vs-sidereal-chart
+  agreement.
+- Deferred to a follow-up: Raja yogas (kendra-trikona lord
+  conjunction/aspect), Dhana yogas, Vipareeta Raja yogas, Neecha
+  Bhanga (debilitation cancellation), Kemadruma, and the various
+  yoga-cancellation conditions.
+
 ### Added (Task 024 — Vedic Tajika: varshapravesh + Mudda dasha)
 - `mayaastrolib/vedic/tajika.py` — the core Tajika annual-chart slice.
   - `varshapravesh(natal_chart, target_year, ayanamsa=...)` → the

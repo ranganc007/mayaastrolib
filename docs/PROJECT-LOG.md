@@ -6,6 +6,52 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 026 — Vedic Yoga Detection
+
+Branch: `task-026-vedic-yogas`. Prompt:
+`prompts/task-026-vedic-yogas.md`. P3 module (the interpretation
+layer). Done before Task 025 (KP) — yogas are self-contained and
+make a satisfying capstone for the Vedic foundation; KP's "249
+sub-lord" framing needs a closer look before shipping.
+
+### What was done
+
+- `mayaastrolib/vedic/yogas.py` — `detect_yogas`, the 5 Pancha
+  Mahapurusha + Gaja-Kesari + Budha-Aditya + Chandra-Mangala
+  detectors, `YogaResult` frozen dataclass, classical Vedic dignity
+  tables (`OWN_SIGNS`/`EXALTATION_SIGN`/`DEBILITATION_SIGN`), and the
+  `is_in_own_or_exaltation` / `is_debilitated` / `house_from` helpers.
+- 23 unit tests in `tests/test_vedic_yogas.py`.
+
+### Verification
+
+- Tests: 372 → 395 (+23). All pass.
+- Coverage: 91.06% → 91.18%. `yogas.py` near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Decisions / honest notes
+
+- **Whole-Sign kendras.** A planet is "in a kendra" by sign offset
+  from the Ascendant's sign, not by the chart's `hsys` house number.
+  This is the Vedic convention — using Placidus house numbers for
+  yoga detection would be wrong. Documented in the module.
+- **Vedic dignity tables are encoded fresh** — they are *not* the
+  Western essential-dignity table in `dignities/tables.py` (which is
+  keyed by sign and tuned for Hellenistic rulerships). E.g. Vedic
+  Mars exalts in Capricorn; the Western table's "exalt" entries are
+  organised differently.
+- Test-helper bug caught during the run: `_signs(JUPITER=...)` as a
+  kwarg produces the key `'JUPITER'`, but the dict is keyed by
+  `const.JUPITER` = `"Jupiter"`. Fixed by mapping kwarg names through
+  `getattr(const, name)`.
+- Three description strings exceeded the 100-char line limit (ruff
+  format doesn't wrap string literals) — shortened.
+- Out of scope (follow-up): Raja/Dhana/Vipareeta-Raja yogas, Neecha
+  Bhanga, Kemadruma, and the cancellation conditions. KP sub-lords
+  (Task 025) also still pending.
+
+---
+
 ## 2026-05-11 — Task 024 — Vedic Tajika (varshapravesh + Mudda dasha)
 
 Branch: `task-024-vedic-tajika`. Prompt:
