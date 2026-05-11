@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 017b — additional ayanamsas)
+- `mayaastrolib/vedic/ayanamsa.py` now supports four ayanamsas, not
+  just Lahiri: `lahiri`, `krishnamurti` (KP), `raman`, `fagan_bradley`
+  (Western sidereal). New constants `AYANAMSA_KRISHNAMURTI`,
+  `AYANAMSA_RAMAN`, `AYANAMSA_FAGAN_BRADLEY` added to `const`;
+  `LIST_AYANAMSAS` extended to all four.
+- `Chart(zodiac=ZODIAC_SIDEREAL, ayanamsa=...)` accepts any of them
+  (the validation was already there; the list just got longer).
+- `ayanamsa.get(ayanamsa, date)` is now a generic dispatcher backed by
+  the `_AYANAMSA_TO_SWE_MODE` table; the per-name functions
+  (`lahiri`/`krishnamurti`/`raman`/`fagan_bradley`) are thin wrappers.
+  This collapses the old hardcoded Lahiri-only `get` into a clean
+  table-driven form — all downstream consumers (`to_sidereal`,
+  `to_tropical`, `_sidereal_calc_ut` in `ephem/swe.py`) work with any
+  ayanamsa unchanged.
+- 11 unit tests in `tests/test_vedic_ayanamsa_variants.py`.
+
 ### Added (Task 026 — Vedic Yoga Detection)
 - `mayaastrolib/vedic/yogas.py` — named planetary-combination detection.
   - `detect_yogas(chart, ayanamsa=...)` → list of frozen

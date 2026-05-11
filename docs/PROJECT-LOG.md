@@ -6,6 +6,36 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 017b — Additional Ayanamsas
+
+Branch: `task-017b-extra-ayanamsas`. Follow-up to Task 017.
+
+### What was done
+
+- `vedic/ayanamsa.py`: added `krishnamurti`, `raman`, `fagan_bradley`
+  alongside `lahiri`; collapsed `get()` into a generic table-driven
+  dispatcher; the per-name functions are now thin `get(...)` wrappers.
+- `const.py`: `AYANAMSA_KRISHNAMURTI` / `AYANAMSA_RAMAN` /
+  `AYANAMSA_FAGAN_BRADLEY`; `LIST_AYANAMSAS` extended.
+- 11 unit tests in `tests/test_vedic_ayanamsa_variants.py`.
+
+### Verification
+
+- Tests: 395 → 406 (+11). All pass. Coverage: 91.18% → 91.24%.
+- ruff format/check clean. mypy at the documented baseline.
+- Values at J2000.0: Lahiri 23.857°, Krishnamurti 23.760°, Raman
+  22.411°, Fagan-Bradley 24.740°.
+
+### Honest note
+
+- swisseph's `SIDM_KRISHNAMURTI` differs from Lahiri by ~0.1°, NOT by
+  the "Lahiri − 0.00375°" rule of thumb some KP texts quote — that
+  rule describes a *different* KP-ayanamsa variant. We use swisseph's
+  canonical `SIDM_KRISHNAMURTI`. Documented in the const comment and
+  the module docstring.
+
+---
+
 ## 2026-05-11 — Task 026 — Vedic Yoga Detection
 
 Branch: `task-026-vedic-yogas`. Prompt:

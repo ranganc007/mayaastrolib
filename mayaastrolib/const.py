@@ -110,10 +110,22 @@ ZODIAC_SIDEREAL = "sidereal"
 LIST_ZODIACS = [ZODIAC_TROPICAL, ZODIAC_SIDEREAL]
 
 # --- Ayanamsa (sidereal-mode offsets) ---
-# Lahiri ayanamsa — canonical Vedic, Indian Astronomical Ephemeris standard.
-# Additional ayanamsas (KP, Raman, Fagan-Bradley) will be added in Task 017b.
+# Lahiri — canonical Vedic, Indian Astronomical Ephemeris standard.
 AYANAMSA_LAHIRI = "lahiri"
-LIST_AYANAMSAS = [AYANAMSA_LAHIRI]
+# Krishnamurti — the KP system's ayanamsa (pyswisseph SIDM_KRISHNAMURTI;
+# K.S. Krishnamurti's own value, ~0.1° smaller than Lahiri).
+AYANAMSA_KRISHNAMURTI = "krishnamurti"
+# Raman — B.V. Raman's ayanamsa (slightly different epoch from Lahiri).
+AYANAMSA_RAMAN = "raman"
+# Fagan-Bradley — the Western sidereal standard (not used in Vedic;
+# provided for comparison and for Western-sidereal consumers).
+AYANAMSA_FAGAN_BRADLEY = "fagan_bradley"
+LIST_AYANAMSAS = [
+    AYANAMSA_LAHIRI,
+    AYANAMSA_KRISHNAMURTI,
+    AYANAMSA_RAMAN,
+    AYANAMSA_FAGAN_BRADLEY,
+]
 
 # Object movement
 DIRECT = "Direct"

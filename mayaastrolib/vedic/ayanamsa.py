@@ -2,12 +2,19 @@
 
 The ayanamsa is a slowly-varying angle (~50 arcseconds/year) measuring
 precession of the equinoxes since the canonical epoch of each tradition.
-Lahiri ayanamsa is the standard for Indian Vedic astrology; the Indian
-Astronomical Ephemeris uses it.
+
+Supported:
+- **Lahiri** — the standard for Indian Vedic astrology; the Indian
+  Astronomical Ephemeris uses it.
+- **Krishnamurti** — the KP system's ayanamsa (K.S. Krishnamurti's own
+  value; ~0.1° smaller than Lahiri).
+- **Raman** — B.V. Raman's ayanamsa.
+- **Fagan-Bradley** — the Western sidereal standard (not used in Vedic;
+  provided for comparison and Western-sidereal consumers).
 
 References:
 - Indian Astronomical Ephemeris (Lahiri canonical implementation)
-- pyswisseph ``swe.get_ayanamsa_ut(jd)`` (Lahiri at IAU 1976 precision)
+- pyswisseph ``swe.get_ayanamsa_ut(jd)`` with ``set_sid_mode``
 - IAU 1976 nutation/precession model
 """
 
@@ -20,6 +27,9 @@ from mayaastrolib import const
 # Map our string constants to pyswisseph integer mode IDs.
 _AYANAMSA_TO_SWE_MODE = {
     const.AYANAMSA_LAHIRI: swisseph.SIDM_LAHIRI,
+    const.AYANAMSA_KRISHNAMURTI: swisseph.SIDM_KRISHNAMURTI,
+    const.AYANAMSA_RAMAN: swisseph.SIDM_RAMAN,
+    const.AYANAMSA_FAGAN_BRADLEY: swisseph.SIDM_FAGAN_BRADLEY,
 }
 
 # Lock guarding ``swisseph.set_sid_mode`` + ``swisseph.get_ayanamsa_ut``,
@@ -38,40 +48,53 @@ def _swe_mode_for(ayanamsa):
     return _AYANAMSA_TO_SWE_MODE[ayanamsa]
 
 
-def lahiri(date):
-    """Lahiri ayanamsa in degrees at the given UT-based ``date``.
-
-    The Lahiri ayanamsa (named for N. C. Lahiri, who chaired the 1955
-    Indian Calendar Reform Committee) is the canonical sidereal offset
-    used by the Indian Astronomical Ephemeris. Returns degrees;
-    positive means sidereal longitude < tropical longitude.
+def get(ayanamsa, date):
+    """Return the named ayanamsa in degrees at the UT-based ``date``.
 
     Args:
+        ayanamsa: One of ``const.LIST_AYANAMSAS``.
         date: A :class:`~mayaastrolib.datetime.Datetime`.
 
     Returns:
-        Ayanamsa value at ``date.jd`` in decimal degrees.
+        The ayanamsa value at ``date.jd`` in decimal degrees. Positive
+        means sidereal longitude < tropical longitude.
+    """
+    with _AYANAMSA_LOCK:
+        swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
+        return swisseph.get_ayanamsa_ut(date.jd)
+
+
+def lahiri(date):
+    """Lahiri ayanamsa in degrees at ``date``.
+
+    Named for N. C. Lahiri, who chaired the 1955 Indian Calendar Reform
+    Committee; the canonical sidereal offset of the Indian Astronomical
+    Ephemeris.
 
     Example:
         >>> from mayaastrolib.datetime import Datetime
         >>> from mayaastrolib.vedic.ayanamsa import lahiri
         >>> lahiri(Datetime("2000/01/01", "12:00", "+00:00"))  # ~23.857
     """
-    with _AYANAMSA_LOCK:
-        swisseph.set_sid_mode(_swe_mode_for(const.AYANAMSA_LAHIRI))
-        return swisseph.get_ayanamsa_ut(date.jd)
+    return get(const.AYANAMSA_LAHIRI, date)
 
 
-def get(ayanamsa, date):
-    """Return the named ayanamsa in degrees at ``date``.
+def krishnamurti(date):
+    """Krishnamurti (KP) ayanamsa in degrees at ``date``.
 
-    Dispatch helper that resolves a string ayanamsa name to the
-    corresponding implementation. Currently only Lahiri is supported;
-    additional ayanamsas (KP, Raman, Fagan-Bradley) follow in Task 017b.
+    Used by the Krishnamurti Paddhati system; ~0.1° smaller than Lahiri.
     """
-    if ayanamsa == const.AYANAMSA_LAHIRI:
-        return lahiri(date)
-    raise ValueError(f"Unknown ayanamsa {ayanamsa!r}; supported: {const.LIST_AYANAMSAS}")
+    return get(const.AYANAMSA_KRISHNAMURTI, date)
+
+
+def raman(date):
+    """B.V. Raman's ayanamsa in degrees at ``date``."""
+    return get(const.AYANAMSA_RAMAN, date)
+
+
+def fagan_bradley(date):
+    """Fagan-Bradley (Western sidereal) ayanamsa in degrees at ``date``."""
+    return get(const.AYANAMSA_FAGAN_BRADLEY, date)
 
 
 def to_sidereal(tropical_lon, date, ayanamsa=const.AYANAMSA_LAHIRI):
