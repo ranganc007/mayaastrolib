@@ -16,13 +16,24 @@ Detects:
 - **Neecha Bhanga Raja Yoga** — a debilitated planet whose debilitation
   is cancelled (dispositor or the would-be-exalted planet in a kendra).
 - **Kemadruma Yoga** — no graha in the 2nd or 12th sign from the Moon.
+- A set of **lesser yogas** — Amala (a benefic in the 10th from the
+  Lagna/Moon), Adhi (benefics in the 6th/7th/8th from the Moon),
+  Lakshmi (9th lord dignified in a kendra/trikona), Saraswati (Jupiter,
+  Venus, Mercury all in kendras/trikonas/2nd), Kahala (4th and 9th
+  lords in mutual kendras), Vasumati (all benefics in upachayas),
+  Sunapha/Anapha/Durudhara (planets around the Moon), and Vesi/Vasi/
+  Ubhayachari (planets around the Sun).
+
+`detect_yogas_with_strength` returns the same set paired with a rough
+strength score (`yoga_strength`): +2 if a yoga planet is in its own or
+exaltation sign, −2 if debilitated, +1 if in a kendra/trikona.
 
 Houses are computed Whole-Sign (sign offset from the Ascendant's sign),
 the Vedic convention, regardless of the chart's house system.
 
-Still deferred: yoga *strength* scoring, finer Neecha-Bhanga conditions
-(navamsa exaltation, dispositor-aspect), Gaja-Kesari cancellation, and
-the dozens of named lesser yogas (Lakshmi, Saraswati, Gaja, etc.).
+Still deferred: finer Neecha-Bhanga conditions (navamsa exaltation,
+dispositor-aspect), Gaja-Kesari cancellation, a classical
+Shadbala-weighted yoga strength, and the long tail of named yogas.
 
 References:
 - BPHS ch. 75-78 (Mahapurusha, Raja, Dhana, Vipareeta, Neecha Bhanga)
@@ -354,6 +365,189 @@ def _detect_extended(planet_signs, asc_sign):
     return results
 
 
+# Benefic grahas for the "benefics in good houses" yogas. (Mercury is
+# conditionally benefic; the waxing-Moon nuance is not modelled here.)
+_BENEFICS = (const.JUPITER, const.VENUS, const.MERCURY)
+# Houses considered "good": kendras + trikonas + the 2nd.
+_GOOD_HOUSES = (1, 2, 4, 5, 7, 9, 10)
+# Upachaya houses (growth houses).
+UPACHAYA_HOUSES = (3, 6, 10, 11)
+
+
+def _yoga(name, sanskrit, planets, description):
+    return YogaResult(name=name, sanskrit=sanskrit, planets=tuple(planets), description=description)
+
+
+def _detect_lesser(planet_signs, asc_sign):
+    """Detect the "lesser" named yogas — Amala, Adhi, Lakshmi, Saraswati,
+    Kahala, Vasumati, Sunapha/Anapha/Durudhara, Vesi/Vasi/Ubhayachari.
+
+    Args:
+        planet_signs: Mapping of planet ID → sign index (0..11) for the
+            7 classical planets.
+        asc_sign: The Ascendant's sign index.
+
+    Returns:
+        A list of :class:`YogaResult`.
+    """
+    results = []
+    house_of = {p: house_from(asc_sign, s) for p, s in planet_signs.items()}
+    moon_sign = planet_signs[const.MOON]
+    sun_sign = planet_signs[const.SUN]
+    # House from the Moon / from the Sun for each planet.
+    house_from_moon = {p: house_from(moon_sign, s) for p, s in planet_signs.items()}
+    house_from_sun = {p: house_from(sun_sign, s) for p, s in planet_signs.items()}
+
+    # --- Amala Yoga: a benefic in the 10th from the Lagna or the Moon ---
+    amala_planets = [p for p in _BENEFICS if house_of[p] == 10 or house_from_moon[p] == 10]
+    if amala_planets:
+        results.append(
+            _yoga(
+                "Amala Yoga",
+                "Amala",
+                amala_planets,
+                "A benefic in the 10th from the Lagna or Moon — lasting reputation.",
+            )
+        )
+
+    # --- Adhi Yoga: benefics in the 6th, 7th, and 8th from the Moon ---
+    if all(any(house_from_moon[b] == h for b in _BENEFICS) for h in (6, 7, 8)):
+        results.append(
+            _yoga(
+                "Adhi Yoga",
+                "Adhi",
+                _BENEFICS,
+                "Benefics in the 6th, 7th and 8th from the Moon — authority, success.",
+            )
+        )
+
+    # --- Lakshmi Yoga: 9th lord in own/exaltation, in a kendra/trikona ---
+    ninth_lord = house_lord(9, asc_sign)
+    ninth_lord_sign = planet_signs.get(ninth_lord)
+    if (
+        ninth_lord_sign is not None
+        and is_in_own_or_exaltation(ninth_lord, ninth_lord_sign)
+        and house_of[ninth_lord] in (KENDRA_HOUSES + TRIKONA_HOUSES)
+    ):
+        results.append(
+            _yoga(
+                "Lakshmi Yoga",
+                "Lakshmi",
+                (ninth_lord,),
+                "9th lord dignified in a kendra/trikona — wealth, fortune.",
+            )
+        )
+
+    # --- Saraswati Yoga: Jupiter, Venus, Mercury all in good houses ---
+    if all(house_of[p] in _GOOD_HOUSES for p in (const.JUPITER, const.VENUS, const.MERCURY)):
+        results.append(
+            _yoga(
+                "Saraswati Yoga",
+                "Saraswati",
+                (const.JUPITER, const.VENUS, const.MERCURY),
+                "Jupiter, Venus and Mercury in kendras/trikonas/2nd — learning, eloquence.",
+            )
+        )
+
+    # --- Kahala Yoga: 4th lord and 9th lord in mutual kendras ---
+    fourth_lord = house_lord(4, asc_sign)
+    f_sign = planet_signs.get(fourth_lord)
+    n_sign = planet_signs.get(ninth_lord)
+    if (
+        fourth_lord != ninth_lord
+        and f_sign is not None
+        and n_sign is not None
+        and house_from(f_sign, n_sign) in KENDRA_HOUSES
+    ):
+        results.append(
+            _yoga(
+                "Kahala Yoga",
+                "Kahala",
+                (fourth_lord, ninth_lord),
+                "4th and 9th lords in mutual kendras — drive, leadership.",
+            )
+        )
+
+    # --- Vasumati Yoga: every benefic in an upachaya house ---
+    if all(house_of[p] in UPACHAYA_HOUSES for p in _BENEFICS):
+        results.append(
+            _yoga(
+                "Vasumati Yoga",
+                "Vasumati",
+                _BENEFICS,
+                "All benefics in upachaya houses (3/6/10/11) — accumulating wealth.",
+            )
+        )
+
+    # --- Lunar conjunction yogas: Sunapha / Anapha / Durudhara ---
+    # A planet (other than the Sun) in the 2nd / 12th from the Moon.
+    non_sun = [p for p in _CLASSICAL_PLANETS if p not in (const.SUN, const.MOON)]
+    in_2nd_from_moon = [p for p in non_sun if house_from_moon[p] == 2]
+    in_12th_from_moon = [p for p in non_sun if house_from_moon[p] == 12]
+    if in_2nd_from_moon and in_12th_from_moon:
+        results.append(
+            _yoga(
+                "Durudhara Yoga",
+                "Durudhara",
+                tuple(sorted(set(in_2nd_from_moon + in_12th_from_moon))),
+                "Planets in both the 2nd and 12th from the Moon — comfort, generosity.",
+            )
+        )
+    elif in_2nd_from_moon:
+        results.append(
+            _yoga(
+                "Sunapha Yoga",
+                "Sunapha",
+                tuple(in_2nd_from_moon),
+                "A planet in the 2nd from the Moon — self-earned wealth.",
+            )
+        )
+    elif in_12th_from_moon:
+        results.append(
+            _yoga(
+                "Anapha Yoga",
+                "Anapha",
+                tuple(in_12th_from_moon),
+                "A planet in the 12th from the Moon — well-being, repute.",
+            )
+        )
+
+    # --- Solar conjunction yogas: Vesi / Vasi / Ubhayachari ---
+    # A planet (other than the Moon) in the 2nd / 12th from the Sun.
+    non_moon = [p for p in _CLASSICAL_PLANETS if p not in (const.SUN, const.MOON)]
+    in_2nd_from_sun = [p for p in non_moon if house_from_sun[p] == 2]
+    in_12th_from_sun = [p for p in non_moon if house_from_sun[p] == 12]
+    if in_2nd_from_sun and in_12th_from_sun:
+        results.append(
+            _yoga(
+                "Ubhayachari Yoga",
+                "Ubhayachari",
+                tuple(sorted(set(in_2nd_from_sun + in_12th_from_sun))),
+                "Planets on both sides of the Sun — balanced, well-rounded.",
+            )
+        )
+    elif in_2nd_from_sun:
+        results.append(
+            _yoga(
+                "Vesi Yoga",
+                "Vesi",
+                tuple(in_2nd_from_sun),
+                "A planet in the 2nd from the Sun — moderate fortune, repute.",
+            )
+        )
+    elif in_12th_from_sun:
+        results.append(
+            _yoga(
+                "Vasi Yoga",
+                "Vasi",
+                tuple(in_12th_from_sun),
+                "A planet in the 12th from the Sun — gains through effort.",
+            )
+        )
+
+    return results
+
+
 _CLASSICAL_PLANETS = (
     const.SUN,
     const.MOON,
@@ -363,6 +557,38 @@ _CLASSICAL_PLANETS = (
     const.VENUS,
     const.SATURN,
 )
+
+
+def yoga_strength(yoga, planet_signs, asc_sign):
+    """Return a small integer strength score for a detected yoga.
+
+    For each planet named in ``yoga.planets``: +2 if it is in its own or
+    exaltation sign, −2 if debilitated, and +1 if it sits in a kendra or
+    trikona from the Lagna. The total is the yoga's strength — higher is
+    a more potent expression of the yoga. (A rough, transparent metric,
+    not a classical Shadbala-weighted score.)
+
+    Args:
+        yoga: A :class:`YogaResult`.
+        planet_signs: Mapping of planet ID → sign index (0..11).
+        asc_sign: The Ascendant's sign index.
+
+    Returns:
+        An integer.
+    """
+    score = 0
+    good_houses = KENDRA_HOUSES + TRIKONA_HOUSES
+    for p in yoga.planets:
+        sign = planet_signs.get(p)
+        if sign is None:
+            continue
+        if is_in_own_or_exaltation(p, sign):
+            score += 2
+        elif is_debilitated(p, sign):
+            score -= 2
+        if house_from(asc_sign, sign) in good_houses:
+            score += 1
+    return score
 
 
 def detect_yogas(chart, ayanamsa=const.AYANAMSA_LAHIRI):
@@ -376,6 +602,33 @@ def detect_yogas(chart, ayanamsa=const.AYANAMSA_LAHIRI):
     Returns:
         A list of :class:`YogaResult`, possibly empty.
     """
+    planet_signs, asc_sign = _chart_signs(chart, ayanamsa)
+    return (
+        _detect(planet_signs, asc_sign)
+        + _detect_extended(planet_signs, asc_sign)
+        + _detect_lesser(planet_signs, asc_sign)
+    )
+
+
+def detect_yogas_with_strength(chart, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Like :func:`detect_yogas` but returns ``(YogaResult, strength)`` pairs.
+
+    The strength is from :func:`yoga_strength`. The list is sorted by
+    descending strength.
+    """
+    planet_signs, asc_sign = _chart_signs(chart, ayanamsa)
+    yogas = (
+        _detect(planet_signs, asc_sign)
+        + _detect_extended(planet_signs, asc_sign)
+        + _detect_lesser(planet_signs, asc_sign)
+    )
+    scored = [(y, yoga_strength(y, planet_signs, asc_sign)) for y in yogas]
+    scored.sort(key=lambda pair: pair[1], reverse=True)
+    return scored
+
+
+def _chart_signs(chart, ayanamsa):
+    """Return ``(planet_signs, asc_sign)`` (sidereal sign indices) for a chart."""
 
     def sid_sign(obj):
         if chart.zodiac == const.ZODIAC_SIDEREAL:
@@ -386,4 +639,4 @@ def detect_yogas(chart, ayanamsa=const.AYANAMSA_LAHIRI):
 
     planet_signs = {p: sid_sign(chart.getObject(p)) for p in _CLASSICAL_PLANETS}
     asc_sign = sid_sign(chart.getAngle(const.ASC))
-    return _detect(planet_signs, asc_sign) + _detect_extended(planet_signs, asc_sign)
+    return planet_signs, asc_sign

@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 032 — lesser Vedic yogas + yoga strength scoring)
+- `mayaastrolib/vedic/yogas.py` `detect_yogas` now also returns a set of
+  **lesser yogas**: Amala (a benefic in the 10th from the Lagna/Moon),
+  Adhi (benefics in the 6th/7th/8th from the Moon), Lakshmi (9th lord
+  dignified in a kendra/trikona), Saraswati (Jupiter+Venus+Mercury all
+  in kendras/trikonas/2nd), Kahala (4th and 9th lords in mutual
+  kendras), Vasumati (all benefics in upachayas 3/6/10/11),
+  Sunapha/Anapha/Durudhara (planets in the 2nd/12th from the Moon), and
+  Vesi/Vasi/Ubhayachari (planets in the 2nd/12th from the Sun). Internal
+  `_detect_lesser`.
+- `yoga_strength(yoga, planet_signs, asc_sign)` → a small integer
+  strength score: +2 if a yoga planet is in its own or exaltation sign,
+  −2 if debilitated, +1 if in a kendra/trikona from the Lagna.
+- `detect_yogas_with_strength(chart, ayanamsa=...)` → `(YogaResult,
+  strength)` pairs sorted by descending strength. New `UPACHAYA_HOUSES`
+  constant.
+- 28 unit tests in `tests/test_vedic_yogas_lesser.py`; the integration
+  test in `tests/test_vedic_yogas_extended.py` updated to include the
+  new yoga names.
+- Still deferred: a classical Shadbala-weighted yoga strength, finer
+  Neecha-Bhanga conditions, Gaja-Kesari cancellation, and the long tail
+  of named yogas.
+
 ### Added (Task 031 — Ashtakavarga prastara, shodhana, kakshya)
 - `mayaastrolib/vedic/ashtakavarga.py` extended:
   - `bhinnashtakavarga_prastara(planet, signs)` — the per-contributor

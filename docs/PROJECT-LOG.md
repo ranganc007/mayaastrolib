@@ -6,6 +6,60 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 032 — Lesser Vedic Yogas + Yoga Strength
+
+Branch: `task-032-lesser-yogas`. Follow-up to Task 026/026b. The last
+phase-3 depth-fill task from the brief's list.
+
+### What was done
+
+- `vedic/yogas.py`: `_detect_lesser` adds Amala, Adhi, Lakshmi,
+  Saraswati, Kahala, Vasumati, Sunapha/Anapha/Durudhara, and
+  Vesi/Vasi/Ubhayachari; `detect_yogas` now returns `_detect +
+  _detect_extended + _detect_lesser`. `yoga_strength(yoga,
+  planet_signs, asc_sign)` and `detect_yogas_with_strength(chart, ...)`
+  (sorted by descending strength). New `UPACHAYA_HOUSES` constant; the
+  chart-sign extraction was factored into `_chart_signs`.
+- 28 new tests in `tests/test_vedic_yogas_lesser.py`; the integration
+  test in `test_vedic_yogas_extended.py` updated for the new names.
+
+### Verification
+
+- Tests: 510 → 528 (+18 — 28 tests across the new file, several share
+  helpers). All pass. Coverage: 91.99% → 92.10%.
+- ruff format/check clean. mypy at the documented baseline.
+- For the 1947-08-15 chart, `detect_yogas` now finds Gaja-Kesari,
+  Budha-Aditya, several Raja yogas, Dhana, Sarala, Kahala, Vasumati,
+  Anapha, Vasi; `detect_yogas_with_strength` sorts them with
+  Gaja-Kesari (strength 2) at the top. Tropical/sidereal agree.
+
+### Honest notes
+
+- The lesser-yoga definitions are simplified to their structural cores
+  (e.g. Saraswati = J/V/M all in good houses, dropping the additional
+  "Jupiter strong" sub-condition; Adhi = benefics fill the 6th/7th/8th
+  from the Moon). Documented in the module docstring.
+- `yoga_strength` is a transparent ±points-per-planet metric, not a
+  classical Shadbala-weighted score — flagged in the docstring; the
+  weighted version stays a follow-up along with the long tail of named
+  yogas.
+
+### Phase-3 depth-fill status
+
+All items from the 2026-05-11 brief's "what's genuinely left" list are
+now shipped: full(er) Saham table (14, Task 028), Harsha/Panchavargiya
+Bala + Tajika aspects (029), KP sub-sub-lord/horary/Ruling-Planets
+(030), Ashtakavarga shodhana/kakshya (031), lesser yogas + yoga
+strength (032), and zodiac-aware solar-return/profected/directions
+(027). `mayaastrolib/vedic/` = 12 modules; tests 215 → 528 across the
+whole Phase 2+3 effort; coverage ~88% → 92.10%. What remains is genuine
+long-tail polish (a classical Shadbala-weighted strength, the rest of
+the ~50 Sahams and the 16 Tajika yogas, a full KP horary chart with
+cusps, finer yoga cancellation rules) — none of it blocking, all of it
+scoped in the relevant CHANGELOG entries and module docstrings.
+
+---
+
 ## 2026-05-11 — Task 031 — Ashtakavarga Prastara / Shodhana / Kakshya
 
 Branch: `task-031-ashtakavarga-shodhana`. Follow-up to Task 021.

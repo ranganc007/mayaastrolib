@@ -242,6 +242,19 @@ class IntegrationTests(unittest.TestCase):
             "Vimala",
             "Neecha Bhanga",
             "Kemadruma",
+            # Lesser yogas (Task 032 — detect_yogas now also returns these).
+            "Amala",
+            "Adhi",
+            "Lakshmi",
+            "Saraswati",
+            "Kahala",
+            "Vasumati",
+            "Sunapha",
+            "Anapha",
+            "Durudhara",
+            "Vesi",
+            "Vasi",
+            "Ubhayachari",
         }
         self.assertTrue(names.issubset(supported))
 
