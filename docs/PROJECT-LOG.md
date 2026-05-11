@@ -6,6 +6,55 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 024 — Vedic Tajika (varshapravesh + Mudda dasha)
+
+Branch: `task-024-vedic-tajika`. Prompt:
+`prompts/task-024-vedic-tajika.md`. First P2 module, scoped to the
+core slice — varshapravesh + Mudda dasha. Sahams, lord-of-year, and
+the balas deferred to Task 024b.
+
+### What was done
+
+- `mayaastrolib/vedic/tajika.py` — `sidereal_sun_return_jd`,
+  `varshapravesh`, `mudda_dasha`, reusing `dasha.DashaPeriod` /
+  `VIMSHOTTARI_ORDER` / `VIMSHOTTARI_YEARS` / `_add_days`.
+- 13 unit tests in `tests/test_vedic_tajika.py`.
+
+### Verification
+
+- Tests: 359 → 372 (+13). All pass.
+- Coverage: 90.90% → 91.06%. `tajika.py` near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+- Birth-year varshapravesh lands within **2.6e-5 days** (~2 seconds)
+  of the actual birth moment — confirms the sidereal-return search is
+  correct (the natal Sun is at its natal position at birth, by
+  definition).
+- VP 2024 → VP 2025 differ by 365.26 days (within ±1 of 365.25).
+- Mudda dasha for VP 2024: Moon 30.44 / Mars 21.31 / Rahu 54.79 /
+  Jupiter 48.70 / Saturn 57.83 / Mercury 51.74 / Ketu 21.31 /
+  Venus 60.88 / Sun 18.26 days, summing to 365.25. First lord = Moon
+  (the VP-Moon nakshatra lord).
+
+### Decisions / honest notes
+
+- **`Chart.solarReturn` deliberately left tropical-only.** The
+  zodiac-aware refactor of the Hellenistic solar return is a separate
+  call (flagged in Task 017's CHANGELOG). Tajika varshapravesh
+  sidesteps it entirely with its own `sidereal_sun_return_jd` loop —
+  the right scope boundary, since the Tajika year is conceptually a
+  Vedic construct, not a re-skin of the Western SR.
+- A Tajika "year" uses the 365.25-day convention (consistent with the
+  Mudda/Vimshottari arithmetic) rather than the true tropical year
+  length (~365.2422 d). The varshapravesh *moment* is found by actual
+  ephemeris search, so the chart is exact; only the Mudda *period
+  lengths* use 365.25.
+- Mudda dasha sequence starts from the **varshapravesh-Moon's
+  nakshatra lord** (the most common rule). Some texts start it from
+  the lord of the year (Varsheshwara) instead — once Task 024b adds
+  Varsheshwara, a `start_from=` option could be exposed.
+
+---
+
 ## 2026-05-11 — Task 023 — Vedic Upagrahas
 
 Branch: `task-023-vedic-upagrahas`. Prompt:

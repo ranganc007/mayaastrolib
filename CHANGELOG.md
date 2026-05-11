@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 024 — Vedic Tajika: varshapravesh + Mudda dasha)
+- `mayaastrolib/vedic/tajika.py` — the core Tajika annual-chart slice.
+  - `varshapravesh(natal_chart, target_year, ayanamsa=...)` → the
+    `Datetime` when the *sidereal* Sun returns to the natal sidereal
+    Sun longitude in `target_year`. This is NOT the same as the
+    tropical solar return — the ayanamsa drifts, so the two diverge by
+    up to ~a day over decades — so it runs its own sidereal search
+    (`sidereal_sun_return_jd`, the Newton-style loop from
+    `ephem.tools.solarReturnJD` adapted to sidereal longitudes).
+  - `mudda_dasha(varshapravesh_date, ayanamsa=...)` → the 9 Mudda
+    (Varsha Vimshottari) periods: the 365.25-day year divided among the
+    9 Vimshottari lords in the standard proportions, the sequence
+    starting from the lord of the nakshatra the Moon occupies at the
+    varshapravesh moment. Reuses `dasha.DashaPeriod` /
+    `VIMSHOTTARI_ORDER` / `VIMSHOTTARI_YEARS`. Unlike the natal
+    Vimshottari, the first Mudda period is full-length (the year starts
+    fresh at varshapravesh).
+- `Chart.solarReturn` is deliberately **left tropical-only** — the
+  zodiac-aware refactor of the Hellenistic solar return is a separate
+  decision (see Task 017's CHANGELOG note). Tajika sidesteps it with
+  its own sidereal search.
+- 13 unit tests in `tests/test_vedic_tajika.py`: sidereal-return
+  convergence to ≤1″, birth-year varshapravesh ≈ birth moment,
+  consecutive years ≈365.25 days apart, Sun-at-varshapravesh = natal
+  sidereal Sun, tropical-natal-chart agreement, and the full Mudda
+  dasha structure (9 periods, sum 365.25 days, lord order from the
+  varshapravesh-Moon nakshatra, proportional durations, contiguous).
+- Deferred to a follow-up (Task 024b): Varsheshwara (lord of year),
+  Harsha Bala, Panchavargiya Bala, the ~50 Tajika Sahams, and the
+  Tajika aspects (ithasala etc.).
+
 ### Added (Task 023 — Vedic Upagrahas)
 - `mayaastrolib/vedic/upagrahas.py` — the "sub-planet" sensitive
   points.
