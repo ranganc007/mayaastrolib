@@ -6,6 +6,41 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 026b — Extended Vedic Yogas
+
+Branch: `task-026b-extended-yogas`. Prompt:
+`prompts/task-026b-extended-yogas.md`. Follow-up to Task 026.
+
+### What was done
+
+- `vedic/yogas.py`: `_detect_extended` adds Raja, Dhana, Vipareeta Raja
+  (Harsha/Sarala/Vimala), Neecha Bhanga, and Kemadruma; `detect_yogas`
+  returns `_detect(...) + _detect_extended(...)`. New public helpers
+  `sign_lord`, `house_lord`, `houses_ruled_by`; new constants
+  `TRIKONA_HOUSES`, `DUSTHANA_HOUSES`, `DHANA_HOUSES`, plus internal
+  `_SIGN_LORD` table and `_EXALTED_IN` (inverse of `EXALTATION_SIGN`).
+- 17 new tests in `tests/test_vedic_yogas_extended.py`.
+
+### Verification
+
+- Tests: 420 → 437 (+17). All pass. Coverage: 91.42% → 91.55%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Notes
+
+- Raja/Dhana detection is conjunction-only (same sign); mutual-aspect
+  and parivartana (sign-exchange) forms are deferred. Neecha Bhanga
+  uses two of the classical cancellation conditions (dispositor in a
+  kendra; would-be-exalted planet in a kendra); navamsa-exaltation and
+  dispositor-aspect conditions deferred. Kemadruma is the "2nd and 12th
+  from Moon empty of grahas" form; the Sun and nodes don't count, and
+  the extra "no planet conjunct/kendra from Moon" clauses are deferred.
+- Two cleanup fixes during the run: an unused `rules` dict (leftover
+  from a planned parivartana check) removed; a Vipareeta description
+  string shortened to fit the 100-char line limit.
+
+---
+
 ## 2026-05-11 — Task 025 — Vedic KP Sub-Lords
 
 Branch: `task-025-vedic-kp`. Prompt: `prompts/task-025-vedic-kp.md`.

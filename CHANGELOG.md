@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 026b — extended Vedic yogas)
+- `mayaastrolib/vedic/yogas.py` now also detects, on top of the original
+  8 (Pancha Mahapurusha + Gaja-Kesari + Budha-Aditya + Chandra-Mangala):
+  - **Raja Yoga** — a kendra lord (1/4/7/10) conjunct a distinct trikona
+    lord (1/5/9).
+  - **Dhana Yoga** — two distinct wealth-house (2/5/9/11) lords conjunct.
+  - **Vipareeta Raja Yoga** — Harsha (6th lord), Sarala (8th lord),
+    Vimala (12th lord), each firing when that dusthana lord is itself
+    in a dusthana (6/8/12).
+  - **Neecha Bhanga Raja Yoga** — a debilitated planet whose
+    debilitation is cancelled by the dispositor, or the would-be-exalted
+    planet, being in a kendra from the Ascendant.
+  - **Kemadruma Yoga** — no graha (among Mars/Mercury/Jupiter/Venus/
+    Saturn) in the 2nd or 12th sign from the Moon.
+- New public helpers: `sign_lord(sign_idx)`, `house_lord(house_num,
+  asc_sign)`, `houses_ruled_by(planet, asc_sign)`. New constants:
+  `TRIKONA_HOUSES`, `DUSTHANA_HOUSES`, `DHANA_HOUSES`.
+- `detect_yogas` returns the union of the original and extended sets;
+  internally `_detect` + `_detect_extended`, both pure functions over
+  `(planet_signs, asc_sign)`.
+- 17 new unit tests in `tests/test_vedic_yogas_extended.py` (the helpers
+  + each new yoga's positive/negative cases + integration with a real
+  chart + tropical-vs-sidereal agreement). Existing 23 yoga tests
+  unaffected.
+- Still deferred: yoga strength scoring, mutual-aspect/parivartana Raja
+  Yogas, finer Neecha-Bhanga conditions, Gaja-Kesari cancellation, and
+  the many named lesser yogas.
+
 ### Added (Task 025 — Vedic KP sub-lords)
 - `mayaastrolib/vedic/kp.py` — the Krishnamurti Paddhati Star-Sub
   sub-lord system.
