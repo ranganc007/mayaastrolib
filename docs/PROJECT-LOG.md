@@ -6,6 +6,48 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 038 — Public-API Type Hints (datetime.py)
+
+Branch: `task-038-public-api-type-hints`. Continues the public-API
+type-hint pass; also surfaces a real obstacle for the remaining three
+modules.
+
+### What was done
+
+- `datetime.py`: `from __future__ import annotations`; module-level
+  `import datetime as _pydt` (replacing the per-function local
+  imports); typed `dateJDN`/`jdnDate`/`_format_offset`/`_parse_offset`
+  and the `Date`/`Time`/`Datetime` classes (attribute annotations +
+  every method signature). No behaviour change.
+
+### Verification
+
+- Tests: still 553. All pass. Coverage unchanged.
+- ruff format/check clean. mypy still at the documented 2-error
+  baseline — datetime.py introduced no new mypy errors.
+
+### Finding — why aspects.py / chart.py / object.py are deferred
+
+I attempted `aspects.py` and reverted it. The `Aspect` and
+`AspectObject` classes are populated via `self.__dict__.update(
+properties)`, so mypy doesn't know their attributes
+(`.id`, `.type`, `.movement`, `.orb`, `.active`, `.passive`). While
+those classes' methods are *unannotated*, mypy doesn't check their
+bodies — but the moment a method gets a return-type annotation, mypy
+starts checking it and flags ~28 "has no attribute …" errors. The same
+applies to `Object` / `House` in `object.py` (the
+`_compat.property_with_method_compat` / `_DualAccess` machinery from
+Task 006) and to `chart.py` which builds on them. Typing these cleanly
+needs either class-level attribute annotations on the dynamic classes
+(`Aspect.type: int | str`, `AspectObject.id: str`, …) — with a small
+restructure of `Aspect.__init__` so `self.active`/`self.passive` aren't
+first a dict then an `AspectObject` — or per-line `# type: ignore`s.
+That's a deliberate refactor, not a quick annotation pass, so it's
+left for a follow-up. `geopos.py` (Task 037) and `datetime.py` (this
+task) are typed; 2 of the 5 public-API modules done.
+
+---
+
 ## 2026-05-11 — Task 037 — Public-API Type Hints (geopos.py)
 
 Branch: `task-037-public-api-type-hints`. Starts the public-API

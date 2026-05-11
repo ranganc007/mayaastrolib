@@ -13,6 +13,10 @@ angular functions for internal conversions.
 
 """
 
+from __future__ import annotations
+
+import datetime as _pydt
+
 from . import angle
 
 # Calendar types
@@ -23,7 +27,7 @@ JULIAN = 1
 # === Julian Day Number conversions === #
 
 
-def dateJDN(year, month, day, calendar):
+def dateJDN(year: int, month: int, day: int, calendar: int) -> int:
     """Converts date to Julian Day Number."""
     a = (14 - month) // 12
     y = year + 4800 - a
@@ -34,7 +38,7 @@ def dateJDN(year, month, day, calendar):
         return day + (153 * m + 2) // 5 + 365 * y + y // 4 - 32083
 
 
-def jdnDate(jdn):
+def jdnDate(jdn: int) -> list[int]:
     """Converts Julian Day Number to Gregorian date."""
     a = jdn + 32044
     b = (4 * a + 3) // 146097
@@ -51,7 +55,7 @@ def jdnDate(jdn):
 # === UTC offset string helpers (used by Datetime.from_pydatetime / now) === #
 
 
-def _format_offset(td):
+def _format_offset(td: _pydt.timedelta) -> str:
     """Format a ``datetime.timedelta`` as ``"+HH:MM"`` / ``"-HH:MM"``.
 
     Used to derive the offset string from an aware datetime's tzinfo.
@@ -64,14 +68,12 @@ def _format_offset(td):
     return f"{sign}{hours:02d}:{minutes:02d}"
 
 
-def _parse_offset(offset_str):
+def _parse_offset(offset_str: str) -> _pydt.timedelta:
     """Parse ``"+05:30"`` / ``"-08:00"`` into a ``datetime.timedelta``.
 
     Used when ``Datetime.from_pydatetime`` is asked to convert an aware
     datetime to a different target offset.
     """
-    import datetime as _pydt
-
     if not offset_str or len(offset_str) < 6 or offset_str[0] not in "+-":
         raise ValueError(
             f"Invalid utcoffset format: {offset_str!r} (expected '+HH:MM' or '-HH:MM')"
@@ -101,39 +103,41 @@ class Date:
     GREGORIAN = GREGORIAN
     JULIAN = JULIAN
 
-    def __init__(self, value, calendar=GREGORIAN):
+    jdn: int
+
+    def __init__(self, value: str | list[int] | int, calendar: int = GREGORIAN) -> None:
         if isinstance(value, str):
             # Assume string date such as "2015/03/29"
-            value = [int(v) for v in value.split("/")]
-            value = dateJDN(value[0], value[1], value[2], calendar)
+            parts = [int(v) for v in value.split("/")]
+            value = dateJDN(parts[0], parts[1], parts[2], calendar)
         elif isinstance(value, list):
             # Assume list date such as [2015,03,29]
             value = dateJDN(value[0], value[1], value[2], calendar)
         self.jdn = int(value)
 
-    def dayofweek(self):
+    def dayofweek(self) -> int:
         """Returns the day of week starting on Sunday as zero."""
         return (self.jdn + 1) % 7
 
-    def date(self):
+    def date(self) -> list[int]:
         """Returns date as list [yyyy,mm,dd]."""
         return jdnDate(self.jdn)
 
-    def toList(self):
+    def toList(self) -> list:
         """Returns date as signed list."""
         date = self.date()
         sign = "+" if date[0] >= 0 else "-"
         date[0] = abs(date[0])
         return list(sign) + date
 
-    def toString(self):
+    def toString(self) -> str:
         """Returns date as string."""
         slist = self.toList()
         sign = "" if slist[0] == "+" else "-"
         string = "/".join(["%02d" % v for v in slist[1:]])
         return sign + string
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s>" % self.toString()
 
 
@@ -152,10 +156,12 @@ class Time:
 
     """
 
-    def __init__(self, value):
+    value: float
+
+    def __init__(self, value: float | str | list) -> None:
         self.value = angle.toFloat(value)
 
-    def getUTC(self, utcoffset):
+    def getUTC(self, utcoffset: Time) -> Time:
         """Returns a new Time object set to UTC given
         an offset Time object.
 
@@ -163,7 +169,7 @@ class Time:
         newTime = (self.value - utcoffset.value) % 24
         return Time(newTime)
 
-    def time(self):
+    def time(self) -> list:
         """Returns time as list [hh,mm,ss]."""
         slist = self.toList()
         if slist[0] == "-":
@@ -174,20 +180,20 @@ class Time:
                 slist[1] = -0.0
         return slist[1:]
 
-    def toList(self):
+    def toList(self) -> list:
         """Returns time as signed list."""
         slist = angle.toList(self.value)
         # Keep hours in 0..23
         slist[1] = slist[1] % 24
         return slist
 
-    def toString(self):
+    def toString(self) -> str:
         """Returns time as string."""
         slist = self.toList()
         string = angle.slistStr(slist)
         return string if slist[0] == "-" else string[1:]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s>" % self.toString()
 
 
@@ -207,7 +213,18 @@ class Datetime:
     GREGORIAN = GREGORIAN
     JULIAN = JULIAN
 
-    def __init__(self, date, time=0, utcoffset=0, calendar=GREGORIAN):
+    date: Date
+    time: Time
+    utcoffset: Time
+    jd: float
+
+    def __init__(
+        self,
+        date: Date | str | list[int] | int,
+        time: Time | float | str | list = 0,
+        utcoffset: Time | float | str | list = 0,
+        calendar: int = GREGORIAN,
+    ) -> None:
         # Prepare the variables
         if isinstance(date, Date):
             self.date = date
@@ -228,7 +245,7 @@ class Datetime:
         self.jd = self.date.jdn + self.time.value / 24.0 - self.utcoffset.value / 24.0 - 0.5
 
     @staticmethod
-    def fromJD(jd, utcoffset):
+    def fromJD(jd: float, utcoffset: Time | float | str | list) -> Datetime:
         """Builds a Datetime object given a jd and utc offset."""
         if not isinstance(utcoffset, Time):
             utcoffset = Time(utcoffset)
@@ -238,7 +255,7 @@ class Datetime:
         return Datetime(date, time, utcoffset)
 
     @classmethod
-    def from_pydatetime(cls, dt, utcoffset=None):
+    def from_pydatetime(cls, dt: _pydt.datetime, utcoffset: str | None = None) -> Datetime:
         """Construct a Datetime from a Python ``datetime.datetime``.
 
         Args:
@@ -264,8 +281,6 @@ class Datetime:
             >>> now = pydt.datetime.now(pydt.timezone.utc)
             >>> mdate = Datetime.from_pydatetime(now)
         """
-        import datetime as _pydt
-
         if dt.tzinfo is None:
             if utcoffset is None:
                 raise ValueError(
@@ -276,8 +291,10 @@ class Datetime:
             target_offset_str = utcoffset
             target_dt = dt
         else:
+            offset_td = dt.utcoffset()
             if utcoffset is None:
-                target_offset_str = _format_offset(dt.utcoffset())
+                # offset_td is non-None here because dt is aware.
+                target_offset_str = _format_offset(offset_td if offset_td else _pydt.timedelta())
                 target_dt = dt
             else:
                 # Explicit utcoffset wins. Convert the aware dt to that
@@ -292,7 +309,7 @@ class Datetime:
         return cls(date_str, time_str, target_offset_str)
 
     @classmethod
-    def now(cls, utcoffset="+00:00"):
+    def now(cls, utcoffset: str = "+00:00") -> Datetime:
         """Return a Datetime representing the current moment.
 
         Args:
@@ -312,14 +329,12 @@ class Datetime:
             >>> mdate = Datetime.now()                  # UTC
             >>> mdate = Datetime.now(utcoffset='-05:00') # US Eastern (no DST awareness)
         """
-        import datetime as _pydt
-
         return cls.from_pydatetime(
             _pydt.datetime.now(_pydt.timezone.utc),
             utcoffset=utcoffset,
         )
 
-    def to_pydatetime(self):
+    def to_pydatetime(self) -> _pydt.datetime:
         """Convert to a Python ``datetime.datetime`` with timezone info.
 
         Returns:
@@ -332,8 +347,6 @@ class Datetime:
             >>> py = mdate.to_pydatetime()
             >>> py.tzinfo.utcoffset(py)  # timedelta(0)
         """
-        import datetime as _pydt
-
         year, month, day = jdnDate(self.date.jdn)
         hh, mm, ss = self.time.time()
         # self.time.time() can return floats (e.g. for fractional seconds);
@@ -341,13 +354,13 @@ class Datetime:
         tz = _pydt.timezone(_pydt.timedelta(hours=self.utcoffset.value))
         return _pydt.datetime(year, month, day, int(hh), int(mm), int(ss), tzinfo=tz)
 
-    def getUTC(self):
+    def getUTC(self) -> Datetime:
         """Returns this Datetime localized for UTC."""
         timeUTC = self.time.getUTC(self.utcoffset)
         dateUTC = Date(round(self.jd))
         return Datetime(dateUTC, timeUTC)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s %s %s>" % (
             self.date.toString(),
             self.time.toString(),

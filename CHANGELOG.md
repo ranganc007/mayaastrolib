@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (Task 038 — public-API type hints: datetime.py)
+- `mayaastrolib/datetime.py` is now fully type-hinted (`from __future__
+  import annotations`; `dateJDN`/`jdnDate`/`_format_offset`/
+  `_parse_offset` and the `Date`/`Time`/`Datetime` classes — attribute
+  annotations and all method signatures, including `from_pydatetime` /
+  `now` / `to_pydatetime` / `fromJD` / `getUTC`). The module-level
+  `import datetime as _pydt` replaces the per-function local imports.
+  No behaviour change; mypy stays at the documented 2-error baseline.
+- Note: `aspects.py`, `chart.py`, and `object.py` were attempted but
+  *deferred* — they use `self.__dict__.update(...)` (Aspect /
+  AspectObject) and the `_compat.property_with_method_compat` /
+  `_DualAccess` machinery (Object / House), so adding signature
+  annotations makes mypy start checking those method bodies and it then
+  flags ~30 dynamically-set attributes (`.id`, `.type`, `.movement`,
+  …). Typing those cleanly needs either class-level attribute
+  annotations on the dynamic classes or a small restructure of the
+  `__dict__.update` pattern — a deliberate change, not a quick pass —
+  so it's left for a follow-up. `geopos.py` (Task 037) and
+  `datetime.py` (this task) are the two clean ones; that's 2 of the 5
+  public-API modules typed.
+
 ### Changed (Task 037 — public-API type hints: geopos.py)
 - `mayaastrolib/geopos.py` is now fully type-hinted (`from __future__
   import annotations`; the `toFloat`/`toList`/`toString` conversion
