@@ -97,9 +97,23 @@ PLUTO = "Pluto"
 CHIRON = "Chiron"
 NORTH_NODE = "North Node"
 SOUTH_NODE = "South Node"
+# Vedic aliases for the lunar nodes — same objects, Sanskrit names.
+RAHU = NORTH_NODE
+KETU = SOUTH_NODE
 SYZYGY = "Syzygy"
 PARS_FORTUNA = "Pars Fortuna"
 NO_PLANET = "None"
+
+# --- Zodiac mode (Task 017 — Vedic foundation) ---
+ZODIAC_TROPICAL = "tropical"
+ZODIAC_SIDEREAL = "sidereal"
+LIST_ZODIACS = [ZODIAC_TROPICAL, ZODIAC_SIDEREAL]
+
+# --- Ayanamsa (sidereal-mode offsets) ---
+# Lahiri ayanamsa — canonical Vedic, Indian Astronomical Ephemeris standard.
+# Additional ayanamsas (KP, Raman, Fagan-Bradley) will be added in Task 017b.
+AYANAMSA_LAHIRI = "lahiri"
+LIST_AYANAMSAS = [AYANAMSA_LAHIRI]
 
 # Object movement
 DIRECT = "Direct"
