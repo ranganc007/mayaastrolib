@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 033 — per-factor tests for the smoke-only modules)
+- `tests/test_protocols_temperament_factors.py` and
+  `tests/test_dignities_accidental_factors.py` — exercise the
+  temperament factor/modifier engine and the `AccidentalDignity`
+  engine across several charts × the seven classical planets, asserting
+  structural invariants (factor element keys, modifier shape,
+  temperament/quality partitions, score-property dicts, active ⊆ all
+  score properties, flag methods don't raise). No production code
+  changed. `dignities/accidental.py` coverage 84% → **100%**;
+  `protocols/temperament.py` 80% → **99%** (the one remaining line is
+  the "skip a planet already counted in House 1" branch — needs a
+  contrived chart and isn't worth chasing). Overall coverage 92% →
+  **94%**. Closes the "smoke-tested only" gap flagged in the platform
+  review.
+
 ### Added (Task 032 — lesser Vedic yogas + yoga strength scoring)
 - `mayaastrolib/vedic/yogas.py` `detect_yogas` now also returns a set of
   **lesser yogas**: Amala (a benefic in the 10th from the Lagna/Moon),

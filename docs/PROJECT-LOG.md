@@ -6,6 +6,36 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 033 — Per-Factor Tests for the Smoke-Only Modules
+
+Branch: `task-033-protocol-factor-tests`. Closes the platform-review
+"smoke-tested only" gap for `protocols/temperament.py` and
+`dignities/accidental.py`.
+
+### What was done
+
+- `tests/test_protocols_temperament_factors.py` (7 tests) and
+  `tests/test_dignities_accidental_factors.py` (6 tests) — run the
+  engines over a spread of 5–6 charts × the 7 classical planets and
+  assert structural invariants. No production code touched.
+
+### Verification
+
+- Tests: 528 → 541 (+13). All pass. Coverage: 92.10% → 94%.
+  `accidental.py` 84% → 100%; `temperament.py` 80% → 99% (the lone
+  remaining line is the "obj already in House 1 → skip" continue in
+  `getFactors`; needs a contrived chart, not worth chasing).
+- ruff format/check clean. mypy at the documented baseline.
+
+### Note
+
+- Several `AccidentalDignity` flag methods return `None` (not a bool)
+  where the concept isn't meaningful — e.g. orientality/light for a
+  luminary. The test calls them via `bool(...)` and asserts only that
+  they don't raise, rather than asserting a strict bool type.
+
+---
+
 ## 2026-05-11 — Task 032 — Lesser Vedic Yogas + Yoga Strength
 
 Branch: `task-032-lesser-yogas`. Follow-up to Task 026/026b. The last
