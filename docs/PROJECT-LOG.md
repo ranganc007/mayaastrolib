@@ -6,6 +6,61 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 025 — Vedic KP Sub-Lords
+
+Branch: `task-025-vedic-kp`. Prompt: `prompts/task-025-vedic-kp.md`.
+The last remaining spec module. The "249" derivation was worked out
+first (see below).
+
+### The 243 → 249 derivation
+
+KP divides each of the 27 nakshatras (13°20') into 9 subs, widths
+proportional to the Vimshottari years, sequence starting from the
+nakshatra's own lord. That's 27 × 9 = **243** Star-Sub segments.
+
+Adding the 12 sign boundaries: 6 of them (0°, 60°, 120°, 180°, 240°,
+300°) coincide with existing nakshatra/sub boundaries — the
+0°/120°/240° ones are nakshatra boundaries, and the 60°/180°/300° ones
+land exactly at the Saturn/Mercury sub-boundary inside a Mars-ruled
+nakshatra (Mars+Rahu+Jupiter+Saturn = 7+18+16+19 = 60 Vimshottari
+units = 6.667° into the nakshatra). The other **6** sign boundaries
+(30°, 90°, 150°, 210°, 270°, 330°) fall strictly inside a sub-segment:
+the 30°-type bisects the Rahu-sub of a Sun-ruled nakshatra (3.333° in,
+which is never a sub boundary since no consecutive Vimshottari-year
+window sums to 30/120); the 90°-type bisects the Moon-sub of a
+Jupiter-ruled nakshatra (10° in; no window sums to 90/120 either).
+243 + 6 = **249**. Verified empirically — `len(kp_table()) == 249`,
+asserted at module import.
+
+### What was done
+
+- `mayaastrolib/vedic/kp.py` — `kp_table()` (249 rows, cached),
+  `sub_lord_at(sidereal_lon)`, `kp_sublords(chart, ayanamsa=...)`,
+  `SIGN_LORDS`, plus the `_sub_lord` / `_sub_sequence_for_nakshatra`
+  helpers.
+- 14 unit tests in `tests/test_vedic_kp.py`.
+
+### Verification
+
+- Tests: 406 → 420 (+14). All pass. Coverage: 91.24% → 91.42%.
+- ruff format/check clean. mypy at the documented baseline.
+- `sub_lord_at(0.0)` → Ashwini, star_lord Ketu, sub_lord Ketu, Aries,
+  Mars, pada 1. `sub_lord_at(29.9)` and `sub_lord_at(30.1)` share the
+  Rahu sub-lord but differ in sign (Aries → Taurus) — the bisected-sub
+  case.
+
+### Notes
+
+- `star_lord` / `sub_lord` for the nodes come back as `"North Node"` /
+  `"South Node"` (`const.RAHU` / `const.KETU` are aliases for those).
+- `kp_sublords` defaults to the **Krishnamurti** ayanamsa (the KP
+  ayanamsa), not Lahiri — used only when the input chart is tropical.
+  Documented in the function docstring.
+- Out of scope (follow-up): sub-sub-lord, KP horary (prashna number
+  → chart), Ruling Planets, KP significators / cuspal interlinks.
+
+---
+
 ## 2026-05-11 — Task 017b — Additional Ayanamsas
 
 Branch: `task-017b-extra-ayanamsas`. Follow-up to Task 017.

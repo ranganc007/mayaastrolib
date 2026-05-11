@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 025 — Vedic KP sub-lords)
+- `mayaastrolib/vedic/kp.py` — the Krishnamurti Paddhati Star-Sub
+  sub-lord system.
+  - `kp_table()` → the canonical **249-row** sub-lord table. Each row
+    is `{start_lon, end_lon, sign, sign_lord, nakshatra, star_lord,
+    sub_lord}`; the rows tile `[0, 360)` with no gaps. (249 = the 243
+    Star×Sub segments + the 6 sign boundaries — 30°/90°/150°/210°/270°
+    /330° — that each bisect a sub-segment; an import-time assert
+    enforces the count.)
+  - `sub_lord_at(sidereal_lon)` → `{longitude, sign, sign_lord,
+    nakshatra, star_lord, pada, sub_lord}` for any sidereal longitude.
+  - `kp_sublords(chart, ayanamsa=AYANAMSA_KRISHNAMURTI)` → the chains
+    for the 7 classical planets + the Ascendant. Defaults to the KP
+    (Krishnamurti) ayanamsa for tropical charts; for KP-correct results
+    build the chart with `ayanamsa=AYANAMSA_KRISHNAMURTI`.
+  - `SIGN_LORDS` — the traditional 7-planet sign rulerships.
+- 14 unit tests in `tests/test_vedic_kp.py`: the 249-row count, that
+  the table tiles 360° contiguously, sign-lord consistency, the
+  `sub_lord_at(0.0)` chain, the bisected-sub case at the 30° boundary,
+  consistency with `nakshatras.of_longitude`, and the chart-level
+  `kp_sublords` (sidereal vs tropical-with-KP-ayanamsa agreement).
+- Deferred to a follow-up: sub-sub-lord (4th level), KP horary
+  (prashna 1..249), Ruling Planets, KP significators / cuspal
+  interlinks.
+
 ### Added (Task 017b — additional ayanamsas)
 - `mayaastrolib/vedic/ayanamsa.py` now supports four ayanamsas, not
   just Lahiri: `lahiri`, `krishnamurti` (KP), `raman`, `fagan_bradley`
