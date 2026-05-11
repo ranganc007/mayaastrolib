@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 028 — full(er) Tajika Saham table)
+- `mayaastrolib.vedic.tajika.sahams()` now returns **14** Sahams (was
+  4): Punya, Vidya, Yasas, Karma, Pitri, Matri, Bhratri, Putra,
+  Kalatra, Jeeva, Vivaha, Vyapara, Roga, Bandhu. Refactored to a
+  data-driven `_SAHAM_FORMULAS` table (`name → (term_a, term_b,
+  reversible)`, where a term is a planet ID, the literal `"Asc"`, or
+  another Saham name) — adding more is now one table row. New
+  `SAHAM_*` constants exported for the new names.
+- The Saham formulas vary across sources; these follow Tajika
+  Neelakanthi as commonly reproduced (B.V. Raman, *Varshaphala*). This
+  is still a curated subset of the ~50-Saham list — the remainder
+  remains a follow-up. Yasas references the chart's Punya Saham (handled
+  by ordering it last in the table).
+- Tests in `tests/test_vedic_tajika_balas.py` updated: the 4-Saham
+  check became a 14-Saham check, plus a `test_yasas_uses_punya_saham`
+  verifying the Saham-references-Saham resolution.
+
 ### Changed (Task 027 — zodiac-aware predictives under sidereal mode)
 - `Chart.solarReturn()` and `Chart.profected(target_date=...)` now work
   correctly on **sidereal** charts. Previously the solar-return search

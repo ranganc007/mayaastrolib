@@ -80,12 +80,38 @@ class LordOfYearTests(_Base):
 
 
 class SahamsTests(_Base):
-    def test_four_sahams(self):
+    def test_returns_the_full_curated_set(self):
         s = tajika.sahams(self.annual)
-        self.assertEqual(
-            set(s.keys()),
-            {tajika.SAHAM_PUNYA, tajika.SAHAM_VIDYA, tajika.SAHAM_YASAS, tajika.SAHAM_KARMA},
-        )
+        expected = {
+            tajika.SAHAM_PUNYA,
+            tajika.SAHAM_VIDYA,
+            tajika.SAHAM_YASAS,
+            tajika.SAHAM_KARMA,
+            tajika.SAHAM_PITRI,
+            tajika.SAHAM_MATRI,
+            tajika.SAHAM_BHRATRI,
+            tajika.SAHAM_PUTRA,
+            tajika.SAHAM_KALATRA,
+            tajika.SAHAM_JEEVA,
+            tajika.SAHAM_VIVAHA,
+            tajika.SAHAM_VYAPARA,
+            tajika.SAHAM_ROGA,
+            tajika.SAHAM_BANDHU,
+        }
+        self.assertEqual(set(s.keys()), expected)
+        self.assertEqual(len(s), 14)
+
+    def test_yasas_uses_punya_saham(self):
+        # Yasas (day) = Jupiter − Punya-Saham + Asc, so it must reference
+        # the chart's Punya value, not the Sun.
+        s = tajika.sahams(self.annual)
+        asc = self.annual.getAngle(const.ASC).lon % 360.0
+        jup = self.annual.getObject(const.JUPITER).lon % 360.0
+        if self.annual.isDiurnal():
+            expected = (jup - s[tajika.SAHAM_PUNYA] + asc) % 360.0
+        else:
+            expected = (s[tajika.SAHAM_PUNYA] - jup + asc) % 360.0
+        self.assertAlmostEqual(s[tajika.SAHAM_YASAS], expected, places=4)
 
     def test_all_in_range(self):
         for v in tajika.sahams(self.annual).values():

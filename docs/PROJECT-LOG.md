@@ -6,6 +6,40 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 028 — Fuller Tajika Saham Table
+
+Branch: `task-028-full-sahams`. Follow-up to Task 024b.
+
+### What was done
+
+- `vedic/tajika.py`: `sahams()` extended from 4 → 14 Sahams via a
+  data-driven `_SAHAM_FORMULAS` table; terms resolve as planet IDs,
+  `"Asc"`, or other Saham names (Yasas references Punya, so it's last
+  in the table). New `SAHAM_*` constants. Module docstring updated.
+- Tests updated in `tests/test_vedic_tajika_balas.py`.
+
+### Verification
+
+- Tests: 461 → 462 (the 4-Saham test became a 14-Saham test; one new
+  `test_yasas_uses_punya_saham`). All pass. Coverage: 91.72% → 91.70%.
+- ruff format/check clean. mypy at the documented baseline.
+- Punya + Vidya ≡ 2·Asc still holds; Yasas verified to reference the
+  chart's Punya value.
+
+### Honest note
+
+- Saham formulas are genuinely source-variant — the full ~50-Saham
+  list with verified formulas is a multi-day reference task. Shipped a
+  curated 14 with formulas that appear consistently across standard
+  texts (Punya/Vidya/Yasas/Karma are the most-attested; the
+  relationship/house Sahams — Pitri/Matri/Bhratri/Putra/Kalatra/
+  Vivaha/Jeeva/Vyapara/Roga/Bandhu — follow the common Raman
+  *Varshaphala* forms). Adding more is now a one-line table edit. The
+  rest of the ~50 stays a follow-up rather than shipping possibly-wrong
+  formulas.
+
+---
+
 ## 2026-05-11 — Task 027 — Zodiac-Aware Predictives Under Sidereal Mode
 
 Branch: `task-027-sidereal-predictives`. Closes the architectural

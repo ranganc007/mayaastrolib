@@ -4,16 +4,19 @@ Ships: the *varshapravesh* (the moment the sidereal Sun returns to its
 natal sidereal position in a target year), the *Mudda dasha* (the
 Vimshottari proportions compressed into that one year), the *Muntha*
 (the progressed point that advances one sign per year of life), the
-*Lord of the Year* (Varsheshwara — chosen from 5 candidates), and the
-core *Tajika Sahams* (Punya, Vidya, Yasas, Karma).
+*Lord of the Year* (Varsheshwara — chosen from 5 candidates), and a
+curated set of 14 *Tajika Sahams* (sensitive points — Punya, Vidya,
+Yasas, Karma, Pitri, Matri, Bhratri, Putra, Kalatra, Jeeva, Vivaha,
+Vyapara, Roga, Bandhu).
 
-Deferred to a follow-up: the full ~50 Saham table, Harsha Bala,
+Deferred to a follow-up: the rest of the ~50-Saham list, Harsha Bala,
 Panchavargiya Bala (so Lord-of-Year here uses a simple strength
 heuristic, not the canonical Panchavargiya tally), and the Tajika
 aspects (ithasala, isharafa, etc.).
 
 References:
 - Tajika Neelakanthi (the canonical Tajika text)
+- B.V. Raman, *Varshaphala* (Saham formulas as commonly reproduced)
 - BPHS ch. 31 (Panchavargiya Bala — carried into Tajika; not yet here)
 """
 
@@ -301,15 +304,67 @@ def lord_of_year(annual_chart, natal_chart, target_year, ayanamsa=const.AYANAMSA
     return best
 
 
-# Names of the core Sahams shipped here.
-SAHAM_PUNYA = "Punya"
-SAHAM_VIDYA = "Vidya"
-SAHAM_YASAS = "Yasas"
-SAHAM_KARMA = "Karma"
+# --- Sahams (sensitive points) --- #
+
+# Saham names (subset of the Tajika Neelakanthi list).
+SAHAM_PUNYA = "Punya"  # virtue / merit
+SAHAM_VIDYA = "Vidya"  # learning  (= Punya reversed)
+SAHAM_YASAS = "Yasas"  # fame / glory
+SAHAM_KARMA = "Karma"  # work / vocation
+SAHAM_PITRI = "Pitri"  # father
+SAHAM_MATRI = "Matri"  # mother
+SAHAM_BHRATRI = "Bhratri"  # siblings
+SAHAM_PUTRA = "Putra"  # children
+SAHAM_KALATRA = "Kalatra"  # spouse
+SAHAM_JEEVA = "Jeeva"  # livelihood
+SAHAM_VIVAHA = "Vivaha"  # marriage
+SAHAM_VYAPARA = "Vyapara"  # business / trade
+SAHAM_ROGA = "Roga"  # illness
+SAHAM_BANDHU = "Bandhu"  # relatives / kin
+
+# Each entry: name -> (term_a, term_b, reversible).
+# term_a / term_b are either a planet ID (resolved to its sidereal
+# longitude in the annual chart), the literal "Asc" (the annual Lagna),
+# or a SAHAM_* name (resolved to that Saham's longitude — note: Sahams
+# that reference other Sahams must appear after them in this dict).
+# "reversible" Sahams swap term_a and term_b for a nocturnal chart.
+# Day formula in all cases: term_a - term_b + Asc.
+#
+# Saham formulas vary across sources; these follow Tajika Neelakanthi as
+# commonly reproduced (e.g. in B.V. Raman, *Varshaphala*). This is a
+# curated subset of the ~50-Saham list — the rest is a follow-up.
+_SAHAM_FORMULAS = {
+    SAHAM_PUNYA: (const.MOON, const.SUN, True),
+    SAHAM_VIDYA: (const.SUN, const.MOON, True),
+    SAHAM_KARMA: (const.MARS, const.SUN, True),
+    SAHAM_PITRI: (const.SUN, const.SATURN, True),
+    SAHAM_MATRI: (const.MOON, const.VENUS, True),
+    SAHAM_BHRATRI: (const.JUPITER, const.SATURN, True),
+    SAHAM_PUTRA: (const.JUPITER, const.MOON, True),
+    SAHAM_KALATRA: (const.VENUS, const.SUN, True),
+    SAHAM_JEEVA: (const.SATURN, const.JUPITER, True),
+    SAHAM_VIVAHA: (const.VENUS, const.SATURN, True),
+    SAHAM_VYAPARA: (const.MERCURY, const.SUN, True),
+    SAHAM_ROGA: (const.SATURN, const.MOON, True),
+    SAHAM_BANDHU: (const.MERCURY, const.MOON, True),
+    # Yasas references the Punya Saham, so it comes last.
+    SAHAM_YASAS: (const.JUPITER, SAHAM_PUNYA, True),
+}
+
+# Bodies whose sidereal longitudes the Saham formulas may reference.
+_SAHAM_BODIES = (
+    const.SUN,
+    const.MOON,
+    const.MARS,
+    const.MERCURY,
+    const.JUPITER,
+    const.VENUS,
+    const.SATURN,
+)
 
 
 def sahams(annual_chart, ayanamsa=const.AYANAMSA_LAHIRI):
-    """Return the core Tajika Sahams for an annual (varshapravesh) chart.
+    """Return the Tajika Sahams (sensitive points) for an annual chart.
 
     Args:
         annual_chart: A :class:`Chart` built at the varshapravesh moment
@@ -317,38 +372,39 @@ def sahams(annual_chart, ayanamsa=const.AYANAMSA_LAHIRI):
         ayanamsa: Used only when the chart is tropical.
 
     Returns:
-        Dict ``{saham_name: sidereal_longitude}`` for Punya, Vidya,
-        Yasas, and Karma — all normalised to ``[0, 360)``. For a
+        Dict ``{saham_name: sidereal_longitude}`` — Punya, Vidya, Yasas,
+        Karma, Pitri, Matri, Bhratri, Putra, Kalatra, Jeeva, Vivaha,
+        Vyapara, Roga, Bandhu — all normalised to ``[0, 360)``. For a
         diurnal chart the standard day formulas are used; for a
         nocturnal chart the two non-Lagna terms are swapped (the
         reversible-Saham rule).
 
-    The Saham formulas vary somewhat by source; these follow the
-    commonly-reproduced Tajika Neelakanthi forms. The full ~50-Saham
-    table is a follow-up.
+    The Saham formulas vary across sources; these follow Tajika
+    Neelakanthi as commonly reproduced. This is a curated subset of the
+    ~50-Saham list — the remainder is a follow-up.
     """
 
     def sid(getter):
         return _sidereal_lon_of_object(annual_chart, getter, ayanamsa)
 
     asc = sid(lambda: annual_chart.getAngle(const.ASC))
-    sun = sid(lambda: annual_chart.getObject(const.SUN))
-    moon = sid(lambda: annual_chart.getObject(const.MOON))
-    mars = sid(lambda: annual_chart.getObject(const.MARS))
-    jupiter = sid(lambda: annual_chart.getObject(const.JUPITER))
+    body_lons = {p: sid(lambda p=p: annual_chart.getObject(p)) for p in _SAHAM_BODIES}
     diurnal = annual_chart.isDiurnal()
 
-    def reversible(a, b):
-        # day: a - b + Asc ; night: b - a + Asc
-        return ((a - b if diurnal else b - a) + asc) % 360.0
+    def _term(t, computed):
+        if t == "Asc":
+            return asc
+        if t in body_lons:
+            return body_lons[t]
+        if t in computed:
+            return computed[t]
+        raise ValueError(f"Unresolvable Saham term {t!r}")
 
-    punya = reversible(moon, sun)
-    vidya = reversible(sun, moon)
-    karma = reversible(mars, sun)
-    yasas = reversible(jupiter, punya)
-    return {
-        SAHAM_PUNYA: punya,
-        SAHAM_VIDYA: vidya,
-        SAHAM_YASAS: yasas,
-        SAHAM_KARMA: karma,
-    }
+    computed = {}
+    for name, (a, b, reversible) in _SAHAM_FORMULAS.items():
+        va = _term(a, computed)
+        vb = _term(b, computed)
+        if reversible and not diurnal:
+            va, vb = vb, va
+        computed[name] = (va - vb + asc) % 360.0
+    return computed
