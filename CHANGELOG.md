@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 018 — Vedic nakshatras)
+- `mayaastrolib/vedic/nakshatras.py` — 27-nakshatra arithmetic.
+  - `NAKSHATRA_NAMES` — canonical Sanskrit names in BPHS order
+    (Ashwini, Bharani, …, Revati).
+  - `NAKSHATRA_LORDS` — Vimshottari rulership cycle (Ketu, Venus,
+    Sun, Moon, Mars, Rahu, Jupiter, Saturn, Mercury × 3).
+  - `of_longitude(sidereal_lon)` — sidereal-longitude →
+    `Nakshatra`. Handles negative longitudes and >360° via modulo;
+    raises `ValueError` on NaN/inf.
+  - `janma_nakshatra(chart, ayanamsa=...)` — natal Moon's nakshatra.
+    Accepts both tropical and sidereal charts; tropical input is
+    shifted via `to_sidereal` before lookup.
+  - `tarabala(natal_nak, transit_nak)` — 1..9 tara cycle position
+    per Muhurta Chintamani 6.6.
+- `Nakshatra` is a frozen dataclass — `name`, `lord`, `pada`, `index`.
+- 17 unit tests in `tests/test_vedic_nakshatras.py` covering
+  boundaries, padas, janma_nakshatra (tropical ↔ sidereal
+  agreement), and tarabala.
+
 ### Added (Task 017 — Vedic foundation)
 - New `mayaastrolib/vedic/` package — foundation for the Phase 2 Vedic
   Jyotisha extension. This task ships the foundation only; downstream

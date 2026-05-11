@@ -6,6 +6,37 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 018 — Vedic Nakshatras
+
+Branch: `task-018-vedic-nakshatras`. Prompt:
+`prompts/task-018-vedic-nakshatras.md`. Built on Task 017's
+foundation; no architectural changes.
+
+### What was done
+
+- `mayaastrolib/vedic/nakshatras.py` — `NAKSHATRA_NAMES`,
+  `NAKSHATRA_LORDS`, `Nakshatra` (frozen dataclass), `of_longitude`,
+  `janma_nakshatra`, `tarabala`.
+- 17 unit tests in `tests/test_vedic_nakshatras.py`.
+
+### Verification
+
+- Tests: 242 → 259 (+17). All pass.
+- Coverage: 88.99% → 89.13%. `nakshatras.py` at 100%.
+- ruff format/check clean. mypy at the documented 2-error baseline.
+
+### Notes
+
+- `frozen=True` dataclass raises `AttributeError` (specifically
+  `dataclasses.FrozenInstanceError` which subclasses
+  `AttributeError`) on attribute assignment. Test originally caught
+  bare `Exception`, ruff flagged B017, narrowed to `AttributeError`.
+- The tropical-and-sidereal-agree test passes: a tropical chart with
+  the ayanamsa applied gives the same nakshatra+pada as a sidereal
+  chart. Cross-validates Task 017's wiring at the highest level.
+
+---
+
 ## 2026-05-11 — Task 017 — Vedic Foundation (ayanamsa + sidereal mode)
 
 Branch: `task-017-vedic-foundation`. Spec:
