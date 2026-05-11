@@ -6,6 +6,42 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 035 — Weighted Yoga Strength + Yoga Cancellations
+
+Branch: `task-035-yoga-shadbala-cancellation`. Follow-up to Tasks
+026/026b/032.
+
+### What was done
+
+- `vedic/yogas.py`: `yoga_strength_weighted(yoga, chart, ...)` (sum of
+  the yoga planets' accidental-dignity scores); `weighted=` flag on
+  `detect_yogas_with_strength`. Gaja-Kesari cancellation (Jupiter/Moon
+  debilitated). Neecha-Bhanga also fires on navamsa-exaltation when
+  `planet_lons` is supplied; `_chart_signs` now also returns the
+  longitudes. Module docstring updated.
+- 6 new tests in `tests/test_vedic_yogas_lesser.py`.
+
+### Verification
+
+- Tests: 542 → 548 (+6). All pass. Coverage: 94.07% → 94.11%.
+- ruff format/check clean. mypy at the documented baseline.
+- One existing test (`test_gaja_kesari`) initially failed because its
+  synthetic chart now hit a cancellation condition — but only after I'd
+  *over*-broadened the cancellation (debilitated OR dusthana OR
+  same-sign-as-Sun). Narrowed it to debilitated-only (the cleanest,
+  least source-variant condition; the same-sign-as-Sun "combust" proxy
+  was far too coarse), and the test passes again.
+
+### Honest notes
+
+- `yoga_strength_weighted` is *accidental* dignity, not full Shadbala
+  — flagged in the docstring. A textbook six-fold Shadbala (with
+  Cheshta/Naisargika balas) is still a follow-up.
+- Gaja-Kesari cancellation here is debilitation-only. Combustion and
+  enemy-sign placement are deferred (need an orb / a friendship table).
+
+---
+
 ## 2026-05-11 — Task 034 — AccidentalDignity Score-Rule Refactor
 
 Branch: `task-034-accidental-refactor`. Closes the

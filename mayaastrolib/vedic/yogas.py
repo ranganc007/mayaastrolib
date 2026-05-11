@@ -201,18 +201,27 @@ def _detect(planet_signs, asc_sign):
             )
 
     # --- Gaja-Kesari: Jupiter in a kendra from the Moon ---
+    # Cancelled if Jupiter or the Moon is debilitated. (Combustion and
+    # enemy-sign placement also weaken it per some texts, but those need
+    # finer data — combustion an orb the sign indices can't give,
+    # enemy-sign a friendship table — so only the debilitation check is
+    # applied here.)
     moon_sign = planet_signs.get(const.MOON)
     jup_sign = planet_signs.get(const.JUPITER)
     if moon_sign is not None and jup_sign is not None:
         if house_from(moon_sign, jup_sign) in KENDRA_HOUSES:
-            results.append(
-                YogaResult(
-                    name="Gaja-Kesari Yoga",
-                    sanskrit="Gaja-Kesari",
-                    planets=(const.JUPITER, const.MOON),
-                    description="Jupiter in a kendra from the Moon — fame, intelligence.",
-                )
+            cancelled = is_debilitated(const.JUPITER, jup_sign) or is_debilitated(
+                const.MOON, moon_sign
             )
+            if not cancelled:
+                results.append(
+                    YogaResult(
+                        name="Gaja-Kesari Yoga",
+                        sanskrit="Gaja-Kesari",
+                        planets=(const.JUPITER, const.MOON),
+                        description="Jupiter in a kendra from the Moon — fame, intelligence.",
+                    )
+                )
 
     # --- Budha-Aditya (Nipuna): Mercury conjunct Sun (same sign) ---
     sun_sign = planet_signs.get(const.SUN)
@@ -248,7 +257,7 @@ def _detect(planet_signs, asc_sign):
 _KEMADRUMA_PLANETS = (const.MARS, const.MERCURY, const.JUPITER, const.VENUS, const.SATURN)
 
 
-def _detect_extended(planet_signs, asc_sign):
+def _detect_extended(planet_signs, asc_sign, planet_lons=None):
     """Detect the extended yoga set — Raja, Dhana, Vipareeta Raja, Neecha
     Bhanga, Kemadruma — over sign indices.
 
@@ -256,6 +265,10 @@ def _detect_extended(planet_signs, asc_sign):
         planet_signs: Mapping of planet ID → sign index (0..11) for the
             7 classical planets.
         asc_sign: The Ascendant's sign index.
+        planet_lons: Optional mapping of planet ID → sidereal longitude.
+            When supplied, the Neecha-Bhanga check also fires if the
+            debilitated planet is exalted in its navamsa (D9), which the
+            sign-index data alone can't determine.
 
     Returns:
         A list of :class:`YogaResult`.
@@ -334,6 +347,15 @@ def _detect_extended(planet_signs, asc_sign):
         if exalted_planet is not None and house_of.get(exalted_planet) in KENDRA_HOUSES:
             cancelled = True
             reasons.append(f"{exalted_planet} (exalted there) in a kendra")
+        # Also: the debilitated planet is exalted in its navamsa (needs
+        # longitudes — only available via the chart-level entry point).
+        if planet_lons is not None and planet in planet_lons:
+            from mayaastrolib.vedic import divisional as _div
+
+            navamsa_sign = _div.navamsa(planet_lons[planet])
+            if EXALTATION_SIGN.get(planet) == navamsa_sign:
+                cancelled = True
+                reasons.append("exalted in the navamsa")
         if cancelled:
             results.append(
                 YogaResult(
@@ -591,6 +613,41 @@ def yoga_strength(yoga, planet_signs, asc_sign):
     return score
 
 
+def yoga_strength_weighted(yoga, chart, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return a strength score for a yoga weighted by the *accidental
+    dignity* of its planets.
+
+    For each classical-planet member of ``yoga.planets``, this sums that
+    planet's accidental-dignity score
+    (:meth:`mayaastrolib.dignities.accidental.AccidentalDignity.score`)
+    in the chart. Non-planet members (the Ascendant pseudo-key, the
+    nodes) are skipped. Higher is stronger.
+
+    NOTE: this is the *accidental* dignity score (≈ house/light/speed/
+    aspect strength), not a full six-fold Shadbala — the Cheshta and
+    Naisargika balas aren't modelled. It's a reasonable
+    "weighted by planetary strength" metric, not a textbook Shadbala.
+
+    Args:
+        yoga: A :class:`YogaResult`.
+        chart: The :class:`Chart` the yoga was detected in.
+        ayanamsa: Unused here (kept for signature symmetry); the chart's
+            own positions are read directly.
+
+    Returns:
+        An integer.
+    """
+    from mayaastrolib.dignities.accidental import AccidentalDignity
+
+    total = 0
+    for p in yoga.planets:
+        if p not in _CLASSICAL_PLANETS:
+            continue
+        obj = chart.getObject(p)
+        total += AccidentalDignity(obj, chart).score()
+    return total
+
+
 def detect_yogas(chart, ayanamsa=const.AYANAMSA_LAHIRI):
     """Detect the supported yogas in a chart.
 
@@ -602,41 +659,51 @@ def detect_yogas(chart, ayanamsa=const.AYANAMSA_LAHIRI):
     Returns:
         A list of :class:`YogaResult`, possibly empty.
     """
-    planet_signs, asc_sign = _chart_signs(chart, ayanamsa)
+    planet_signs, asc_sign, planet_lons = _chart_signs(chart, ayanamsa)
     return (
         _detect(planet_signs, asc_sign)
-        + _detect_extended(planet_signs, asc_sign)
+        + _detect_extended(planet_signs, asc_sign, planet_lons=planet_lons)
         + _detect_lesser(planet_signs, asc_sign)
     )
 
 
-def detect_yogas_with_strength(chart, ayanamsa=const.AYANAMSA_LAHIRI):
-    """Like :func:`detect_yogas` but returns ``(YogaResult, strength)`` pairs.
+def detect_yogas_with_strength(chart, ayanamsa=const.AYANAMSA_LAHIRI, weighted=False):
+    """Like :func:`detect_yogas` but returns ``(YogaResult, strength)`` pairs,
+    sorted by descending strength.
 
-    The strength is from :func:`yoga_strength`. The list is sorted by
-    descending strength.
+    Args:
+        chart: A :class:`Chart`.
+        ayanamsa: One of ``const.LIST_AYANAMSAS``.
+        weighted: If ``False`` (default), the strength is the lightweight
+            :func:`yoga_strength` (±points from dignity/house). If
+            ``True``, it is :func:`yoga_strength_weighted` (the sum of
+            the yoga planets' accidental-dignity scores).
     """
-    planet_signs, asc_sign = _chart_signs(chart, ayanamsa)
+    planet_signs, asc_sign, planet_lons = _chart_signs(chart, ayanamsa)
     yogas = (
         _detect(planet_signs, asc_sign)
-        + _detect_extended(planet_signs, asc_sign)
+        + _detect_extended(planet_signs, asc_sign, planet_lons=planet_lons)
         + _detect_lesser(planet_signs, asc_sign)
     )
-    scored = [(y, yoga_strength(y, planet_signs, asc_sign)) for y in yogas]
+    if weighted:
+        scored = [(y, yoga_strength_weighted(y, chart, ayanamsa=ayanamsa)) for y in yogas]
+    else:
+        scored = [(y, yoga_strength(y, planet_signs, asc_sign)) for y in yogas]
     scored.sort(key=lambda pair: pair[1], reverse=True)
     return scored
 
 
 def _chart_signs(chart, ayanamsa):
-    """Return ``(planet_signs, asc_sign)`` (sidereal sign indices) for a chart."""
+    """Return ``(planet_signs, asc_sign, planet_lons)`` for a chart — the
+    sidereal sign indices, the Ascendant's sign index, and the per-planet
+    sidereal longitudes."""
 
-    def sid_sign(obj):
+    def sid_lon(obj):
         if chart.zodiac == const.ZODIAC_SIDEREAL:
-            lon = obj.lon
-        else:
-            lon = _ay.to_sidereal(obj.lon, chart.date, ayanamsa=ayanamsa)
-        return int((lon % 360.0) // 30.0)
+            return obj.lon % 360.0
+        return _ay.to_sidereal(obj.lon, chart.date, ayanamsa=ayanamsa)
 
-    planet_signs = {p: sid_sign(chart.getObject(p)) for p in _CLASSICAL_PLANETS}
-    asc_sign = sid_sign(chart.getAngle(const.ASC))
-    return planet_signs, asc_sign
+    planet_lons = {p: sid_lon(chart.getObject(p)) for p in _CLASSICAL_PLANETS}
+    planet_signs = {p: int(lon // 30.0) for p, lon in planet_lons.items()}
+    asc_sign = int(sid_lon(chart.getAngle(const.ASC)) // 30.0)
+    return planet_signs, asc_sign, planet_lons

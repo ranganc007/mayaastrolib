@@ -196,3 +196,97 @@ class ChartLevelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WeightedStrengthAndCancellationTests(unittest.TestCase):
+    def setUp(self):
+        from mayaastrolib.chart import Chart as _C
+        from mayaastrolib.datetime import Datetime as _D
+        from mayaastrolib.geopos import GeoPos as _G
+
+        self.chart = _C(_D("1947/08/15", "00:00", "+05:30"), _G("28n36", "77e12"))
+        self.sid = _C(
+            _D("1947/08/15", "00:00", "+05:30"),
+            _G("28n36", "77e12"),
+            zodiac=const.ZODIAC_SIDEREAL,
+        )
+
+    def test_weighted_strength_is_int(self):
+        for y in yg.detect_yogas(self.chart):
+            self.assertIsInstance(yg.yoga_strength_weighted(y, self.chart), int)
+
+    def test_detect_with_strength_weighted_flag(self):
+        plain = yg.detect_yogas_with_strength(self.chart, weighted=False)
+        weighted = yg.detect_yogas_with_strength(self.chart, weighted=True)
+        # Same yogas, possibly different ordering / scores.
+        self.assertEqual(
+            {(y.sanskrit, y.planets) for y, _s in plain},
+            {(y.sanskrit, y.planets) for y, _s in weighted},
+        )
+        # Both lists are sorted descending by their score.
+        for lst in (plain, weighted):
+            self.assertEqual([s for _y, s in lst], sorted((s for _y, s in lst), reverse=True))
+
+    def test_weighted_strength_skips_non_planet_members(self):
+        # A YogaResult whose planets include something not in the
+        # classical set is just skipped (contributes 0).
+        y = yg.YogaResult("X Yoga", "X", ("Ascendant", const.SUN), "desc")
+        self.assertEqual(
+            yg.yoga_strength_weighted(y, self.chart),
+            yg.yoga_strength_weighted(yg.YogaResult("X", "X", (const.SUN,), "d"), self.chart),
+        )
+
+    def test_gaja_kesari_cancelled_when_jupiter_debilitated(self):
+        # Jupiter debilitated in Capricorn (9), Moon also in Capricorn →
+        # Jupiter is in the 1st (a kendra) from the Moon, but the yoga is
+        # cancelled.
+        signs = {
+            const.SUN: ARIES,
+            const.MOON: CAPRICORN,
+            const.MARS: TAURUS,
+            const.MERCURY: GEMINI,
+            const.JUPITER: CAPRICORN,
+            const.VENUS: LEO,
+            const.SATURN: VIRGO,
+        }
+        names = {y.sanskrit for y in yg._detect(signs, asc_sign=ARIES)}
+        self.assertNotIn("Gaja-Kesari", names)
+
+    def test_gaja_kesari_fires_when_not_debilitated(self):
+        # Jupiter in Sagittarius (own sign), Moon in Sagittarius → kendra,
+        # not cancelled.
+        signs = {
+            const.SUN: ARIES,
+            const.MOON: SAGITTARIUS,
+            const.MARS: TAURUS,
+            const.MERCURY: GEMINI,
+            const.JUPITER: SAGITTARIUS,
+            const.VENUS: LEO,
+            const.SATURN: VIRGO,
+        }
+        names = {y.sanskrit for y in yg._detect(signs, asc_sign=ARIES)}
+        self.assertIn("Gaja-Kesari", names)
+
+    def test_neecha_bhanga_navamsa_exaltation(self):
+        # _detect_extended with planet_lons: a debilitated planet that is
+        # exalted in its navamsa triggers Neecha Bhanga even if the
+        # kendra conditions don't hold. Saturn debilitated in Aries; pick
+        # a longitude in Aries whose D9 sign is Libra (Saturn's
+        # exaltation). Aries navamsas (movable, start from Aries): the 7th
+        # navamsa = Libra → 20°-23°20' of Aries.
+        signs = {
+            const.SUN: GEMINI,
+            const.MOON: VIRGO,
+            const.MARS: TAURUS,
+            const.MERCURY: SCORPIO,
+            const.JUPITER: SAGITTARIUS,
+            const.VENUS: PISCES,
+            const.SATURN: ARIES,
+        }
+        from mayaastrolib.vedic import divisional as _div
+
+        sat_lon = 21.0  # ~7th navamsa of Aries
+        self.assertEqual(_div.navamsa(sat_lon), 6)  # Libra
+        lons = {const.SATURN: sat_lon}
+        res = yg._detect_extended(signs, asc_sign=CANCER, planet_lons=lons)
+        self.assertIn("Neecha Bhanga", {y.sanskrit for y in res})

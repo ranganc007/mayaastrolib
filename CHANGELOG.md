@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added / Changed (Task 035 — weighted yoga strength + yoga cancellations)
+- `mayaastrolib.vedic.yogas.yoga_strength_weighted(yoga, chart, ...)` —
+  a strength score for a yoga weighted by the *accidental dignity*
+  (`AccidentalDignity.score()`) of its classical-planet members.
+  Documented as accidental dignity, not a full six-fold Shadbala (the
+  Cheshta/Naisargika balas aren't modelled).
+- `detect_yogas_with_strength(chart, ayanamsa=..., weighted=False)` —
+  new `weighted=` flag: `False` (default) uses the lightweight
+  `yoga_strength`; `True` uses `yoga_strength_weighted`.
+- **Gaja-Kesari cancellation** — the yoga is no longer emitted if
+  Jupiter or the Moon is debilitated. (Combustion / enemy-sign also
+  weaken it per some texts, but those need an orb / a friendship table
+  that the sign-index data doesn't provide, so only the debilitation
+  check is applied.)
+- **Neecha-Bhanga refinement** — `_detect_extended` now also accepts
+  `planet_lons=` (supplied by the chart-level `detect_yogas`); when
+  present, Neecha-Bhanga also fires if the debilitated planet is
+  exalted in its navamsa (D9), one of the classical cancellation
+  conditions that sign data alone can't determine. `_chart_signs` now
+  returns the sidereal longitudes alongside the sign indices.
+- 6 new tests in `tests/test_vedic_yogas_lesser.py` (weighted strength,
+  the `weighted=` flag, Gaja-Kesari cancellation, navamsa-exaltation
+  Neecha-Bhanga). The existing yoga tests are unaffected.
+
 ### Changed (Task 034 — accidental-dignity score-rule refactor)
 - `AccidentalDignity.getScoreProperties` rewritten: the 15 "+N if flag
   else 0" rules (peregrine excepted) now come from a single
