@@ -6,6 +6,37 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 037 — Public-API Type Hints (geopos.py)
+
+Branch: `task-037-public-api-type-hints`. Starts the public-API
+type-hint pass from the 2026-05-08 brief's "suggested next moves".
+
+### What was done
+
+- `geopos.py`: `from __future__ import annotations`; typed the
+  conversion helpers (`toFloat`/`toList`/`toString`) and the `GeoPos`
+  class (`lat: float`, `lon: float` annotations, `__init__`, `slists`,
+  `strings`, `__str__`). No behaviour change.
+
+### Verification
+
+- Tests: still 553. All pass. Coverage unchanged (94.12%).
+- ruff format/check clean. mypy still at the documented 2-error
+  baseline — geopos.py introduced no new mypy errors.
+
+### Note
+
+- This is the *first* of the five public-API modules. `datetime.py`
+  and `aspects.py` are the next cleanest to type; `chart.py` and
+  `object.py` carry the `_compat.property_with_method_compat` /
+  `_DualAccess` machinery from Task 006, so typing them needs care to
+  avoid mypy noise around the dual-access wrappers — left as a
+  follow-up. (`angle` params throughout accept `float | str | list`;
+  used that union rather than a `Union[...]` import, with `from
+  __future__ import annotations` making the `|` syntax fine on 3.10.)
+
+---
+
 ## 2026-05-11 — Task 036 — Ashtakavarga Shodhana Variants
 
 Branch: `task-036-ashtakavarga-shodhana-variants`. Follow-up to Task

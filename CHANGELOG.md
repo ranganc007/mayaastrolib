@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (Task 037 — public-API type hints: geopos.py)
+- `mayaastrolib/geopos.py` is now fully type-hinted (`from __future__
+  import annotations`; the `toFloat`/`toList`/`toString` conversion
+  helpers and the `GeoPos` class — `lat`/`lon` attributes, `__init__`,
+  `slists`, `strings`, `__str__`). No behaviour change; mypy stays at
+  the documented 2-error baseline. First slice of the public-API
+  type-hint pass — `datetime.py`, `aspects.py`, `chart.py`, and
+  `object.py` are still to do (the latter two are the `_compat`-heavy
+  ones and need care to avoid mypy noise).
+
 ### Added (Task 036 — Ashtakavarga shodhana variants)
 - `trikona_shodhana(bav, variant="subtract_min")` — new `variant=`:
   `"subtract_min"` (default, unchanged) or `"zero_if_any_zero"` (the

@@ -9,6 +9,8 @@ represented by a <float> value.
 
 """
 
+from __future__ import annotations
+
 from . import angle
 
 # Modes
@@ -26,7 +28,7 @@ CHAR = {
 # === Conversions === #
 
 
-def toFloat(value):
+def toFloat(value: float | str | list) -> float:
     """Converts angle representation to float.
     Accepts angles and strings such as "12W30:00".
 
@@ -41,12 +43,12 @@ def toFloat(value):
     return angle.toFloat(value)
 
 
-def toList(value):
+def toList(value: float | str | list) -> list:
     """Converts angle float to signed list."""
     return angle.toList(value)
 
 
-def toString(value, mode):
+def toString(value: float, mode: int) -> str:
     """Converts angle float to string.
     Mode refers to LAT/LON.
 
@@ -73,7 +75,10 @@ class GeoPos:
 
     """
 
-    def __init__(self, lat, lon):
+    lat: float
+    lon: float
+
+    def __init__(self, lat: float | str | list, lon: float | str | list) -> None:
         self.lat = toFloat(lat)
         self.lon = toFloat(lon)
         # Validate after coercion: bad-but-parseable inputs (e.g.
@@ -85,14 +90,14 @@ class GeoPos:
         if not -180.0 <= self.lon <= 180.0:
             raise ValueError(f"Longitude must be in [-180, 180]; got {self.lon}")
 
-    def slists(self):
+    def slists(self) -> list:
         """Return lat/lon as signed lists."""
         return [toList(self.lat), toList(self.lon)]
 
-    def strings(self):
+    def strings(self) -> list[str]:
         """Return lat/lon as strings."""
         return [toString(self.lat, LAT), toString(self.lon, LON)]
 
-    def __str__(self):
+    def __str__(self) -> str:
         strings = self.strings()
         return "<%s %s>" % (strings[0], strings[1])
