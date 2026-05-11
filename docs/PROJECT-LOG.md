@@ -6,6 +6,93 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 017 — Vedic Foundation (ayanamsa + sidereal mode)
+
+Branch: `task-017-vedic-foundation`. Spec:
+`docs/2026-05-11-vedic-extension-spec.md`. Prompt:
+`prompts/task-017-vedic-foundation.md`. Architectural commitment for
+Phase 2 Vedic Jyotisha extension — every downstream module depends on
+the shape established here.
+
+### What was done
+
+- New `mayaastrolib/vedic/` package with `ayanamsa.py` exposing
+  `lahiri(date)`, `to_sidereal(lon, date, ayanamsa=...)`,
+  `to_tropical(...)`, `get(ayanamsa, date)`.
+- `Chart.__init__` accepts `zodiac=` and `ayanamsa=` kwargs. Default
+  `zodiac=ZODIAC_TROPICAL` — backwards-compatible.
+- Sidereal mode threaded through the three-layer ephem stack
+  (`swe.py` → `eph.py` → `ephem.py`). Tropical path unchanged.
+- Thread-safe sidereal helpers `_sidereal_calc_ut` and
+  `_sidereal_houses_ex` in `swe.py` lock-guard the
+  `(set_sid_mode, calc_ut)` and `(set_sid_mode, houses_ex)` pairs.
+- New constants in `const.py`: `ZODIAC_TROPICAL`, `ZODIAC_SIDEREAL`,
+  `AYANAMSA_LAHIRI`, `LIST_ZODIACS`, `LIST_AYANAMSAS`, plus
+  `RAHU`/`KETU` aliases for `NORTH_NODE`/`SOUTH_NODE`.
+- 23 new tests in `tests/test_vedic_foundation.py` covering ayanamsa
+  arithmetic, Chart kwarg validation, sidereal position shift,
+  multiple house systems under sidereal mode, and backwards
+  compatibility.
+- 3 new golden tests in `tests/golden/test_vedic_positions.py` —
+  Skyfield-anchored sidereal positions for Einstein, Kahlo, Amundsen
+  at ±2 arcmin tolerance. The "expected sidereal" is computed as
+  Skyfield-tropical minus `swisseph.get_ayanamsa_ut`; the "actual" is
+  `Chart(zodiac=ZODIAC_SIDEREAL).getObject(planet).lon`. Two
+  independent code paths in swisseph cross-checked.
+
+### Decisions (already in the prompt, recorded here for future reference)
+
+1. **Per-Chart `zodiac=`/`ayanamsa=` kwargs**, not module-level config.
+   Avoids global state pitfalls; matches Task 010's symbolic-chart
+   pattern.
+2. **Lahiri only.** KP, Raman, Fagan-Bradley deferred to a follow-up
+   task. YAGNI per CLAUDE.md.
+3. **Sanskrit naming for downstream Vedic modules** (e.g. Navamsa,
+   Vimshottari). Captured in spec for Tasks 018+.
+4. **Lock-guarded sidereal path; no SIDM_NONE reset on exit.** Tropical
+   path is uncontended (no FLG_SIDEREAL flag passed).
+
+### Verification
+
+- 215 existing tests → 242 (added 26). All pass.
+- 57 existing subtests → 87 (golden charts add 27). All pass.
+- Coverage: 88.99% (was ~88%). `mayaastrolib/vedic/ayanamsa.py` at 96%.
+- `ruff format --check` clean. `ruff check` clean (one unused-import
+  auto-fixed during cleanup pass).
+- mypy at the documented 2-error baseline; no new errors.
+- Lahiri ayanamsa at J2000.0 measured: 23.857° via
+  `swisseph.get_ayanamsa_ut`. Matches IAU 1976 model. The
+  `calc_ut(FLG_SIDEREAL)` path gives an effective offset of 23.853°
+  for the same date — a 0.004° discrepancy due to a subtle
+  precession-model difference between the two swisseph entry points.
+  Our tests target ±0.01° / ±2 arcmin which is well above this gap.
+
+### Surprises / honest notes
+
+- `HouseList` is not subscriptable (no `__getitem__`); used
+  `chart.getHouse(const.HOUSE1)` instead.
+- Pars Fortuna's diurnal check uses tropical Sun/MC for correct
+  horizon math (RA/Decl is invariant under ayanamsa shift but the
+  ecliptic-coord-to-RA conversion depends on which longitude you feed
+  in). Solved by computing PF tropically and shifting the result.
+- Under sidereal mode, `solarReturn`/`profected`/`directions` are
+  zodiac-naive — they read the chart's natal Sun longitude (now
+  sidereal) but the underlying `solarReturnJD` iteration in
+  `ephem/tools.py` uses tropical Sun internally → mixed-zodiac output.
+  Documented in CHANGELOG as a known limitation; addressed in
+  Phase 2 follow-ups (Tajika varshapravesh = Task 024).
+
+### Follow-ups
+
+- Task 017b — add KP / Raman / Fagan-Bradley ayanamsas (small,
+  ~30 min)
+- Task 018 — Vedic nakshatras (prompt already drafted at
+  `prompts/task-018-vedic-nakshatras.md`)
+- Task 019 — Divisional charts
+- Task 020 — Vimshottari dasha
+
+---
+
 ## 2026-05-08 — Re-review (post-Task 016)
 
 Closure-tracking review against `docs/REVIEW-2026-05-08.md`

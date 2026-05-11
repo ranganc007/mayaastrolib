@@ -98,7 +98,7 @@ These should not be modified without explicit instruction:
 <!-- AUTO-MANAGED: project-description -->
 ## Current codebase state
 
-Last updated by Task 016 fixstar_mag caching (2026-05-08, branch `development`).
+Last updated by Task 017 Vedic foundation (2026-05-11, branch `development`).
 
 - **Package name:** `mayaastrolib/` — rename from `flatlib/` completed in Task 005. Canonical import: `from mayaastrolib import ...`. The `flatlib/` directory still exists as a compatibility shim (emits `DeprecationWarning`; will be removed in 1.0).
 - **Version:** 0.3.0 — unified via `importlib.metadata.version("mayaastrolib")` in `pyproject.toml`.
@@ -111,7 +111,7 @@ Last updated by Task 016 fixstar_mag caching (2026-05-08, branch `development`).
 - **CI:** `.github/workflows/test.yml` EXISTS — GitHub Actions, matrix Python 3.10/3.11/3.12, runs ruff format check + ruff check + pytest + coverage against `mayaastrolib`.
 - **Dev venv:** `python3 -m venv .venv-<taskname>` then `pip install -e ".[dev]"`. Named per-task (`.venv-task002` through `.venv-task009`; no `.venv-task010` — Tasks 010–013 reused `.venv-task009`; `.venv-task014` created fresh because skyfield needed installing; Tasks 014, 015, and 016 all reused `.venv-task014` — no `.venv-task015` or `.venv-task016` created); all ignored by `.gitignore`.
 - **Python locally:** 3.14.3. CI targets 3.10–3.12.
-- **Tests:** 29 test files, 215 tests, all passing (+4 from Task 016 cache-correctness suite). Coverage ~88% (`--cov=mayaastrolib --cov-fail-under=80`).
+- **Tests:** 31 test files, 242 tests + 87 subtests, all passing (Task 017 added 23 unit tests + 3 sidereal golden subtests). Coverage 88.99% (`--cov=mayaastrolib --cov-fail-under=80`).
 - **Lint state:** `ruff format --check` PASSES. `ruff check` PASSES. UP031 deferred — see `docs/RUFF-DEBT.md`.
 - **mypy:** 2 errors with `--ignore-missing-imports` (pyswisseph has no stubs).
 - **Known bugs:** None open. Eclipse `backward=` kwarg bug fixed in Task 004 (see `docs/KNOWN-BUGS.md`).
@@ -132,6 +132,7 @@ Last updated by Task 016 fixstar_mag caching (2026-05-08, branch `development`).
   - Task 014: golden test fixtures (`tests/golden/`) — Skyfield-anchored planet-position tests for 3 reference charts (Einstein, Kahlo, Amundsen) at ±2 arcmin tolerance, plus self-consistency invariant suite (houses sum to 360°, cusps ordered, planets in valid ranges, profected charts symbolic); `skyfield>=1.46` added as dev-only dep; `LICENSING.md` clarifies the MIT + LGPL + GPL-Swiss-Eph commercial situation; 10 new test methods, 57 subtests; closes the headline reliability gap surfaced by the platform review
   - Task 015: `GeoPos.__init__` validates `lat ∈ [-90, 90]` and `lon ∈ [-180, 180]` after `toFloat()` coercion; raises `ValueError` with the offending value; closes the silent-bad-chart bug surfaced by the platform review (`docs/REVIEW-2026-05-08.md`); 15 regression tests in `tests/test_geopos_validation.py`; new entry in `docs/KNOWN-BUGS.md` "Resolved"
   - Task 016: `swisseph.fixstar2_mag` lookups cached per-process via `@functools.cache` on private `mayaastrolib.ephem.swe._fixstar_mag(star)` wrapper; 144x measured speedup on a 35-star pass (M2 / Python 3.14); no public API change; closes the only documented "really slow" path surfaced by the platform review; 4 cache-correctness regression tests in `tests/test_fixstar_mag_cache.py`
+  - **Task 017: Vedic foundation.** New `mayaastrolib/vedic/` package; `vedic.ayanamsa.lahiri(date)`, `to_sidereal`, `to_tropical`, `get`. `Chart` accepts `zodiac=ZODIAC_TROPICAL|ZODIAC_SIDEREAL` and `ayanamsa=AYANAMSA_LAHIRI` kwargs (default tropical — zero behaviour change for existing callers). Sidereal mode threaded through three-layer ephem stack with lock-guarded `set_sid_mode + calc_ut` / `set_sid_mode + houses_ex` pairs in `ephem/swe.py`. Constants: `ZODIAC_*`, `AYANAMSA_LAHIRI`, `LIST_ZODIACS`, `LIST_AYANAMSAS`, plus Sanskrit aliases `RAHU = NORTH_NODE`, `KETU = SOUTH_NODE`. Golden tests at `tests/golden/test_vedic_positions.py` anchor Skyfield-tropical-minus-Lahiri-ayanamsa against `Chart(zodiac=ZODIAC_SIDEREAL)` at ±2 arcmin for Einstein/Kahlo/Amundsen. Solar returns / profections / directions are zodiac-naive under sidereal mode (deferred to Phase 2 follow-ups). Lahiri ayanamsa only; KP/Raman/Fagan-Bradley deferred.
 <!-- END AUTO-MANAGED -->
 
 ## Goal anchor

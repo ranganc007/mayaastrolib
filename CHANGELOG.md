@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 017 — Vedic foundation)
+- New `mayaastrolib/vedic/` package — foundation for the Phase 2 Vedic
+  Jyotisha extension. This task ships the foundation only; downstream
+  modules (nakshatras, divisional charts, dasha, ...) follow in
+  Tasks 018+.
+- `mayaastrolib.vedic.ayanamsa.lahiri(date)` — Lahiri ayanamsa in
+  degrees at a given date. Backed by
+  `swisseph.get_ayanamsa_ut(SIDM_LAHIRI)`.
+- `mayaastrolib.vedic.ayanamsa.to_sidereal(lon, date, ayanamsa=...)`
+  and `to_tropical(lon, date, ayanamsa=...)` — longitude conversions.
+- `mayaastrolib.vedic.ayanamsa.get(ayanamsa, date)` — dispatcher.
+- `Chart` now accepts `zodiac=ZODIAC_TROPICAL|ZODIAC_SIDEREAL` and
+  `ayanamsa=AYANAMSA_LAHIRI` kwargs. **Default is tropical — zero
+  behaviour change for existing callers.** All 215 pre-Task-017 tests
+  pass unchanged.
+- New constants in `const`: `ZODIAC_TROPICAL`, `ZODIAC_SIDEREAL`,
+  `AYANAMSA_LAHIRI`, `LIST_ZODIACS`, `LIST_AYANAMSAS`. Sanskrit
+  aliases `RAHU = NORTH_NODE`, `KETU = SOUTH_NODE`.
+- New tests: `tests/test_vedic_foundation.py` (23 tests) and
+  `tests/golden/test_vedic_positions.py` (Skyfield-anchored sidereal
+  positions for Einstein, Kahlo, Amundsen at ±2 arcmin tolerance).
+
+### Architectural notes
+- Sidereal mode is resolved at `Chart` construction. The
+  `(set_sid_mode, calc_ut)` and `(set_sid_mode, houses_ex)` pairs are
+  lock-guarded in `mayaastrolib/ephem/swe.py` (`_sidereal_calc_ut`,
+  `_sidereal_houses_ex`) so concurrent sidereal chart construction
+  with different ayanamsas is safe. Tropical charts bypass the lock
+  entirely.
+- Pars Fortuna and Syzygy under sidereal mode: PF is computed
+  tropically (the diurnal check needs tropical Sun/MC for correct
+  horizon math) and the resulting longitude is shifted via
+  `to_sidereal`. The shift is mathematically equivalent to computing
+  Asc+Moon−Sun directly in sidereal coordinates.
+- Under sidereal mode, `Chart.solarReturn()`, `Chart.profected()`,
+  and the predictives module are not yet zodiac-aware. Calling them
+  on a sidereal chart will produce mixed-zodiac output. Phase 2
+  follow-up tasks address these (see Task 024 for Tajika
+  varshapravesh, which is the Vedic equivalent of solar returns).
+- Additional ayanamsas (KP, Raman, Fagan-Bradley) deferred to a
+  follow-up task. Lahiri only for now.
+
 ### Performance (Task 016 — fixstar_mag caching)
 - `swisseph.fixstar2_mag` lookups are now cached per-process via
   `functools.cache` on a private `mayaastrolib.ephem.swe._fixstar_mag`
