@@ -1,14 +1,20 @@
 """Tajika — Vedic annual ("Persian-derived") astrology.
 
-This module ships the core slice: the *varshapravesh* (the moment the
-sidereal Sun returns to its natal sidereal position in a target year)
-and the *Mudda dasha* (the Vimshottari proportions compressed into that
-one year). The Lord-of-Year, Harsha Bala, Panchavargiya Bala, and the
-~50 Tajika Sahams are deferred to a follow-up.
+Ships: the *varshapravesh* (the moment the sidereal Sun returns to its
+natal sidereal position in a target year), the *Mudda dasha* (the
+Vimshottari proportions compressed into that one year), the *Muntha*
+(the progressed point that advances one sign per year of life), the
+*Lord of the Year* (Varsheshwara — chosen from 5 candidates), and the
+core *Tajika Sahams* (Punya, Vidya, Yasas, Karma).
+
+Deferred to a follow-up: the full ~50 Saham table, Harsha Bala,
+Panchavargiya Bala (so Lord-of-Year here uses a simple strength
+heuristic, not the canonical Panchavargiya tally), and the Tajika
+aspects (ithasala, isharafa, etc.).
 
 References:
 - Tajika Neelakanthi (the canonical Tajika text)
-- BPHS ch. 31 (Panchavargiya Bala — carried into Tajika; not in this slice)
+- BPHS ch. 31 (Panchavargiya Bala — carried into Tajika; not yet here)
 """
 
 from mayaastrolib import const
@@ -30,6 +36,44 @@ _SWE_MOON = 1
 # A Tajika year is one tropical year of the Sun's return; we use the same
 # 365.25-day convention as the Vimshottari/Mudda arithmetic.
 TAJIKA_YEAR_DAYS = DAYS_PER_VIMSHOTTARI_YEAR
+
+# Traditional 7-planet sign rulerships, 0-indexed (Aries .. Pisces).
+# (Kept local rather than shared — it's a 12-element table; see
+# vedic/kp.py and vedic/yogas.py for the other copies.)
+_SIGN_LORDS = [
+    const.MARS,
+    const.VENUS,
+    const.MERCURY,
+    const.MOON,
+    const.SUN,
+    const.MERCURY,
+    const.VENUS,
+    const.MARS,
+    const.JUPITER,
+    const.SATURN,
+    const.SATURN,
+    const.JUPITER,
+]
+# Classical Vedic dignities (for the Lord-of-Year strength heuristic).
+_OWN_SIGNS = {
+    const.SUN: [4],
+    const.MOON: [3],
+    const.MARS: [0, 7],
+    const.MERCURY: [2, 5],
+    const.JUPITER: [8, 11],
+    const.VENUS: [1, 6],
+    const.SATURN: [9, 10],
+}
+_EXALTATION_SIGN = {
+    const.SUN: 0,
+    const.MOON: 1,
+    const.MARS: 9,
+    const.MERCURY: 5,
+    const.JUPITER: 3,
+    const.VENUS: 11,
+    const.SATURN: 6,
+}
+_KENDRA_HOUSES = (1, 4, 7, 10)
 
 
 def _sidereal_lon(swe_body, jd, ayanamsa):
@@ -122,3 +166,189 @@ def mudda_dasha(varshapravesh_date, ayanamsa=const.AYANAMSA_LAHIRI):
         periods.append(DashaPeriod(lord=lord, start=current_start, end=end, level=1))
         current_start = end
     return periods
+
+
+# --- Muntha, Lord of Year, Sahams (Task 024b) --- #
+
+
+def _sign_of(lon):
+    return int((lon % 360.0) // 30.0)
+
+
+def _sidereal_asc_sign(chart, ayanamsa):
+    asc = chart.getAngle(const.ASC)
+    if chart.zodiac == const.ZODIAC_SIDEREAL:
+        return _sign_of(asc.lon)
+    return _sign_of(_ay.to_sidereal(asc.lon, chart.date, ayanamsa=ayanamsa))
+
+
+def _sidereal_planet_sign(chart, planet_id, ayanamsa):
+    obj = chart.getObject(planet_id)
+    if chart.zodiac == const.ZODIAC_SIDEREAL:
+        return _sign_of(obj.lon)
+    return _sign_of(_ay.to_sidereal(obj.lon, chart.date, ayanamsa=ayanamsa))
+
+
+def _sidereal_lon_of_object(chart, getter, ayanamsa):
+    obj = getter()
+    if chart.zodiac == const.ZODIAC_SIDEREAL:
+        return obj.lon % 360.0
+    return _ay.to_sidereal(obj.lon, chart.date, ayanamsa=ayanamsa)
+
+
+def muntha(natal_chart, target_year, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return the Muntha for ``target_year``.
+
+    The Muntha is a progressed point: it occupies the natal Lagna's sign
+    at birth and advances one sign per completed year of life. For
+    ``target_year`` (a civil year), the age used is ``target_year −
+    birth_year``.
+
+    Returns:
+        Dict ``{sign_idx, sign, lord}`` — the Muntha's sidereal sign
+        index (0..11), sign name, and ruling planet.
+    """
+    natal_lagna_sign = _sidereal_asc_sign(natal_chart, ayanamsa)
+    birth_year = natal_chart.date.to_pydatetime().year
+    age = target_year - birth_year
+    sign_idx = (natal_lagna_sign + age) % 12
+    return {
+        "sign_idx": sign_idx,
+        "sign": const.LIST_SIGNS[sign_idx],
+        "lord": _SIGN_LORDS[sign_idx],
+    }
+
+
+def _trirashi_pati(annual_lagna_lon, is_diurnal):
+    """Return the Trirashi-pati: the lord of the relevant third of the
+    annual Lagna's sign.
+
+    Each sign is split into three 10° parts. By day: 1st part → the
+    sign's own lord, 2nd → the 5th sign's lord, 3rd → the 9th sign's
+    lord. By night the order of the three is reversed.
+    """
+    sign_idx = _sign_of(annual_lagna_lon)
+    deg = (annual_lagna_lon % 360.0) - sign_idx * 30.0
+    part = int(deg // 10.0)  # 0, 1, 2
+    offsets_day = [0, 4, 8]  # same sign, 5th, 9th
+    offsets = offsets_day if is_diurnal else list(reversed(offsets_day))
+    return _SIGN_LORDS[(sign_idx + offsets[part]) % 12]
+
+
+def lord_of_year_candidates(annual_chart, natal_chart, target_year, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return the five Varsheshwara (Lord-of-Year) candidates.
+
+    Returns:
+        A list of ``(label, planet_id)`` pairs in the traditional
+        priority order: Muntha lord, annual-Lagna lord, Sun-sign lord
+        (the sign the Sun occupies at varshapravesh), natal-Lagna lord,
+        Trirashi-pati.
+    """
+    m = muntha(natal_chart, target_year, ayanamsa=ayanamsa)
+    annual_lagna_lon = _sidereal_lon_of_object(
+        annual_chart, lambda: annual_chart.getAngle(const.ASC), ayanamsa
+    )
+    annual_lagna_lord = _SIGN_LORDS[_sign_of(annual_lagna_lon)]
+    sun_sign_lord = _SIGN_LORDS[_sidereal_planet_sign(annual_chart, const.SUN, ayanamsa)]
+    natal_lagna_lord = _SIGN_LORDS[_sidereal_asc_sign(natal_chart, ayanamsa)]
+    trirashi = _trirashi_pati(annual_lagna_lon, annual_chart.isDiurnal())
+    return [
+        ("muntha", m["lord"]),
+        ("annual_lagna", annual_lagna_lord),
+        ("sun_sign", sun_sign_lord),
+        ("natal_lagna", natal_lagna_lord),
+        ("trirashi", trirashi),
+    ]
+
+
+def _simple_strength(planet, annual_chart, annual_lagna_sign, ayanamsa):
+    """A crude 0–3 strength tally for the Lord-of-Year heuristic:
+    +1 if the planet is in its own sign, +1 if exalted, +1 if in a
+    kendra from the annual Lagna. (The canonical Tajika rule uses
+    Panchavargiya Bala — see the module docstring.)"""
+    sign = _sidereal_planet_sign(annual_chart, planet, ayanamsa)
+    score = 0
+    if sign in _OWN_SIGNS.get(planet, []):
+        score += 1
+    if _EXALTATION_SIGN.get(planet) == sign:
+        score += 1
+    house = (sign - annual_lagna_sign) % 12 + 1
+    if house in _KENDRA_HOUSES:
+        score += 1
+    return score
+
+
+def lord_of_year(annual_chart, natal_chart, target_year, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return the Lord of the Year (Varsheshwara) as ``(label, planet_id)``.
+
+    Picks the candidate with the highest simple strength tally
+    (own-sign / exalted / in-a-kendra in the annual chart), ties broken
+    by the traditional candidate priority (Muntha lord first).
+
+    NOTE: the canonical Tajika rule picks the strongest candidate by
+    *Panchavargiya Bala* — a five-component strength sum not yet
+    implemented. This is a documented heuristic stand-in.
+    """
+    candidates = lord_of_year_candidates(annual_chart, natal_chart, target_year, ayanamsa=ayanamsa)
+    annual_lagna_sign = _sidereal_asc_sign(annual_chart, ayanamsa)
+    best = None
+    best_score = -1
+    for label, planet in candidates:
+        s = _simple_strength(planet, annual_chart, annual_lagna_sign, ayanamsa)
+        if s > best_score:
+            best_score = s
+            best = (label, planet)
+    return best
+
+
+# Names of the core Sahams shipped here.
+SAHAM_PUNYA = "Punya"
+SAHAM_VIDYA = "Vidya"
+SAHAM_YASAS = "Yasas"
+SAHAM_KARMA = "Karma"
+
+
+def sahams(annual_chart, ayanamsa=const.AYANAMSA_LAHIRI):
+    """Return the core Tajika Sahams for an annual (varshapravesh) chart.
+
+    Args:
+        annual_chart: A :class:`Chart` built at the varshapravesh moment
+            (tropical or sidereal).
+        ayanamsa: Used only when the chart is tropical.
+
+    Returns:
+        Dict ``{saham_name: sidereal_longitude}`` for Punya, Vidya,
+        Yasas, and Karma — all normalised to ``[0, 360)``. For a
+        diurnal chart the standard day formulas are used; for a
+        nocturnal chart the two non-Lagna terms are swapped (the
+        reversible-Saham rule).
+
+    The Saham formulas vary somewhat by source; these follow the
+    commonly-reproduced Tajika Neelakanthi forms. The full ~50-Saham
+    table is a follow-up.
+    """
+
+    def sid(getter):
+        return _sidereal_lon_of_object(annual_chart, getter, ayanamsa)
+
+    asc = sid(lambda: annual_chart.getAngle(const.ASC))
+    sun = sid(lambda: annual_chart.getObject(const.SUN))
+    moon = sid(lambda: annual_chart.getObject(const.MOON))
+    mars = sid(lambda: annual_chart.getObject(const.MARS))
+    jupiter = sid(lambda: annual_chart.getObject(const.JUPITER))
+    diurnal = annual_chart.isDiurnal()
+
+    def reversible(a, b):
+        # day: a - b + Asc ; night: b - a + Asc
+        return ((a - b if diurnal else b - a) + asc) % 360.0
+
+    punya = reversible(moon, sun)
+    vidya = reversible(sun, moon)
+    karma = reversible(mars, sun)
+    yasas = reversible(jupiter, punya)
+    return {
+        SAHAM_PUNYA: punya,
+        SAHAM_VIDYA: vidya,
+        SAHAM_YASAS: yasas,
+        SAHAM_KARMA: karma,
+    }

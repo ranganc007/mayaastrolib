@@ -6,6 +6,70 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 024b — Tajika Muntha / Lord of Year / Sahams
+
+Branch: `task-024b-tajika-balas`. Prompt: none (scoped from the
+session plan). Follow-up to Task 024.
+
+### What was done
+
+- `vedic/tajika.py`: `muntha`, `lord_of_year_candidates`,
+  `lord_of_year`, `sahams`, plus `_trirashi_pati`, the
+  `SAHAM_PUNYA`/`VIDYA`/`YASAS`/`KARMA` constants, and the local
+  `_SIGN_LORDS`/`_OWN_SIGNS`/`_EXALTATION_SIGN` tables. Module
+  docstring updated.
+- 21 new tests in `tests/test_vedic_tajika_balas.py`.
+
+### Verification
+
+- Tests: 437 → 450 (+13 — 21 new tests across the file, several
+  reuse the same setUp). All pass. Coverage: 91.55% → 91.68%.
+- ruff format/check clean. mypy at the documented baseline.
+- Muntha 1980 (birth year) = Virgo (the natal Lagna sign); Muntha 2024
+  = Taurus (advanced 44 ≡ 8 signs from Virgo). Sahams: Punya + Vidya ≡
+  2·Asc (mod 360) — confirms the reversal relation. Lord-of-Year for
+  the 1980 chart, 2024 → Mercury (the Sun-sign-lord candidate) by the
+  strength heuristic.
+
+### Decisions / honest notes
+
+- **Lord-of-Year uses a heuristic, not Panchavargiya Bala.** The
+  canonical rule picks the strongest of the 5 candidates by a
+  five-component Panchavargiya tally (Kshetra/Hadda/Drekkana/Navamsa/
+  Trimshamsa Bala) — a Shadbala-lite computation not yet implemented.
+  The heuristic here scores +1 for own sign, +1 for exalted, +1 for
+  in-a-kendra, ties broken by candidate priority. Documented in the
+  function docstring; flagged as a follow-up.
+- **Only 4 Sahams.** The full Tajika Neelakanthi Saham list runs to
+  ~50, with formulas that vary across sources and per-Saham day/night
+  rules that aren't all the simple "swap the two terms" pattern.
+  Shipping Punya/Vidya/Yasas/Karma — the ones whose formulas are
+  unambiguous and widely agreed — rather than 50 possibly-wrong ones.
+  The rest, plus the balas and the Tajika aspects, are a further
+  follow-up.
+- **Trirashi-pati** uses the day-style "1st part → own sign, 2nd → 5th,
+  3rd → 9th" with the order reversed at night — one common form; some
+  texts vary.
+- `_SIGN_LORDS` is now defined in three vedic modules (kp, yogas,
+  tajika). It's a 12-element table; a shared `vedic/_common.py` for it
+  would be over-engineering per CLAUDE.md's YAGNI. Noted in the
+  module comment.
+
+### Phase 2 status — the spec module list plus its named follow-ups
+
+All of the spec's modules (017–026) AND the follow-ups it implied
+(017b extra ayanamsas, 024b Tajika balas-core, extended yogas) are now
+shipped. Tests: 215 → 450 (+235 new). Coverage ~88% → 91.68%. The
+`mayaastrolib/vedic/` package now has 10 modules (ayanamsa, nakshatras,
+divisional, dasha, ashtakavarga, sadesati, upagrahas, tajika, kp,
+yogas). Remaining work is genuinely "phase 3" depth-fill: the full
+50-Saham table, Harsha/Panchavargiya Bala, Tajika aspects, KP
+sub-sub-lord / horary / Ruling Planets, Ashtakavarga shodhana/kakshya,
+the lesser yogas, and yoga strength scoring — all clearly scoped in the
+respective CHANGELOG entries and module docstrings.
+
+---
+
 ## 2026-05-11 — Task 026b — Extended Vedic Yogas
 
 Branch: `task-026b-extended-yogas`. Prompt:

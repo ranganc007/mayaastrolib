@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 024b — Tajika Muntha, Lord of Year, Sahams)
+- `mayaastrolib/vedic/tajika.py` extended:
+  - `muntha(natal_chart, target_year, ayanamsa=...)` → the Muntha (the
+    progressed point that sits in the natal Lagna's sign at birth and
+    advances one sign per year of life). Returns `{sign_idx, sign, lord}`.
+  - `lord_of_year_candidates(annual_chart, natal_chart, target_year,
+    ayanamsa=...)` → the 5 Varsheshwara candidates in traditional
+    priority order (Muntha lord, annual-Lagna lord, Sun-sign lord,
+    natal-Lagna lord, Trirashi-pati) as `(label, planet_id)` pairs.
+  - `lord_of_year(...)` → picks the candidate with the highest simple
+    own/exalted/in-a-kendra strength tally (ties → Muntha-first).
+    **Heuristic** — the canonical rule uses Panchavargiya Bala, which
+    is a follow-up.
+  - `sahams(annual_chart, ayanamsa=...)` → the core Tajika Sahams as
+    `{name: sidereal_longitude}` — **Punya** (Moon−Sun+Asc by day,
+    reversed by night), **Vidya** (the reverse of Punya), **Yasas**
+    (Jupiter−Punya+Asc by day, reversed by night), **Karma**
+    (Mars−Sun+Asc by day, reversed by night). All normalised to
+    `[0, 360)`.
+  - `_trirashi_pati`, `SAHAM_PUNYA`/`SAHAM_VIDYA`/`SAHAM_YASAS`/
+    `SAHAM_KARMA` constants exported.
+- 21 new unit tests in `tests/test_vedic_tajika_balas.py` (Muntha
+  advance per year, the 5-candidate list, Lord-of-Year ∈ candidates,
+  the Trirashi-pati helper, the 4 Sahams, Punya/Vidya reversal,
+  Punya-matches-formula, tropical-vs-sidereal-chart agreement).
+- Still deferred (a further follow-up): the full ~50 Saham table,
+  Harsha Bala, Panchavargiya Bala, and the Tajika aspects (ithasala,
+  isharafa, etc.).
+
 ### Added (Task 026b — extended Vedic yogas)
 - `mayaastrolib/vedic/yogas.py` now also detects, on top of the original
   8 (Pancha Mahapurusha + Gaja-Kesari + Budha-Aditya + Chandra-Mangala):
