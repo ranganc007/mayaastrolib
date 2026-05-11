@@ -53,39 +53,74 @@ def _sub_sequence_for_nakshatra(nak_idx):
     return [VIMSHOTTARI_ORDER[(start + i) % 9] for i in range(9)]
 
 
+def _vimshottari_sequence_from(lord):
+    """Return the 9-lord Vimshottari cycle starting from ``lord``."""
+    start = VIMSHOTTARI_ORDER.index(lord)
+    return [VIMSHOTTARI_ORDER[(start + i) % 9] for i in range(9)]
+
+
+def _proportional_lord(fraction, seq):
+    """Given a fraction 0..1 of a span and a 9-lord sequence with widths
+    proportional to the Vimshottari years, return the lord whose
+    sub-span contains ``fraction``."""
+    cum = 0.0
+    for lord in seq:
+        cum += VIMSHOTTARI_YEARS[lord] / 120.0
+        if fraction < cum - _EPS / _SEG:
+            return lord
+    return seq[-1]
+
+
 def _sub_lord(sidereal_lon):
     """Return the KP sub-lord ID at ``sidereal_lon``."""
     lon = sidereal_lon % 360.0
     nak_idx = int(lon // _SEG)
     pos_in_nak = (lon - nak_idx * _SEG) / _SEG  # fraction 0..1
+    return _proportional_lord(pos_in_nak, _sub_sequence_for_nakshatra(nak_idx))
+
+
+def _sub_sub_lord(sidereal_lon):
+    """Return the KP sub-sub-lord ID (the 4th level) at ``sidereal_lon``.
+
+    Within a sub (whose width is proportional to its lord's Vimshottari
+    years), the 30° is divided again into 9 parts proportional to the
+    Vimshottari years, the sequence starting from the sub's own lord.
+    """
+    lon = sidereal_lon % 360.0
+    nak_idx = int(lon // _SEG)
+    pos_in_nak = (lon - nak_idx * _SEG) / _SEG  # fraction 0..1 of the nakshatra
+    sub_seq = _sub_sequence_for_nakshatra(nak_idx)
+    # Walk the subs to find which one we're in and our fraction within it.
     cum = 0.0
-    seq = _sub_sequence_for_nakshatra(nak_idx)
-    for sub_lord in seq:
-        cum += VIMSHOTTARI_YEARS[sub_lord] / 120.0
-        # Use a small epsilon so a longitude exactly at a sub boundary
-        # belongs to the *next* sub (consistent with [start, end) rows).
-        if pos_in_nak < cum - _EPS / _SEG:
-            return sub_lord
-    return seq[-1]
+    for sub_lord in sub_seq:
+        width = VIMSHOTTARI_YEARS[sub_lord] / 120.0
+        if pos_in_nak < cum + width - _EPS / _SEG:
+            frac_in_sub = (pos_in_nak - cum) / width if width > 0 else 0.0
+            return _proportional_lord(frac_in_sub, _vimshottari_sequence_from(sub_lord))
+        cum += width
+    # Boundary: last sub, last sub-sub.
+    return _vimshottari_sequence_from(sub_seq[-1])[-1]
 
 
-def sub_lord_at(sidereal_lon):
+def sub_lord_at(sidereal_lon, with_sub_sub=False):
     """Return the full KP chain at ``sidereal_lon``.
 
     Args:
         sidereal_lon: A sidereal ecliptic longitude in degrees. For
             KP-correct results compute it under the Krishnamurti
             ayanamsa.
+        with_sub_sub: If True, the result also includes ``sub_sub_lord``
+            (the 4th level).
 
     Returns:
         Dict with keys ``longitude`` (normalised), ``sign``,
         ``sign_lord``, ``nakshatra``, ``star_lord``, ``pada``,
-        ``sub_lord``.
+        ``sub_lord`` — and ``sub_sub_lord`` when ``with_sub_sub=True``.
     """
     lon = sidereal_lon % 360.0
     sign_idx = int(lon // 30.0)
     nak = _nak.of_longitude(lon)
-    return {
+    chain = {
         "longitude": lon,
         "sign": const.LIST_SIGNS[sign_idx],
         "sign_lord": SIGN_LORDS[sign_idx],
@@ -94,6 +129,14 @@ def sub_lord_at(sidereal_lon):
         "pada": nak.pada,
         "sub_lord": _sub_lord(lon),
     }
+    if with_sub_sub:
+        chain["sub_sub_lord"] = _sub_sub_lord(lon)
+    return chain
+
+
+def sub_sub_lord_at(sidereal_lon):
+    """Return just the KP sub-sub-lord ID (the 4th level) at ``sidereal_lon``."""
+    return _sub_sub_lord(sidereal_lon)
 
 
 def _build_kp_table():
@@ -196,3 +239,108 @@ def kp_sublords(chart, ayanamsa=const.AYANAMSA_KRISHNAMURTI):
     result = {p: sub_lord_at(sid_lon(chart.getObject(p))) for p in _CLASSICAL_PLANETS}
     result[const.ASC] = sub_lord_at(sid_lon(chart.getAngle(const.ASC)))
     return result
+
+
+# --- KP horary --- #
+
+# Weekday lords, Sunday=0 .. Saturday=6.
+_WEEKDAY_LORDS = [
+    const.SUN,
+    const.MOON,
+    const.MARS,
+    const.MERCURY,
+    const.JUPITER,
+    const.VENUS,
+    const.SATURN,
+]
+
+
+def prashna_to_longitude(prashna_number):
+    """Return the sidereal longitude (the midpoint of the corresponding
+    249-row KP segment) for a horary *prashna* number 1..249.
+
+    Args:
+        prashna_number: An integer in ``[1, 249]``.
+
+    Returns:
+        The midpoint longitude of the ``prashna_number``-th row of
+        :func:`kp_table` (1-indexed), in degrees.
+
+    Raises:
+        ValueError: if ``prashna_number`` is outside ``[1, 249]``.
+    """
+    if not (1 <= prashna_number <= 249):
+        raise ValueError(f"prashna_number must be in [1, 249]; got {prashna_number}")
+    row = _KP_TABLE[prashna_number - 1]
+    start, end = row["start_lon"], row["end_lon"]
+    if end <= start:
+        end += 360.0
+    return ((start + end) / 2.0) % 360.0
+
+
+def kp_horary(prashna_number):
+    """Return the KP horary Ascendant chain for a *prashna* number.
+
+    The querent's number 1..249 selects one of the 249 KP segments; the
+    horary Ascendant is taken at the midpoint of that segment. (This
+    returns the Lagna's sub-lord chain — building a full horary chart
+    with house cusps from a fixed Ascendant degree is a follow-up.)
+
+    Returns:
+        Dict ``{"prashna": int, "lagna_longitude": float, "lagna":
+        <sub_lord_at dict including sub_sub_lord>}``.
+    """
+    lon = prashna_to_longitude(prashna_number)
+    return {
+        "prashna": prashna_number,
+        "lagna_longitude": lon,
+        "lagna": sub_lord_at(lon, with_sub_sub=True),
+    }
+
+
+def ruling_planets(date, pos, ayanamsa=const.AYANAMSA_KRISHNAMURTI):
+    """Return the KP Ruling Planets at the moment of a question.
+
+    The Ruling Planets are: the day-of-week lord, the Moon's sign lord
+    and star (nakshatra) lord, the Ascendant's sign lord and star lord,
+    plus the Moon's and Ascendant's KP sub-lords. (The weekday used is
+    the civil-date weekday — the true astrological day runs
+    sunrise→sunrise, a documented approximation.)
+
+    Args:
+        date: A :class:`~mayaastrolib.datetime.Datetime` — the question
+            moment.
+        pos: A :class:`~mayaastrolib.geopos.GeoPos` — the question
+            location (needed for the Ascendant).
+        ayanamsa: The sidereal ayanamsa to use; defaults to the KP
+            (Krishnamurti) ayanamsa.
+
+    Returns:
+        Dict with keys ``day_lord``, ``moon_sign_lord``,
+        ``moon_star_lord``, ``moon_sub_lord``, ``lagna_sign_lord``,
+        ``lagna_star_lord``, ``lagna_sub_lord``, plus a ``set`` of all
+        the distinct ruling-planet IDs under ``"all"``.
+    """
+    from mayaastrolib.chart import Chart
+
+    chart = Chart(date, pos, zodiac=const.ZODIAC_SIDEREAL, ayanamsa=ayanamsa)
+    moon_lon = chart.getObject(const.MOON).lon % 360.0
+    asc_lon = chart.getAngle(const.ASC).lon % 360.0
+    moon_chain = sub_lord_at(moon_lon)
+    lagna_chain = sub_lord_at(asc_lon)
+
+    pydt = date.to_pydatetime()
+    weekday = (pydt.weekday() + 1) % 7  # Python Mon=0..Sun=6 → astro Sun=0..Sat=6
+    day_lord = _WEEKDAY_LORDS[weekday]
+
+    rp = {
+        "day_lord": day_lord,
+        "moon_sign_lord": moon_chain["sign_lord"],
+        "moon_star_lord": moon_chain["star_lord"],
+        "moon_sub_lord": moon_chain["sub_lord"],
+        "lagna_sign_lord": lagna_chain["sign_lord"],
+        "lagna_star_lord": lagna_chain["star_lord"],
+        "lagna_sub_lord": lagna_chain["sub_lord"],
+    }
+    rp["all"] = set(rp.values())
+    return rp

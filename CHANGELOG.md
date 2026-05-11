@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 030 — KP sub-sub-lord, horary, Ruling Planets)
+- `mayaastrolib/vedic/kp.py` extended:
+  - `sub_sub_lord_at(sidereal_lon)` and `sub_lord_at(..., with_sub_sub=
+    True)` — the **4th level** of the KP hierarchy. Within a sub (whose
+    width is proportional to its lord's Vimshottari years), the span is
+    divided again into 9 parts proportional to the Vimshottari years,
+    the sequence starting from the sub's own lord. New
+    `_vimshottari_sequence_from` / `_proportional_lord` helpers (the
+    sub-level lookup is now expressed in terms of the latter too).
+  - `prashna_to_longitude(prashna_number)` — maps a horary number
+    1..249 to the midpoint longitude of the corresponding 249-row KP
+    segment; raises `ValueError` outside `[1, 249]`.
+  - `kp_horary(prashna_number)` — returns `{prashna, lagna_longitude,
+    lagna}` where `lagna` is the `sub_lord_at(..., with_sub_sub=True)`
+    chain at that longitude. (A full horary chart with house cusps from
+    a fixed Ascendant degree is a follow-up.)
+  - `ruling_planets(date, pos, ayanamsa=AYANAMSA_KRISHNAMURTI)` — the
+    KP Ruling Planets at a question moment: `day_lord` (weekday lord),
+    `moon_sign_lord` / `moon_star_lord` / `moon_sub_lord`,
+    `lagna_sign_lord` / `lagna_star_lord` / `lagna_sub_lord`, plus
+    `"all"` (the distinct set). Uses the civil-date weekday (the true
+    astrological day runs sunrise→sunrise — a documented approximation)
+    and builds a chart under the KP ayanamsa.
+- 13 unit tests in `tests/test_vedic_kp_extras.py`.
+- Deferred: a full horary chart (house cusps from a fixed Asc), KP
+  significators / cuspal interlinks.
+
 ### Added (Task 029 — Tajika Harsha/Panchavargiya Bala + aspects)
 - `mayaastrolib/vedic/tajika_bala.py`:
   - `harsha_bala(chart, ayanamsa=...)` → the "joy strength": a

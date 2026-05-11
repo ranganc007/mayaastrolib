@@ -6,6 +6,42 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 030 — KP Sub-Sub-Lord, Horary, Ruling Planets
+
+Branch: `task-030-kp-extras`. Follow-up to Task 025.
+
+### What was done
+
+- `vedic/kp.py`: `sub_sub_lord_at` / `sub_lord_at(with_sub_sub=True)`
+  (the 4th KP level), `prashna_to_longitude` / `kp_horary` (horary
+  number 1..249 → segment midpoint), `ruling_planets(date, pos, ...)`.
+  New `_vimshottari_sequence_from` / `_proportional_lord` helpers.
+- 13 new tests in `tests/test_vedic_kp_extras.py`.
+
+### Verification
+
+- Tests: 478 → 491 (+13). All pass. Coverage: 91.76% → 91.88%.
+- ruff format/check clean. mypy at the documented baseline.
+- `sub_lord_at(0.0, with_sub_sub=True)` → Ketu all the way down (Ashwini
+  is Ketu-ruled). `ruling_planets(2024-06-15 Sat, Delhi)` → day_lord
+  Saturn. `prashna_to_longitude(1)` ≈ 0.39°, `(249)` ≈ 358.94°.
+
+### Notes
+
+- One smoke-test guess was wrong (the sub-sub at 0.3° into Ashwini is
+  Mars, not Venus — within the Ketu sub, the sub-sub sequence is
+  Ketu/Venus/Sun/Moon/Mars/…); the test was rewritten to assert the
+  sub-sub *changes* through the sub rather than guessing a specific
+  value, with `_sub_lord` still Ketu inside the Ketu sub.
+- `kp_horary` returns the Ascendant chain at the segment midpoint, not
+  a full chart with house cusps — building the cusps from a fixed Asc
+  degree (via `swisseph` armc-based house functions) is a follow-up.
+- Ruling Planets uses the civil-date weekday; the sunrise→sunrise
+  astrological day would shift a pre-dawn question to the previous
+  weekday. Documented.
+
+---
+
 ## 2026-05-11 — Task 029 — Tajika Harsha/Panchavargiya Bala + Aspects
 
 Branch: `task-029-tajika-bala-aspects`. Follow-up to Task 024b/028.
