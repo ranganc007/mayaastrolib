@@ -6,6 +6,44 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 031 — Ashtakavarga Prastara / Shodhana / Kakshya
+
+Branch: `task-031-ashtakavarga-shodhana`. Follow-up to Task 021.
+
+### What was done
+
+- `vedic/ashtakavarga.py`: `bhinnashtakavarga_prastara`,
+  `trikona_shodhana`, `ekadhipatya_shodhana`,
+  `shodhita_sarvashtakavarga`, `kakshya_of`, `kakshya_transit_active`,
+  plus `TRIKONA_GROUPS` / `EKADHIPATYA_PAIRS` / `KAKSHYA_LORDS`
+  constants. Module docstring updated.
+- 35 new tests in `tests/test_vedic_ashtakavarga_shodhana.py`.
+
+### Verification
+
+- Tests: 491 → 510 (+19 — 35 tests in the new file, several share
+  setUp). All pass. Coverage: 91.88% → 91.99%.
+- ruff format/check clean (fixed two `zip(... strict=)` lint flags in
+  the test). mypy at the documented baseline.
+- For the 1947-08-15 chart: full SAV 337, shodhita SAV ≈ 37 (much
+  lower, as expected); shodhita per-rasi ≤ full per-rasi everywhere.
+  Kakshya order verified within a sign (Saturn at 1°, Jupiter at 4°,
+  …, Lagna at 28°).
+
+### Honest notes
+
+- Both shodhana rule sets are source-variant. `trikona_shodhana` uses
+  the clean "subtract the min from each trine" form (the harsher "zero
+  the whole trine if any member is zero" variant is not implemented).
+  `ekadhipatya_shodhana` uses one common variant of the
+  occupied/unoccupied reduction rules; documented in the docstring.
+- `kakshya_transit_active` operates on the *prastara* (per-contributor
+  breakdown), since kakshya transit analysis needs to know *which*
+  contributor placed the bindu — `bhinnashtakavarga` only returns the
+  sum, so `bhinnashtakavarga_prastara` was added for this.
+
+---
+
 ## 2026-05-11 — Task 030 — KP Sub-Sub-Lord, Horary, Ruling Planets
 
 Branch: `task-030-kp-extras`. Follow-up to Task 025.

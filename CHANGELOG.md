@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 031 — Ashtakavarga prastara, shodhana, kakshya)
+- `mayaastrolib/vedic/ashtakavarga.py` extended:
+  - `bhinnashtakavarga_prastara(planet, signs)` — the per-contributor
+    breakdown `{contributor: 12-cell list of 0/1}`; summing the eight
+    rows reproduces `bhinnashtakavarga`.
+  - `trikona_shodhana(bav)` — trine reduction: for each of the four
+    trine groups, subtract the minimum of the three cells from all
+    three. (Documented: this is the "subtract the min" form, not the
+    harsher "zero the whole trine if any member is zero" variant.)
+  - `ekadhipatya_shodhana(bav, occupied_signs)` — co-rulership
+    reduction applied to the trikona-reduced BAV across the five
+    co-rulership sign pairs. (One common variant; documented.)
+  - `shodhita_sarvashtakavarga(planet_signs, lagna_sign)` — the SAV
+    after trikona + ekadhipatya reduction of each BAV.
+  - `kakshya_of(sidereal_lon)` — which of the 8 kakshyas (3°45' each,
+    ruled in the fixed order Saturn/Jupiter/Mars/Sun/Venus/Mercury/
+    Moon/Lagna) a longitude falls in.
+  - `kakshya_transit_active(prastara, transiting_lon)` — for transit
+    timing: returns `(kakshya_lord, active)` where `active` is True iff
+    that kakshya's lord (as an Ashtakavarga contributor) places a bindu
+    in the transited sign in the given prastara.
+  - New constants `TRIKONA_GROUPS`, `EKADHIPATYA_PAIRS`,
+    `KAKSHYA_LORDS`, `KAKSHYA_WIDTH_DEG`.
+- 35 unit tests in `tests/test_vedic_ashtakavarga_shodhana.py`.
+
 ### Added (Task 030 — KP sub-sub-lord, horary, Ruling Planets)
 - `mayaastrolib/vedic/kp.py` extended:
   - `sub_sub_lord_at(sidereal_lon)` and `sub_lord_at(..., with_sub_sub=

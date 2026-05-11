@@ -1,4 +1,4 @@
-"""Ashtakavarga — the bindu (benefic-point) system. BPHS ch. 66.
+"""Ashtakavarga — the bindu (benefic-point) system. BPHS ch. 66, 8.
 
 Each of the 7 classical planets gets a Bhinnashtakavarga (BAV): a 12-cell
 array counting how many "benefic points" it receives in each sign,
@@ -6,11 +6,20 @@ contributed by the positions of 8 bodies (the 7 planets + the
 Ascendant — hence "ashta", eight). The Sarvashtakavarga (SAV) sums the
 7 planetary BAVs per sign; the grand total is canonically 337.
 
+This module also provides:
+- the *prastara* (per-contributor breakdown) — `bhinnashtakavarga_prastara`;
+- the *shodhana* reductions — `trikona_shodhana` (by trine),
+  `ekadhipatya_shodhana` (by co-rulership), and `shodhita_sarvashtakavarga`
+  (the SAV after both);
+- *kakshya* — `kakshya_of` (which of the 8 sub-divisions of a sign a
+  longitude is in) and `kakshya_transit_active` (transit timing).
+
 House counting convention: "house h from contributor C" means the sign
 ``(c_sign + h - 1) % 12`` — house 1 is C's own sign.
 
 References:
-- Brihat Parashara Hora Shastra (BPHS) ch. 66 (Prastara Ashtakavarga)
+- Brihat Parashara Hora Shastra (BPHS) ch. 66 (Prastara), ch. 8
+  (Shodhana, Kakshya)
 - Phaladeepika ch. 19 (cross-reference)
 """
 
@@ -220,3 +229,199 @@ def ashtakavarga(chart, ayanamsa=const.AYANAMSA_LAHIRI):
     asc = chart.getAngle(const.ASC)
     lagna_sign = _sign_of(sid_lon(asc))
     return sarvashtakavarga(planet_signs, lagna_sign)
+
+
+# --- Prastara (per-contributor breakdown) --- #
+
+
+def bhinnashtakavarga_prastara(planet, signs):
+    """Return the per-contributor Bhinnashtakavarga ("prastara") for ``planet``.
+
+    Like :func:`bhinnashtakavarga` but instead of summing, returns the
+    breakdown: ``{contributor_id: 12-cell list}`` where each cell is 0
+    or 1 (the bindu that contributor places in that sign for this
+    planet). Summing the eight 12-cell lists element-wise reproduces
+    :func:`bhinnashtakavarga`.
+    """
+    if planet not in ASHTAKAVARGA_TABLES:
+        raise ValueError(
+            f"{planet!r} has no Ashtakavarga table; expected one of {ASHTAKAVARGA_PLANETS}"
+        )
+    table = ASHTAKAVARGA_TABLES[planet]
+    prastara = {}
+    for contributor in ASHTAKAVARGA_CONTRIBUTORS:
+        if contributor not in signs:
+            raise ValueError(f"signs is missing contributor {contributor!r}")
+        c_sign = signs[contributor] % 12
+        row = [0] * 12
+        for house in table[contributor]:
+            row[(c_sign + house - 1) % 12] = 1
+        prastara[contributor] = row
+    return prastara
+
+
+# --- Shodhana (reduction) --- #
+
+# The four trine ("trikona") groups of sign indices.
+TRIKONA_GROUPS = ([0, 4, 8], [1, 5, 9], [2, 6, 10], [3, 7, 11])
+
+# The five co-rulership ("ekadhipatya") sign pairs (signs sharing a
+# planet-lord). Cancer (Moon) and Leo (Sun) are single-rulership — no pair.
+EKADHIPATYA_PAIRS = (
+    (0, 7),  # Aries / Scorpio — Mars
+    (1, 6),  # Taurus / Libra — Venus
+    (2, 5),  # Gemini / Virgo — Mercury
+    (8, 11),  # Sagittarius / Pisces — Jupiter
+    (9, 10),  # Capricorn / Aquarius — Saturn
+)
+
+
+def trikona_shodhana(bav):
+    """Apply trikona (trine) reduction to a 12-cell BAV.
+
+    For each of the four trine groups, the minimum of the three cells is
+    subtracted from all three. (If the minimum is zero the trine is
+    unchanged. Some texts use a harsher rule — "if any trine member is
+    zero, zero the whole trine" — which is *not* what this implements.)
+
+    Returns a new 12-cell list; the input is not modified.
+    """
+    result = list(bav)
+    for group in TRIKONA_GROUPS:
+        m = min(result[i] for i in group)
+        for i in group:
+            result[i] -= m
+    return result
+
+
+def ekadhipatya_shodhana(bav, occupied_signs):
+    """Apply ekadhipatya (co-rulership) reduction to a 12-cell BAV.
+
+    For each of the five co-rulership sign pairs ``(a, b)``, using
+    whether each sign is *occupied* (has a planet of the natal chart in
+    it):
+
+    - both occupied → unchanged;
+    - neither occupied → if the two cells differ, both become the
+      smaller; if equal, both become 0;
+    - one occupied, one not → the unoccupied cell becomes 0 if the
+      occupied cell's value is greater-or-equal, otherwise both become
+      the smaller value.
+
+    (Ekadhipatya rules vary across sources — this is one common variant.
+    Apply *after* :func:`trikona_shodhana`.)
+
+    Args:
+        bav: A 12-cell list (typically already trikona-reduced).
+        occupied_signs: An iterable of sign indices that contain a
+            planet in the chart.
+
+    Returns a new 12-cell list; the input is not modified.
+    """
+    result = list(bav)
+    occ = set(occupied_signs)
+    for a, b in EKADHIPATYA_PAIRS:
+        va, vb = result[a], result[b]
+        a_occ, b_occ = a in occ, b in occ
+        if a_occ and b_occ:
+            continue
+        if not a_occ and not b_occ:
+            if va == vb:
+                result[a] = result[b] = 0
+            else:
+                lo = min(va, vb)
+                result[a] = result[b] = lo
+        else:
+            # Exactly one occupied.
+            occ_val = va if a_occ else vb
+            unocc_idx = b if a_occ else a
+            unocc_val = vb if a_occ else va
+            if occ_val >= unocc_val:
+                result[unocc_idx] = 0
+            else:
+                result[a] = result[b] = min(va, vb)
+    return result
+
+
+def shodhita_sarvashtakavarga(planet_signs, lagna_sign):
+    """Return the SAV after trikona + ekadhipatya reduction of each BAV.
+
+    Args:
+        planet_signs: Mapping of planet ID → sign index for the 7
+            classical planets.
+        lagna_sign: Sign index of the Ascendant.
+
+    Returns:
+        Dict with keys ``"per_rasi"`` (12-cell list, the reduced SAV),
+        ``"grand_total"`` (its sum — typically much less than 337), and
+        ``"by_planet"`` (dict ``{planet_id: reduced 12-cell BAV}``).
+    """
+    signs = dict(planet_signs)
+    signs[ASCENDANT] = lagna_sign % 12
+    occupied = set(planet_signs.values())  # signs occupied by a planet
+    by_planet = {}
+    for p in ASHTAKAVARGA_PLANETS:
+        bav = bhinnashtakavarga(p, signs)
+        reduced = ekadhipatya_shodhana(trikona_shodhana(bav), occupied)
+        by_planet[p] = reduced
+    per_rasi = [sum(by_planet[p][i] for p in ASHTAKAVARGA_PLANETS) for i in range(12)]
+    return {
+        "per_rasi": per_rasi,
+        "grand_total": sum(per_rasi),
+        "by_planet": by_planet,
+    }
+
+
+# --- Kakshya --- #
+
+# The 8 kakshya lords, in order from 0° to 30° within a sign
+# (each kakshya is 3°45').
+KAKSHYA_LORDS = (
+    const.SATURN,
+    const.JUPITER,
+    const.MARS,
+    const.SUN,
+    const.VENUS,
+    const.MERCURY,
+    const.MOON,
+    ASCENDANT,
+)
+KAKSHYA_WIDTH_DEG = 30.0 / 8.0  # 3°45'
+
+
+def kakshya_of(sidereal_lon):
+    """Return the kakshya lord for a sidereal longitude.
+
+    Each sign's 30° is split into 8 kakshyas of 3°45' each, ruled in the
+    fixed order Saturn, Jupiter, Mars, Sun, Venus, Mercury, Moon,
+    Ascendant (Lagna) from 0° to 30°.
+    """
+    deg = (sidereal_lon % 360.0) % 30.0
+    idx = int(deg / KAKSHYA_WIDTH_DEG)
+    if idx > 7:
+        idx = 7
+    return KAKSHYA_LORDS[idx]
+
+
+def kakshya_transit_active(prastara, transiting_lon):
+    """Return whether the transiting planet's current kakshya is "active".
+
+    A transit through a sign is judged auspicious for the kakshya whose
+    lord (as an Ashtakavarga *contributor*) places a bindu in that sign
+    in the relevant prastara. This returns ``(kakshya_lord, active)``
+    where ``active`` is ``True`` iff that contributor's row of
+    ``prastara`` has a 1 in the transited sign.
+
+    Args:
+        prastara: A ``{contributor_id: 12-cell list}`` mapping, e.g.
+            from :func:`bhinnashtakavarga_prastara`.
+        transiting_lon: The transiting planet's sidereal longitude.
+
+    Returns:
+        ``(kakshya_lord, bool)``.
+    """
+    sign = _sign_of(transiting_lon)
+    lord = kakshya_of(transiting_lon)
+    row = prastara.get(lord)
+    active = bool(row[sign]) if row is not None else False
+    return lord, active
