@@ -6,6 +6,30 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 036 — Ashtakavarga Shodhana Variants
+
+Branch: `task-036-ashtakavarga-shodhana-variants`. Follow-up to Task
+031.
+
+### What was done
+
+- `vedic/ashtakavarga.py`: `variant=` on `trikona_shodhana`
+  (`subtract_min` / `zero_if_any_zero`) and `ekadhipatya_shodhana`
+  (`default` / `zero_unoccupied`); `shodhita_sarvashtakavarga` threads
+  both through. `TRIKONA_VARIANTS` / `EKADHIPATYA_VARIANTS` constants;
+  unknown variant → `ValueError`. Docstrings updated.
+- 5 new tests in `tests/test_vedic_ashtakavarga_shodhana.py`.
+
+### Verification
+
+- Tests: 548 → 553 (+5). All pass. Coverage: 94.11% → 94.12%.
+- ruff format/check clean. mypy at the documented baseline.
+- The strict combination (`zero_if_any_zero` + `zero_unoccupied`)
+  reduces the SAV at least as aggressively as the default everywhere —
+  verified on the 1947-08-15 chart.
+
+---
+
 ## 2026-05-11 — Task 035 — Weighted Yoga Strength + Yoga Cancellations
 
 Branch: `task-035-yoga-shadbala-cancellation`. Follow-up to Tasks

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 036 — Ashtakavarga shodhana variants)
+- `trikona_shodhana(bav, variant="subtract_min")` — new `variant=`:
+  `"subtract_min"` (default, unchanged) or `"zero_if_any_zero"` (the
+  harsher rule some texts use — if any cell in a trine is 0, zero the
+  whole trine).
+- `ekadhipatya_shodhana(bav, occupied_signs, variant="default")` — new
+  `variant=`: `"default"` (unchanged) or `"zero_unoccupied"` (when one
+  sign of a co-ruled pair is occupied, the unoccupied one is always
+  zeroed regardless of values).
+- `shodhita_sarvashtakavarga(planet_signs, lagna_sign,
+  trikona_variant=..., ekadhipatya_variant=...)` — passes the variants
+  through. New `TRIKONA_VARIANTS` / `EKADHIPATYA_VARIANTS` constants;
+  unknown variants raise `ValueError`.
+- 5 new tests in `tests/test_vedic_ashtakavarga_shodhana.py`.
+
 ### Added / Changed (Task 035 — weighted yoga strength + yoga cancellations)
 - `mayaastrolib.vedic.yogas.yoga_strength_weighted(yoga, chart, ...)` —
   a strength score for a yoga weighted by the *accidental dignity*

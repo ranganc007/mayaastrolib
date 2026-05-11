@@ -175,3 +175,53 @@ class KakshyaTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ShodhanaVariantTests(unittest.TestCase):
+    def test_trikona_zero_if_any_zero_variant(self):
+        # Trine {3,7,11} = [0,8,2]: "subtract_min" leaves it unchanged
+        # (min 0), "zero_if_any_zero" zeroes the whole trine.
+        bav = [1, 2, 3, 0, 5, 6, 7, 8, 9, 4, 1, 2]
+        sub = av.trikona_shodhana(bav, variant="subtract_min")
+        zero = av.trikona_shodhana(bav, variant="zero_if_any_zero")
+        self.assertEqual([sub[3], sub[7], sub[11]], [0, 8, 2])
+        self.assertEqual([zero[3], zero[7], zero[11]], [0, 0, 0])
+        # The trines without a zero behave the same under both variants.
+        self.assertEqual([sub[0], sub[4], sub[8]], [zero[0], zero[4], zero[8]])
+
+    def test_trikona_unknown_variant_raises(self):
+        with self.assertRaises(ValueError):
+            av.trikona_shodhana([0] * 12, variant="bogus")
+
+    def test_ekadhipatya_zero_unoccupied_variant(self):
+        # Sag/Pisces pair, Sag occupied with the *lower* value (2 vs 6).
+        bav = [0] * 12
+        bav[8], bav[11] = 2, 6  # Sag=2, Pisces=6
+        default = av.ekadhipatya_shodhana(bav, occupied_signs={8})
+        strict = av.ekadhipatya_shodhana(bav, occupied_signs={8}, variant="zero_unoccupied")
+        # default: occ value (2) < unocc value (6) → both become min → 2/2.
+        self.assertEqual([default[8], default[11]], [2, 2])
+        # zero_unoccupied: the unoccupied sign is zeroed regardless → 2/0.
+        self.assertEqual([strict[8], strict[11]], [2, 0])
+
+    def test_ekadhipatya_unknown_variant_raises(self):
+        with self.assertRaises(ValueError):
+            av.ekadhipatya_shodhana([0] * 12, occupied_signs=set(), variant="bogus")
+
+    def test_shodhita_sav_threads_variants(self):
+        date = Datetime("1947/08/15", "00:00", "+05:30")
+        pos = GeoPos("28n36", "77e12")
+        chart = Chart(date, pos, zodiac=const.ZODIAC_SIDEREAL)
+        planet_signs = {p: int(chart.getObject(p).lon // 30) % 12 for p in av.ASHTAKAVARGA_PLANETS}
+        lagna = int(chart.getAngle(const.ASC).lon // 30) % 12
+        default_sav = av.shodhita_sarvashtakavarga(planet_signs, lagna)
+        strict_sav = av.shodhita_sarvashtakavarga(
+            planet_signs,
+            lagna,
+            trikona_variant="zero_if_any_zero",
+            ekadhipatya_variant="zero_unoccupied",
+        )
+        # The strict combination reduces at least as aggressively.
+        self.assertLessEqual(strict_sav["grand_total"], default_sav["grand_total"])
+        for s, d in zip(strict_sav["per_rasi"], default_sav["per_rasi"], strict=True):
+            self.assertLessEqual(s, d)

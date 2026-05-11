@@ -276,48 +276,71 @@ EKADHIPATYA_PAIRS = (
 )
 
 
-def trikona_shodhana(bav):
+# Recognised shodhana-rule variants.
+TRIKONA_VARIANTS = ("subtract_min", "zero_if_any_zero")
+EKADHIPATYA_VARIANTS = ("default", "zero_unoccupied")
+
+
+def trikona_shodhana(bav, variant="subtract_min"):
     """Apply trikona (trine) reduction to a 12-cell BAV.
 
-    For each of the four trine groups, the minimum of the three cells is
-    subtracted from all three. (If the minimum is zero the trine is
-    unchanged. Some texts use a harsher rule — "if any trine member is
-    zero, zero the whole trine" — which is *not* what this implements.)
+    Args:
+        bav: A 12-cell list.
+        variant: ``"subtract_min"`` (default) — for each of the four
+            trine groups, subtract the minimum of the three cells from
+            all three (if the minimum is 0 the trine is unchanged).
+            ``"zero_if_any_zero"`` — the harsher rule some texts use:
+            if any cell in a trine is 0, zero the whole trine; otherwise
+            subtract the minimum.
 
     Returns a new 12-cell list; the input is not modified.
     """
+    if variant not in TRIKONA_VARIANTS:
+        raise ValueError(f"Unknown trikona variant {variant!r}; expected {TRIKONA_VARIANTS}")
     result = list(bav)
     for group in TRIKONA_GROUPS:
         m = min(result[i] for i in group)
-        for i in group:
-            result[i] -= m
+        if variant == "zero_if_any_zero" and m == 0:
+            for i in group:
+                result[i] = 0
+        else:
+            for i in group:
+                result[i] -= m
     return result
 
 
-def ekadhipatya_shodhana(bav, occupied_signs):
+def ekadhipatya_shodhana(bav, occupied_signs, variant="default"):
     """Apply ekadhipatya (co-rulership) reduction to a 12-cell BAV.
 
     For each of the five co-rulership sign pairs ``(a, b)``, using
     whether each sign is *occupied* (has a planet of the natal chart in
     it):
 
-    - both occupied → unchanged;
-    - neither occupied → if the two cells differ, both become the
-      smaller; if equal, both become 0;
-    - one occupied, one not → the unoccupied cell becomes 0 if the
+    - **both occupied** → unchanged (both variants);
+    - **neither occupied** → if the two cells differ, both become the
+      smaller; if equal, both become 0 (both variants);
+    - **one occupied, one not** —
+      ``variant="default"``: the unoccupied cell becomes 0 if the
       occupied cell's value is greater-or-equal, otherwise both become
-      the smaller value.
+      the smaller value;
+      ``variant="zero_unoccupied"``: the unoccupied cell always becomes
+      0 (the occupied cell is left as-is).
 
-    (Ekadhipatya rules vary across sources — this is one common variant.
-    Apply *after* :func:`trikona_shodhana`.)
+    (Ekadhipatya rules vary across sources; apply *after*
+    :func:`trikona_shodhana`.)
 
     Args:
         bav: A 12-cell list (typically already trikona-reduced).
         occupied_signs: An iterable of sign indices that contain a
             planet in the chart.
+        variant: One of ``EKADHIPATYA_VARIANTS``.
 
     Returns a new 12-cell list; the input is not modified.
     """
+    if variant not in EKADHIPATYA_VARIANTS:
+        raise ValueError(
+            f"Unknown ekadhipatya variant {variant!r}; expected {EKADHIPATYA_VARIANTS}"
+        )
     result = list(bav)
     occ = set(occupied_signs)
     for a, b in EKADHIPATYA_PAIRS:
@@ -329,27 +352,30 @@ def ekadhipatya_shodhana(bav, occupied_signs):
             if va == vb:
                 result[a] = result[b] = 0
             else:
-                lo = min(va, vb)
-                result[a] = result[b] = lo
+                result[a] = result[b] = min(va, vb)
         else:
             # Exactly one occupied.
             occ_val = va if a_occ else vb
             unocc_idx = b if a_occ else a
             unocc_val = vb if a_occ else va
-            if occ_val >= unocc_val:
+            if variant == "zero_unoccupied" or occ_val >= unocc_val:
                 result[unocc_idx] = 0
             else:
                 result[a] = result[b] = min(va, vb)
     return result
 
 
-def shodhita_sarvashtakavarga(planet_signs, lagna_sign):
+def shodhita_sarvashtakavarga(
+    planet_signs, lagna_sign, trikona_variant="subtract_min", ekadhipatya_variant="default"
+):
     """Return the SAV after trikona + ekadhipatya reduction of each BAV.
 
     Args:
         planet_signs: Mapping of planet ID → sign index for the 7
             classical planets.
         lagna_sign: Sign index of the Ascendant.
+        trikona_variant: Passed to :func:`trikona_shodhana`.
+        ekadhipatya_variant: Passed to :func:`ekadhipatya_shodhana`.
 
     Returns:
         Dict with keys ``"per_rasi"`` (12-cell list, the reduced SAV),
@@ -362,7 +388,9 @@ def shodhita_sarvashtakavarga(planet_signs, lagna_sign):
     by_planet = {}
     for p in ASHTAKAVARGA_PLANETS:
         bav = bhinnashtakavarga(p, signs)
-        reduced = ekadhipatya_shodhana(trikona_shodhana(bav), occupied)
+        reduced = ekadhipatya_shodhana(
+            trikona_shodhana(bav, variant=trikona_variant), occupied, variant=ekadhipatya_variant
+        )
         by_planet[p] = reduced
     per_rasi = [sum(by_planet[p][i] for p in ASHTAKAVARGA_PLANETS) for i in range(12)]
     return {
