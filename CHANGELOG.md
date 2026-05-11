@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 029 — Tajika Harsha/Panchavargiya Bala + aspects)
+- `mayaastrolib/vedic/tajika_bala.py`:
+  - `harsha_bala(chart, ayanamsa=...)` → the "joy strength": a
+    five-component, 0-or-5-per-component score (max 25) per classical
+    planet — hemisphere (diurnal planet above the horizon / nocturnal
+    below), gender (masc planet in odd sign / fem in even / neutral
+    always), dignity (own or exaltation sign), own decanate (D3 lord =
+    the planet), and planetary joy (in its joy house). Returns
+    `{planet: {"components": {...}, "total": int}}`.
+  - `panchavargiya_bala(chart, ayanamsa=...)` → the "five-fold
+    strength": Kshetra + Uchcha (exaltation-distance, 0..20) + Hadda
+    (term) + Drekkana + Navamsa sub-balas, summed. **The component
+    scales are a documented simplification** — good for relative
+    comparison (e.g. picking the Lord of the Year by the canonical
+    rule) but not a verified replica of any single text. `tajika.
+    lord_of_year` keeps its own simpler heuristic; callers who want the
+    Panchavargiya pick can compute it from this.
+- `mayaastrolib/vedic/tajika_aspects.py`:
+  - `tajika_aspects(chart)` → detects **Ithasala** (within combined
+    deeptamsha orb of a Ptolemaic aspect, faster planet applying),
+    **Isharafa** (within orb, faster planet separating), and **Nakta**
+    (translation of light — a faster planet within orb of two slower
+    planets that aren't within orb of each other). Returns a list of
+    frozen `TajikaAspect(kind, planets, aspect_angle, orb, separation)`.
+    Needs a real ephemeris chart (planets must have `lonspeed`) — a
+    symbolic chart raises `ValueError`. Deeptamshas: Sun 15°, Moon 12°,
+    Mars 8°, Mercury 7°, Jupiter 9°, Venus 7°, Saturn 9°; pair-orb =
+    their average.
+- 16 unit tests in `tests/test_vedic_tajika_bala.py` (Harsha component
+  invariants, joy-house cross-check, Panchavargiya totals, the
+  `_uchcha`/`_kshetra` helpers, Tajika-aspect shape/orb invariants,
+  `_pair_orb`/`_closest_aspect`, symbolic-chart rejection).
+- Still deferred: a fully reference-faithful Panchavargiya component
+  scheme; the rest of the 16 Tajika yogas (Yamaya, Kambula,
+  Gairi-Kambula, Khallasara, Rudda, …).
+
 ### Added (Task 028 — full(er) Tajika Saham table)
 - `mayaastrolib.vedic.tajika.sahams()` now returns **14** Sahams (was
   4): Punya, Vidya, Yasas, Karma, Pitri, Matri, Bhratri, Putra,

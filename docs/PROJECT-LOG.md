@@ -6,6 +6,50 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 029 — Tajika Harsha/Panchavargiya Bala + Aspects
+
+Branch: `task-029-tajika-bala-aspects`. Follow-up to Task 024b/028.
+
+### What was done
+
+- `vedic/tajika_bala.py` — `harsha_bala` (5-component joy strength,
+  max 25) and `panchavargiya_bala` (simplified 5-sub-bala sum), plus
+  the `_uchcha`/`_kshetra`/`_hadda`/`_drekkana_bala`/`_navamsa_bala`
+  helpers.
+- `vedic/tajika_aspects.py` — `tajika_aspects` detecting Ithasala /
+  Isharafa / Nakta with the deeptamsha orbs; `TajikaAspect` frozen
+  dataclass; `_applying` (one-hour-step closing check).
+- 16 new tests in `tests/test_vedic_tajika_bala.py`.
+
+### Verification
+
+- Tests: 462 → 478 (+16). All pass. Coverage: 91.70% → 91.76%.
+- ruff format/check clean. mypy at the documented baseline.
+- For the 1980-chart, 2024 annual: Harsha Bala Mercury 20/25 (highest),
+  Jupiter/Venus 0/25. Panchavargiya Mercury ~64.6 (highest). All 8
+  in-orb pairs came back Isharafa (the faster member had passed
+  exactness in each) — a legitimate result for that chart, not a bug;
+  tests verify the orb/shape invariants rather than a specific
+  Ithasala/Isharafa split.
+
+### Honest notes
+
+- **Panchavargiya component scales are simplified** (own/exalt → 30
+  Kshetra, etc.) and documented as such — a fully reference-faithful
+  version would need the friendship table and the Egyptian-terms table.
+  `lord_of_year` therefore still uses its own simpler heuristic;
+  `panchavargiya_bala` is provided as the building block for the
+  canonical pick.
+- **Tajika aspects need real speeds** — `tajika_aspects` raises on a
+  symbolic chart (profected etc.) since those have `lonspeed is None`.
+  Ithasala vs Isharafa is decided by a one-hour-step "is the
+  separation-from-exactness shrinking" check on the faster planet.
+- Only the 3 core Tajika yogas (Ithasala/Isharafa/Nakta) are
+  implemented; the other 13 (Yamaya, Kambula, Gairi-Kambula,
+  Khallasara, Rudda, Duhphali-kuttha, …) are a follow-up.
+
+---
+
 ## 2026-05-11 — Task 028 — Fuller Tajika Saham Table
 
 Branch: `task-028-full-sahams`. Follow-up to Task 024b.
