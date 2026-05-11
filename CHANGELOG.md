@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 023 — Vedic Upagrahas)
+- `mayaastrolib/vedic/upagrahas.py` — the "sub-planet" sensitive
+  points.
+  - `sun_derived_upagrahas(sun_sidereal_lon)` → the 5 Phaladeepika
+    points (Dhuma = Sun+133°20', Vyatipata = 360°−Dhuma, Parivesha
+    = Vyatipata+180°, Indrachapa = 360°−Parivesha, Upaketu =
+    Indrachapa+16°40'). The chained relations hold: Dhuma+Vyatipata
+    = 360°, Indrachapa+Parivesha = 360°.
+  - `gulika_longitude(chart, ayanamsa=...)` → Gulika/Mandi via the
+    weekday-portion ascendant method (School A): the day or night
+    span is split into 8 parts ruled in weekday order; Gulika is the
+    sidereal Ascendant at the start of the Saturn-ruled part. Uses
+    the civil-date weekday (the true astrological day runs
+    sunrise→sunrise — a documented approximation).
+  - `upagrahas(chart, school="B", ayanamsa=...)` → dict of
+    `UpagrahaResult(name, sidereal_longitude, sign, deg_in_sign)`.
+    `school="B"` (default) = the 5 Sun-derived; `school="A"` adds
+    Gulika.
+- 17 unit tests in `tests/test_vedic_upagrahas.py` covering the
+  School B formulas (including the chained-relation invariants),
+  Gulika day-vs-night divergence, the Saturday-day Gulika ≈
+  sunrise-ascendant check, the entry-point school selection, and
+  result-field consistency.
+
 ### Added (Task 022 — Vedic Sade Sati)
 - `mayaastrolib/vedic/sadesati.py` — the ~7.5-year Saturn-over-Moon
   transit phase detector.

@@ -6,6 +6,58 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 023 — Vedic Upagrahas
+
+Branch: `task-023-vedic-upagrahas`. Prompt:
+`prompts/task-023-vedic-upagrahas.md`. Closes the P1 tier.
+
+### What was done
+
+- `mayaastrolib/vedic/upagrahas.py` — `sun_derived_upagrahas`
+  (School B, the 5 Phaladeepika points), `gulika_longitude`
+  (School A, weekday-portion ascendant method), `upagrahas` entry
+  point, `UpagrahaResult` frozen dataclass, `WEEKDAY_LORDS` table.
+- 17 unit tests in `tests/test_vedic_upagrahas.py`.
+
+### Verification
+
+- Tests: 342 → 359 (+17). All pass.
+- Coverage: 90.52% → 90.90%. `upagrahas.py` near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Surprises / honest notes
+
+- **Daytime-detection bug, caught at smoke-test:** the naive
+  `lastSunrise <= birth < nextSunset` returns True even for a
+  pre-dawn (night) birth, because `lastSunrise` can be the previous
+  day's sunrise and `nextSunset` the current day's sunset — both
+  bracket the night birth incorrectly. Fixed to the
+  "which event comes next" test: `is_daytime = nextSunset.jd <
+  nextSunrise.jd`. Verified: Gulika now differs sharply day-vs-night
+  (59° vs 301° for the test charts).
+- `_astro_weekday` uses the **civil date**, not the
+  sunrise→sunrise astrological day. A pre-dawn birth technically
+  belongs to the previous weekday for Gulika purposes. Documented in
+  the module and the prompt; not fixed in this task.
+- Only **Gulika** is implemented from the weekday-portion family —
+  the other Kala-velas (Kala, Mrityu, Artha-prahara, Yamaghantaka)
+  are deferred. Mandi is treated as a synonym of Gulika (start of
+  the Saturn part; the start-vs-midpoint-vs-end distinction is
+  out of scope).
+
+### Phase 2 status after Task 023
+
+P0 (017–020) + P1 (021–023) are all merged on `development`. Tests:
+215 → 359 (+144 new). Coverage: ~88% → 90.90%. The library now
+ships, in one MIT-licensed Python package: Hellenistic predictives
++ sidereal mode + nakshatras + Shodashavarga + Vimshottari dasha +
+Ashtakavarga + Sade Sati + Upagrahas. Remaining spec tasks: 024
+(Tajika — needs the solarReturn-under-sidereal architectural
+decision deferred in Task 017), 025 (KP 249 sub-lord table),
+026 (yoga detection).
+
+---
+
 ## 2026-05-11 — Task 022 — Vedic Sade Sati
 
 Branch: `task-022-vedic-sadesati`. Prompt:
