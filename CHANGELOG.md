@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Added (Task 021 — Vedic Ashtakavarga)
+- `mayaastrolib/vedic/ashtakavarga.py` — the bindu (benefic-point)
+  system per BPHS ch. 66.
+  - `ASHTAKAVARGA_TABLES` — the canonical Prastara tables for all 7
+    planets (per-planet totals Sun 48 / Moon 49 / Mars 39 /
+    Mercury 54 / Jupiter 56 / Venus 52 / Saturn 39, summing to the
+    337 SAV grand-total invariant; enforced by import-time asserts).
+  - `bhinnashtakavarga(planet, signs)` — the 12-cell BAV histogram
+    for one planet given the 8 contributor sign indices (7 planets +
+    Ascendant). Sums to the planet's canonical total.
+  - `sarvashtakavarga(planet_signs, lagna_sign)` — the SAV: per-sign
+    sum of the 7 planetary BAVs. Returns `{per_rasi, grand_total,
+    by_planet}`; `grand_total` is always 337.
+  - `ashtakavarga(chart, ayanamsa=...)` — chart-level entry point;
+    handles both tropical and sidereal charts.
+- 16 unit tests in `tests/test_vedic_ashtakavarga.py` covering the
+  table-total invariants, the BAV-is-a-fixed-histogram property
+  (BAV rotates with positions, sums constant), a hand-computed
+  micro case, and the SAV=337 invariant for arbitrary positions.
+
 ### Added (Task 020 — Vimshottari Dasha)
 - `mayaastrolib/vedic/dasha.py` — Vimshottari Mahadasha computation.
   - `vimshottari(chart, target=None, ayanamsa=...)` — main entry

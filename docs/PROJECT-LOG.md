@@ -6,6 +6,49 @@ Each entry should follow this template:
 
 ---
 
+## 2026-05-11 — Task 021 — Vedic Ashtakavarga
+
+Branch: `task-021-vedic-ashtakavarga`. Prompt:
+`prompts/task-021-vedic-ashtakavarga.md`. First P1 module. Pure
+table-driven; reference-data heavy.
+
+### What was done
+
+- `mayaastrolib/vedic/ashtakavarga.py` — `ASHTAKAVARGA_TABLES`
+  (BPHS Ch. 66 Prastara tables), `bhinnashtakavarga(planet, signs)`,
+  `sarvashtakavarga(planet_signs, lagna_sign)`,
+  `ashtakavarga(chart, ayanamsa=...)`.
+- Import-time `assert` enforces the per-planet totals
+  (48/49/39/54/56/52/39) and the 337 grand-total invariant — a typo
+  in the tables fails the import, not just a test.
+- 16 unit tests in `tests/test_vedic_ashtakavarga.py`.
+
+### Verification
+
+- Tests: 304 → 320 (+16). All pass.
+- Coverage: 90.21% → 90.37%. `ashtakavarga.py` near-100%.
+- ruff format/check clean. mypy at the documented baseline.
+
+### Surprises / honest notes
+
+- **Moon BAV table initially summed to 50, not 49.** The Moon-from-
+  Moon contribution had an extra `9` — the canonical Chandra
+  Ashtakavarga Moon-from-Moon is houses [1, 3, 6, 7, 10, 11]
+  (6 bindus, not 7). The import-time assert caught it immediately,
+  before any test ran. Fixed.
+- The SAV grand total is **structurally** 337 — a BAV is a histogram
+  of a fixed number of bindus, so positions only redistribute, never
+  change the total. `test_grand_total_invariant_for_random_positions`
+  verifies this across all 12 lagna placements.
+- Different traditions vary slightly in the Prastara tables (e.g.
+  some sources give Moon-from-Moon as 7 houses). This module uses the
+  standard set that sums to 337; alternates can be flagged in
+  docstrings if a consumer needs them. The trikona/ekadhipatya
+  shodhana reduction techniques and the kakshya sub-divisions are
+  deferred to a follow-up task.
+
+---
+
 ## 2026-05-11 — Task 020 — Vimshottari Dasha
 
 Branch: `task-020-vedic-dasha`. Prompt:
