@@ -2,7 +2,30 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.1] — 2026-06-07
+
+### Fixed
+- **Packaging: `mayaastrolib.vedic` was omitted from built wheels/sdists.**
+  `pyproject.toml` used a hand-maintained `[tool.setuptools] packages = [...]`
+  list that predated the Vedic subsystem (added in Task 017), so a real
+  `pip install` shipped the library *without its entire Vedic engine* —
+  any sidereal/Jyotisha call raised `ModuleNotFoundError: No module named
+  'mayaastrolib.vedic'`. Editable installs (`pip install -e .`) masked it
+  because they put the whole source tree on the path. Switched to
+  setuptools auto-discovery (`[tool.setuptools.packages.find]`, include
+  `mayaastrolib*` / `flatlib*`) so no subpackage can be silently dropped
+  again. Caught by a clean-install end-to-end smoke test (Western chart +
+  Vedic nakshatra) run against the built wheel.
+- **Packaging: `MANIFEST.in`** expanded to ship the Swiss Ephemeris data
+  (`*.se1`/`*.cat`/`*.txt`), README, CHANGELOG, and LICENSING in the sdist.
+
+### Changed
+- README documentation links made absolute so they render on PyPI.
+
+## [0.3.0] — 2026-06-07
+
+First release under the `mayaastrolib` name; first to ship the unified
+Western + Vedic engine. See the per-task entries below for the full history.
 
 ### Changed (Docs — flatlib → mayaastrolib branding pass + enhancement showcase)
 - `README.md` rewritten to lead with the value the fork adds over flatlib:

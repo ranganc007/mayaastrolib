@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mayaastrolib"
-version = "0.3.0"
+version = "0.3.1"
 description = "Python library for Traditional and Vedic Astrology (fork of flatangle/flatlib)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -46,21 +46,11 @@ dev = [
 Homepage = "https://github.com/ranganc007/mayaastrolib"
 Upstream = "https://github.com/flatangle/flatlib"
 
-[tool.setuptools]
-packages = [
-    "mayaastrolib",
-    "mayaastrolib.dignities",
-    "mayaastrolib.ephem",
-    "mayaastrolib.predictives",
-    "mayaastrolib.protocols",
-    "mayaastrolib.tools",
-    "flatlib",
-    "flatlib.dignities",
-    "flatlib.ephem",
-    "flatlib.predictives",
-    "flatlib.protocols",
-    "flatlib.tools",
-]
+[tool.setuptools.packages.find]
+# Auto-discover all subpackages (incl. mayaastrolib.vedic and any future
+# ones) so the build can't silently drop a package the way a hand-kept
+# list did before 0.3.0.
+include = ["mayaastrolib*", "flatlib*"]
 
 [tool.setuptools.package-data]
 mayaastrolib = [

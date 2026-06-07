@@ -8,7 +8,7 @@ heavily extended fork of [`flatangle/flatlib`](https://github.com/flatangle/flat
 (MIT, unmaintained in practice since 2024).
 
 > Original copyright © João Ventura, MIT licensed. Fork modifications © Rangan C., 2026.
-> See [docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md) for why this fork exists.
+> See [docs/FORK-RATIONALE.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/FORK-RATIONALE.md) for why this fork exists.
 
 ```python
 from mayaastrolib import const
@@ -75,7 +75,7 @@ flatlib is tropical-only. `mayaastrolib` adds a full sidereal engine behind one 
 - Thread-safe sidereal calculation (lock-guarded Swiss-Ephemeris global state).
 - Eclipse-keyword bug fixed for pyswisseph 2.x; fixed-star magnitude lookups cached (144× speedup).
 
-See [CHANGELOG.md](CHANGELOG.md) for the full task-by-task history.
+See [CHANGELOG.md](https://github.com/ranganc007/mayaastrolib/blob/master/CHANGELOG.md) for the full task-by-task history.
 
 ---
 
@@ -98,7 +98,7 @@ is *verified*, not taken on trust:
 In other words: the code is AI-generated, but the *behaviour* is held to an independent,
 reproducible, real-world standard. Classical-technique simplifications (e.g. yoga strength
 using accidental dignity rather than full Shadbala) are documented honestly in
-[CHANGELOG.md](CHANGELOG.md) and `docs/PROJECT-LOG.md` rather than hidden.
+[CHANGELOG.md](https://github.com/ranganc007/mayaastrolib/blob/master/CHANGELOG.md) and `docs/PROJECT-LOG.md` rather than hidden.
 
 ---
 
@@ -106,11 +106,11 @@ using accidental dignity rather than full Shadbala) are documented honestly in
 
 Start here:
 
-- **[docs/FAQ.md](docs/FAQ.md)** — what the library is, what it computes, what it does **not** do, threading, accuracy, licensing.
-- **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** — the calculation pipeline, package layout, and gotchas.
-- **[docs/BIRTH-CHART-PRIMER.md](docs/BIRTH-CHART-PRIMER.md)** — how a birth chart is calculated and what the houses/planets traditionally mean.
-- **[docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md)** — why this fork exists.
-- **[docs/KNOWN-BUGS.md](docs/KNOWN-BUGS.md)** — tracked bugs and their fixes.
+- **[docs/FAQ.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/FAQ.md)** — what the library is, what it computes, what it does **not** do, threading, accuracy, licensing.
+- **[docs/HOW-IT-WORKS.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/HOW-IT-WORKS.md)** — the calculation pipeline, package layout, and gotchas.
+- **[docs/BIRTH-CHART-PRIMER.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/BIRTH-CHART-PRIMER.md)** — how a birth chart is calculated and what the houses/planets traditionally mean.
+- **[docs/FORK-RATIONALE.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/FORK-RATIONALE.md)** — why this fork exists.
+- **[docs/KNOWN-BUGS.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/KNOWN-BUGS.md)** — tracked bugs and their fixes.
 
 The original flatlib API documentation is largely still applicable — substitute `flatlib`
 with `mayaastrolib` in import paths.
@@ -149,4 +149,4 @@ ruff check . && ruff format --check . && mypy mayaastrolib/
 `mayaastrolib` is MIT-licensed (preserving flatlib's original copyright chain). It depends on
 `pyswisseph` (LGPL) and the Swiss Ephemeris data, which is GPL / commercial dual-licensed —
 if you ship `mayaastrolib` in a closed-source product you must comply with the Swiss Ephemeris
-GPL terms or hold a commercial Swiss Ephemeris licence. See [LICENSING.md](LICENSING.md).
+GPL terms or hold a commercial Swiss Ephemeris licence. See [LICENSING.md](https://github.com/ranganc007/mayaastrolib/blob/master/LICENSING.md).

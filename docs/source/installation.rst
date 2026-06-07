@@ -36,7 +36,7 @@ Start the Python interpreter and execute::
 
    >>> import mayaastrolib
    >>> mayaastrolib.__version__
-   '0.3.0'
+   '0.3.1'
 
 If you don't get an import error, mayaastrolib is installed in your system.
 
