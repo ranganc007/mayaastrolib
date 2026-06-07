@@ -79,6 +79,29 @@ See [CHANGELOG.md](CHANGELOG.md) for the full task-by-task history.
 
 ---
 
+## Development & provenance
+
+Most of the fork's commits — the entire Vedic subsystem, the modernisation, and the test
+suite — were authored through **[Claude Code](https://claude.com/claude-code)** (Anthropic's
+agentic CLI), with **minimal line-by-line human review** of individual diffs.
+
+That makes the test discipline the load-bearing part of this project, by design — correctness
+is *verified*, not taken on trust:
+
+- **Structural tests** pin every public function's contract (553 tests, 94% coverage).
+- **Golden tests** anchor the astronomical output against [Skyfield](https://rhodesmill.org/skyfield/)
+  — a completely independent ephemeris — at ±2 arc-minutes for known reference charts, so a
+  wrong calculation fails CI rather than shipping silently.
+- The library is **exercised in real applications** (the mayaastro.com lunar site and its
+  local demo), which surfaces integration issues that unit tests don't.
+
+In other words: the code is AI-generated, but the *behaviour* is held to an independent,
+reproducible, real-world standard. Classical-technique simplifications (e.g. yoga strength
+using accidental dignity rather than full Shadbala) are documented honestly in
+[CHANGELOG.md](CHANGELOG.md) and `docs/PROJECT-LOG.md` rather than hidden.
+
+---
+
 ## Documentation
 
 Start here:
