@@ -1,3 +1,3 @@
-# flatlib resources
+# mayaastrolib resources
 
-Includes resources for the flatlib library
+Includes resources (Swiss Ephemeris data files and star catalogues) for the mayaastrolib library.

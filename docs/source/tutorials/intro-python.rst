@@ -162,7 +162,7 @@ https://docs.python.org/3.4/library/index.html.
 More about Python
 -----------------
 
-The purpose of this tutorial is just to give you enough knowledge on Python to get you started with *flatlib*. 
+The purpose of this tutorial is just to give you enough knowledge on Python to get you started with *mayaastrolib*. 
 There are many more tutorials on the internet which may give you deeper knowledge of the Python programming language.
 
 The Python community provides an official tutorial which can be found at https://docs.python.org/3.4/tutorial/index.html.  

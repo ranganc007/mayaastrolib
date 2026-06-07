@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Changed (Docs — flatlib → mayaastrolib branding pass + enhancement showcase)
+- `README.md` rewritten to lead with the value the fork adds over flatlib:
+  a "What this fork adds" section covering the 12-module Vedic subsystem,
+  the modernisation (Python 3.10+, type hints, `pyproject.toml`-only
+  packaging, ruff/mypy/CI), the coverage jump (34% → 94% with
+  Skyfield-anchored golden tests), and the API ergonomics/correctness fixes.
+- The 32 inherited source-file headers now read "This file is part of
+  mayaastrolib, a fork of flatlib - (C) FlatAngle" — accurate to the
+  package name while preserving the original copyright/author attribution.
+- `mayaastrolib/resources/README.md`, `docs/README.md`, and the inherited
+  Sphinx tree under `docs/source/` (`conf.py`, `index.rst`, `faq.rst`,
+  `installation.rst`, and the tutorial import/URL examples) updated from
+  flatlib to mayaastrolib; installation docs updated for the 3.10+
+  source-install reality and project metadata bumped to 0.3.0.
+- `LICENSE`, `docs/FORK-RATIONALE.md`, `CLAUDE.md`, the `flatlib/`
+  compatibility shim, and historical logs (CHANGELOG/PROJECT-LOG/prompts)
+  intentionally left referencing flatlib — they document the copyright
+  chain, the fork rationale, and project history.
+- No code behaviour change; 553 tests pass, ruff/format clean, mypy at the
+  2-error baseline.
+
 ### Changed (Task 038 — public-API type hints: datetime.py)
 - `mayaastrolib/datetime.py` is now fully type-hinted (`from __future__
   import annotations`; `dateJDN`/`jdnDate`/`_format_offset`/

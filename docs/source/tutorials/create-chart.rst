@@ -17,7 +17,7 @@ and the calendar type. It assumes, by default, the Gregorian calendar.
 To create a Datetime object, we must first import it. Here's an example that creates a Datetime object for the
 13th of March of 2015 at 5pm, assuming UTC+0::
 
-   >>> from flatlib.datetime import Datetime
+   >>> from mayaastrolib.datetime import Datetime
    >>> date = Datetime('2015/03/13', '17:00', '+00:00')
    >>> date.jd
    2457095.2083333335
@@ -61,7 +61,7 @@ The *GeoPos* class represents a geographic position on Earth given by a latitude
 To create a GeoPos object, we must first import the class definition and instantiate an object. 
 Here's an example::
 
-   >>> from flatlib.geopos import GeoPos
+   >>> from mayaastrolib.geopos import GeoPos
    >>> pos = GeoPos('38n32', '8w54')
    >>> pos.lat
    38.53333333333333
@@ -98,21 +98,21 @@ The *Chart* class represents an Astrology chart for a specific datetime and geog
 To create a chart object, we must create the Datetime and GeoPos objects and pass them as arguments to the Chart::
 
    >>> # Set datetime and position
-   >>> from flatlib.datetime import Datetime
-   >>> from flatlib.geopos import GeoPos
+   >>> from mayaastrolib.datetime import Datetime
+   >>> from mayaastrolib.geopos import GeoPos
    >>> date = Datetime('2015/03/13', '17:00', '+00:00')
    >>> pos = GeoPos('38n32', '8w54')
    
    >>> # Finally create the chart
-   >>> from flatlib.chart import Chart
+   >>> from mayaastrolib.chart import Chart
    >>> chart = Chart(date, pos)
 
 By default, the chart will include only the Traditional planets (*Sun* to *Saturn*, including *Pars Fortuna* and 
 the Moon nodes) and the *Alcabitius* house system. 
-To create a chart with other parameters, we must first import the **flatlib.const** module (where some things are 
+To create a chart with other parameters, we must first import the **mayaastrolib.const** module (where some things are 
 defined) and pass some arguments in the object constructor::
 
-   >>> from flatlib import const
+   >>> from mayaastrolib import const
    
    >>> # Build a chart with Regiomontanus houses
    >>> chart = Chart(date, pos, hsys=const.HOUSES_REGIOMONTANUS)

@@ -11,9 +11,9 @@ Specifically, you will learn how to access:
 
 Let's start by creating a new chart::
 
-   >>> from flatlib.datetime import Datetime
-   >>> from flatlib.geopos import GeoPos
-   >>> from flatlib.chart import Chart
+   >>> from mayaastrolib.datetime import Datetime
+   >>> from mayaastrolib.geopos import GeoPos
+   >>> from mayaastrolib.chart import Chart
    
    >>> date = Datetime('2015/03/13', '17:00', '+00:00')
    >>> pos = GeoPos('38n32', '8w54')
@@ -23,7 +23,7 @@ Let's start by creating a new chart::
 Objects
 -------
 
-In *flatlib* an object is a planet, a moon node, the syzygy or pars fortuna. 
+In *mayaastrolib* an object is a planet, a moon node, the syzygy or pars fortuna. 
 The following example shows how you can access an object from the chart::
 
    >>> sun = chart.getObject(const.SUN)
@@ -192,5 +192,5 @@ Finally, the chart object also provides a useful function to retrieve the solar 
    <2020/03/12 22:01:59 00:00:00>
    
    
-.. _`source code`: https://github.com/flatangle/flatlib/blob/master/flatlib/const.py
-.. _`lists.py`: https://github.com/flatangle/flatlib/blob/master/flatlib/lists.py
+.. _`source code`: https://github.com/ranganc007/mayaastrolib/blob/master/mayaastrolib/const.py
+.. _`lists.py`: https://github.com/ranganc007/mayaastrolib/blob/master/mayaastrolib/lists.py

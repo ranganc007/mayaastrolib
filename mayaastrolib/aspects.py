@@ -1,5 +1,5 @@
 """
-This file is part of flatlib - (C) FlatAngle
+This file is part of mayaastrolib, a fork of flatlib - (C) FlatAngle
 Author: João Ventura (flatangleweb@gmail.com)
 
 

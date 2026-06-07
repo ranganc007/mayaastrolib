@@ -1,15 +1,14 @@
-> **Note:** This is `mayaastrolib` — a fork of [flatangle/flatlib](https://github.com/flatangle/flatlib).
-> The original `flatlib` is no longer actively maintained. This fork modernises the codebase
-> (Python 3.10+, type hints, modern tooling) and unifies Western and Vedic astrology in a
-> single library. See [docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md) for details.
->
-> Original copyright João Ventura, MIT licensed. Fork modifications copyright Rangan C., 2026.
-
----
-
 # mayaastrolib
 
-`mayaastrolib` is a Python library for Traditional and Vedic Astrology, forked from `flatangle/flatlib`.
+**A modern, typed, unified Western + Vedic astrology engine for Python 3.10+.**
+
+`mayaastrolib` is a Python library for Traditional (Hellenistic/Western) **and** Vedic
+(Jyotisha) astrology, computed on the Swiss Ephemeris. It is a thoroughly modernised,
+heavily extended fork of [`flatangle/flatlib`](https://github.com/flatangle/flatlib)
+(MIT, unmaintained in practice since 2024).
+
+> Original copyright © João Ventura, MIT licensed. Fork modifications © Rangan C., 2026.
+> See [docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md) for why this fork exists.
 
 ```python
 from mayaastrolib import const
@@ -26,18 +25,72 @@ print(sun)
 # <Sun Pisces +22:47:25 +00:59:51>
 ```
 
+---
+
+## What this fork adds over flatlib
+
+`flatlib` is an excellent traditional-astrology core, but it stopped at Python-2-era
+packaging, had no type hints, ~34% test coverage, and no sidereal/Vedic support.
+`mayaastrolib` keeps the calculation core's correctness and rebuilds everything around it:
+
+### 🪔 A complete Vedic (Jyotisha) subsystem — *new, ~3,600 LOC, 12 modules*
+
+flatlib is tropical-only. `mayaastrolib` adds a full sidereal engine behind one switch
+(`Chart(zodiac=const.ZODIAC_SIDEREAL, ayanamsa=const.AYANAMSA_LAHIRI)`):
+
+| Module | What it computes |
+|---|---|
+| `vedic.ayanamsa` | Lahiri, Krishnamurti (KP), Raman, Fagan-Bradley |
+| `vedic.nakshatras` | 27 nakshatras, lords, padas, tarabala |
+| `vedic.divisional` | all 16 BPHS divisional charts (D1–D60 / Shodashavarga) |
+| `vedic.dasha` | Vimshottari Mahadasha / Antardasha / Pratyantardasha |
+| `vedic.ashtakavarga` | BAV/SAV (337-bindu system), prastara, trikona/ekadhipatya shodhana, kakshya |
+| `vedic.yogas` | Pancha Mahapurusha, Raja, Dhana, Vipareeta, Neecha-Bhanga, Gaja-Kesari, lesser yogas + strength scoring |
+| `vedic.sadesati` | Sade Sati phases + small-panoti (ashtama/kantaka shani) |
+| `vedic.upagrahas` | Sun-derived upagrahas + Gulika/Mandi |
+| `vedic.tajika` (+`_bala`, `_aspects`) | annual charts (Varshaphala), Mudda dasha, Sahams, Harsha/Panchavargiya Bala, Ithasala/Isharafa/Nakta |
+| `vedic.kp` | Krishnamurti Paddhati — 249-row sub-lord table, sub-sub-lord, horary, Ruling Planets |
+
+### ⚙️ Modern engineering — *the whole codebase brought to current standards*
+
+- **Python 3.10+** baseline (3.12 target); all Python-2 compatibility code removed.
+- **Type hints** rolling out across the public API (`geopos`, `datetime` done; core classes in progress).
+- **Modern packaging** — single `pyproject.toml` (PEP 621); `setup.py`, `requirements.txt`, and `README.rst` deleted.
+- **ruff** format + lint (clean across 121 files) and **mypy** in CI.
+- **CI** — GitHub Actions matrix on Python 3.10 / 3.11 / 3.12.
+
+### 🧪 Real correctness guarantees — *coverage 34% → 94%*
+
+- **553 tests** (+87 subtests), all passing, **94% coverage** (80% CI floor).
+- **Golden tests** anchor planet positions against [Skyfield](https://rhodesmill.org/skyfield/)
+  — an *independent* ephemeris — at ±2 arc-minutes for reference charts (Einstein, Kahlo, Amundsen),
+  plus astronomical-invariant suites (houses sum to 360°, cusps ordered, etc.).
+
+### ✨ API ergonomics & correctness fixes
+
+- `Chart.houseOf()`, `Chart.objectsInHouse()`, `Object.house`, `House.objects` (object↔house links).
+- `Datetime.from_pydatetime()` / `.now()` / `.to_pydatetime()`.
+- Immutable `Object.with_longitude()`, `Chart.profected()`, zodiac-aware `Chart.solarReturn()`.
+- `GeoPos` now validates latitude/longitude ranges instead of silently producing a wrong chart.
+- Thread-safe sidereal calculation (lock-guarded Swiss-Ephemeris global state).
+- Eclipse-keyword bug fixed for pyswisseph 2.x; fixed-star magnitude lookups cached (144× speedup).
+
+See [CHANGELOG.md](CHANGELOG.md) for the full task-by-task history.
+
+---
+
 ## Documentation
 
-Fork-specific documentation (start here):
+Start here:
 
-- **[docs/FAQ.md](docs/FAQ.md)** — plain-English Q&A: what the library is, what it computes, what it does **not** do, threading, accuracy, licensing.
-- **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** — guided walkthrough from "what does this library do?" through the calculation pipeline to the package layout and gotchas.
-- **[docs/BIRTH-CHART-PRIMER.md](docs/BIRTH-CHART-PRIMER.md)** — how a birth chart is calculated (six stages), what the twelve houses traditionally mean, and what each planet conventionally signifies in each house (a 10×12 reference grid).
-- **[docs/PROPERTY-MIGRATION.md](docs/PROPERTY-MIGRATION.md)** — method-to-property API migration and 1.0 removal plan.
+- **[docs/FAQ.md](docs/FAQ.md)** — what the library is, what it computes, what it does **not** do, threading, accuracy, licensing.
+- **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** — the calculation pipeline, package layout, and gotchas.
+- **[docs/BIRTH-CHART-PRIMER.md](docs/BIRTH-CHART-PRIMER.md)** — how a birth chart is calculated and what the houses/planets traditionally mean.
 - **[docs/FORK-RATIONALE.md](docs/FORK-RATIONALE.md)** — why this fork exists.
-- **[docs/KNOWN-BUGS.md](docs/KNOWN-BUGS.md)** — tracked bugs and fixes (e.g. pyswisseph 2.x eclipse keyword).
+- **[docs/KNOWN-BUGS.md](docs/KNOWN-BUGS.md)** — tracked bugs and their fixes.
 
-The original flatlib documentation at [http://flatlib.readthedocs.org/](http://flatlib.readthedocs.org/) is largely still applicable — substitute `flatlib` with `mayaastrolib` in import paths.
+The original flatlib API documentation is largely still applicable — substitute `flatlib`
+with `mayaastrolib` in import paths.
 
 ## Installation
 
@@ -49,19 +102,28 @@ cd mayaastrolib
 pip install -e .
 ```
 
-A PyPI release will follow once the API surface stabilises.
+The only runtime dependency is `pyswisseph` (Swiss Ephemeris). A PyPI release will follow
+once the public API stabilises.
 
 ### Migrating from flatlib
 
-`mayaastrolib` 0.3.0 ships a compatibility shim: existing `import flatlib` and `from flatlib.x import Y` calls continue to work but emit a `DeprecationWarning`. Update your imports to `mayaastrolib` at your convenience; the shim will be removed in version 1.0.
+`mayaastrolib` ships a compatibility shim: existing `import flatlib` and `from flatlib.x import Y`
+calls keep working but emit a `DeprecationWarning`. Update imports to `mayaastrolib` at your
+convenience; the shim is removed in version 1.0.
 
 ## Development
-
-Clone the repository and install dev dependencies:
 
 ```sh
 git clone https://github.com/ranganc007/mayaastrolib.git
 cd mayaastrolib
 pip install -e ".[dev]"
-pytest tests/
+pytest
+ruff check . && ruff format --check . && mypy mayaastrolib/
 ```
+
+## Licensing
+
+`mayaastrolib` is MIT-licensed (preserving flatlib's original copyright chain). It depends on
+`pyswisseph` (LGPL) and the Swiss Ephemeris data, which is GPL / commercial dual-licensed —
+if you ship `mayaastrolib` in a closed-source product you must comply with the Swiss Ephemeris
+GPL terms or hold a commercial Swiss Ephemeris licence. See [LICENSING.md](LICENSING.md).
