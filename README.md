@@ -2,6 +2,10 @@
 
 **A modern, typed, unified Western + Vedic astrology engine for Python 3.10+.**
 
+[![PyPI](https://img.shields.io/pypi/v/mayaastrolib)](https://pypi.org/project/mayaastrolib/)
+[![Python](https://img.shields.io/pypi/pyversions/mayaastrolib)](https://pypi.org/project/mayaastrolib/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ranganc007/mayaastrolib/blob/master/LICENSE)
+
 `mayaastrolib` is a Python library for Traditional (Hellenistic/Western) **and** Vedic
 (Jyotisha) astrology, computed on the Swiss Ephemeris. It is a thoroughly modernised,
 heavily extended fork of [`flatangle/flatlib`](https://github.com/flatangle/flatlib)
@@ -117,16 +121,14 @@ with `mayaastrolib` in import paths.
 
 ## Installation
 
-`mayaastrolib` requires Python 3.10 or later. Install from source:
+`mayaastrolib` requires Python 3.10 or later:
 
 ```sh
-git clone https://github.com/ranganc007/mayaastrolib.git
-cd mayaastrolib
-pip install -e .
+pip install mayaastrolib
 ```
 
-The only runtime dependency is `pyswisseph` (Swiss Ephemeris). A PyPI release will follow
-once the public API stabilises.
+The only runtime dependency is `pyswisseph` (Swiss Ephemeris). To install from source
+instead (e.g. for development), see the [Development](#development) section below.
 
 ### Migrating from flatlib
 

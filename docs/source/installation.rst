@@ -1,8 +1,11 @@
 Installation
 ============
 
-mayaastrolib requires Python 3.10 or later and installs from source. A PyPI release will be
-made available once the public API stabilises, at which point these instructions will be updated.
+mayaastrolib requires Python 3.10 or later. The simplest way to install it is from PyPI::
+
+   pip install mayaastrolib
+
+To install from source instead (for development), see "Installing from source" below.
 
 Prerequisites
 -------------
