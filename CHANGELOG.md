@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] — 2026-06-07
+
+### Added
+- **CI Trusted Publishing** (`.github/workflows/publish.yml`) — publishing to
+  PyPI now happens automatically when a GitHub Release is published, via
+  PyPI's OIDC Trusted Publishing (no API token stored anywhere). The build
+  job validates with `twine check` and installs the built wheel into a clean
+  venv to compute a Western + Vedic chart before publishing, so a broken
+  wheel (e.g. the 0.3.1 dropped-`vedic` bug) can never be auto-released.
+- `docs/RELEASING.md` documents the one-time PyPI trusted-publisher setup and
+  the tag → release → auto-publish flow.
+
+### Changed
+- Richer `[project.urls]` (Repository, Documentation, Changelog, Issues) so
+  the PyPI project page links back to the GitHub repo, docs, and changelog.
+
 ## [0.3.1] — 2026-06-07
 
 ### Fixed

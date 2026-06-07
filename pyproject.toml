@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mayaastrolib"
-version = "0.3.1"
+version = "0.3.2"
 description = "Python library for Traditional and Vedic Astrology (fork of flatangle/flatlib)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -44,6 +44,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/ranganc007/mayaastrolib"
+Repository = "https://github.com/ranganc007/mayaastrolib"
+Documentation = "https://github.com/ranganc007/mayaastrolib/tree/master/docs"
+Changelog = "https://github.com/ranganc007/mayaastrolib/blob/master/CHANGELOG.md"
+Issues = "https://github.com/ranganc007/mayaastrolib/issues"
 Upstream = "https://github.com/flatangle/flatlib"
 
 [tool.setuptools.packages.find]
