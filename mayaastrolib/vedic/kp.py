@@ -298,6 +298,47 @@ def kp_horary(prashna_number):
     }
 
 
+def kp_horary_chart(prashna_number):
+    """Return a full KP horary chart — 12 house cusps with sub-lord chains.
+
+    The querent's number 1..249 fixes the horary Ascendant (the midpoint
+    of the corresponding KP segment). The remaining cusps are placed
+    **equal-house** — each 30° from the Ascendant — and every cusp is
+    resolved to its full KP chain (sign / star / sub / sub-sub lord).
+
+    Why equal house: the 249-number method supplies only an Ascendant
+    *degree*, not a birth time or latitude, so the Placidus intermediate
+    cusps KP normally uses are undetermined from the number alone. Equal
+    houses are the deterministic, number-only choice. When you do have the
+    question's time and place, cast a sidereal ``Chart`` (Krishnamurti
+    ayanamsa) and pass it to :func:`kp_sublords` for true Placidus cusps.
+
+    Args:
+        prashna_number: An integer in ``[1, 249]``.
+
+    Returns:
+        Dict ``{"prashna": int, "lagna_longitude": float, "houses":
+        [chain_1, ..., chain_12]}`` where each ``chain_i`` is the
+        :func:`sub_lord_at` result (with sub-sub-lord) for cusp ``i``,
+        carrying an extra ``"cusp"`` key (1..12).
+
+    Raises:
+        ValueError: if ``prashna_number`` is outside ``[1, 249]``.
+    """
+    asc_lon = prashna_to_longitude(prashna_number)
+    houses = []
+    for cusp in range(1, 13):
+        cusp_lon = (asc_lon + (cusp - 1) * 30.0) % 360.0
+        chain = sub_lord_at(cusp_lon, with_sub_sub=True)
+        chain["cusp"] = cusp
+        houses.append(chain)
+    return {
+        "prashna": prashna_number,
+        "lagna_longitude": asc_lon,
+        "houses": houses,
+    }
+
+
 def ruling_planets(date, pos, ayanamsa=const.AYANAMSA_KRISHNAMURTI):
     """Return the KP Ruling Planets at the moment of a question.
 

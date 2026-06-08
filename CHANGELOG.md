@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file. Format foll
 ## [Unreleased]
 
 ### Added
+- **KP horary chart with house cusps** (`vedic.kp.kp_horary_chart`). A
+  prashna number (1–249) now yields a full 12-cusp horary chart — each
+  cusp placed equal-house from the horary Ascendant and resolved to its
+  KP sign/star/sub/sub-sub-lord chain.
+- **Higher-order Tajika yogas** (`vedic.tajika_aspects.tajika_yogas`):
+  Kamboola, Gairi-Kamboola, and Khallasara, derived from the existing
+  Ithasala/Isharafa analysis.
 - **Six-fold Shadbala** (`mayaastrolib.vedic.shadbala`). `shadbala(chart)`
   computes the classical planetary strength — Sthana, Dig, Kala, Cheshta,
   Naisargika, and Drik bala — in Virupas for the seven classical planets,

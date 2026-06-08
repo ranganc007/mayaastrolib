@@ -61,6 +61,10 @@ ITHASALA = "Ithasala"
 ISHARAFA = "Isharafa"
 NAKTA = "Nakta"
 
+KAMBOOLA = "Kamboola"
+GAIRI_KAMBOOLA = "Gairi-Kamboola"
+KHALLASARA = "Khallasara"
+
 
 @dataclass(frozen=True)
 class TajikaAspect:
@@ -207,3 +211,50 @@ def tajika_aspects(chart):
                     continue
                 results.append(TajikaAspect(NAKTA, (translator, a, b), 0.0, _pair_orb(a, b), None))
     return results
+
+
+def tajika_yogas(chart):
+    """Detect the Moon-centred and chart-level Tajika yogas that derive
+    from the Ithasala/Isharafa analysis.
+
+    Three higher-order yogas are reported, all built on
+    :func:`tajika_aspects`:
+
+    - **Kamboola** — the Moon is in an *Ithasala* (applying aspect) with
+      another planet. An auspicious yoga: the year's matters fructify.
+      (Classically Kamboola is graded full / half / quarter by the Moon's
+      angularity and is keyed to the Lord of the Year; this reports the
+      core condition — the Moon forming an Ithasala.)
+    - **Gairi-Kamboola** — the Moon is in an *Isharafa* (separating
+      aspect) and forms no Ithasala. The weakening counterpart of
+      Kamboola.
+    - **Khallasara** — *no* Ithasala exists anywhere in the chart: the
+      promise of the year is "void", lacking a perfected aspect to carry
+      it. A chart-level condition.
+
+    Args:
+        chart: A real ephemeris :class:`Chart` (planets must carry
+            speeds); a symbolic chart raises :class:`ValueError`.
+
+    Returns:
+        Dict with keys ``kamboola`` (bool), ``kamboola_aspects`` (the
+        Moon Ithasalas), ``gairi_kamboola`` (bool),
+        ``gairi_kamboola_aspects`` (the Moon Isharafas), and
+        ``khallasara`` (bool).
+
+    Note:
+        The names and finer grading of the Tajika yogas vary across
+        sources (Tajika Neelakanthi, Raman's *Varshaphala*); the
+        conditions encoded here are the commonly reproduced core.
+    """
+    aspects = tajika_aspects(chart)
+    moon_ithasala = [a for a in aspects if a.kind == ITHASALA and const.MOON in a.planets]
+    moon_isharafa = [a for a in aspects if a.kind == ISHARAFA and const.MOON in a.planets]
+    any_ithasala = any(a.kind == ITHASALA for a in aspects)
+    return {
+        KAMBOOLA: bool(moon_ithasala),
+        "kamboola_aspects": moon_ithasala,
+        GAIRI_KAMBOOLA: bool(moon_isharafa) and not moon_ithasala,
+        "gairi_kamboola_aspects": moon_isharafa,
+        KHALLASARA: not any_ithasala,
+    }

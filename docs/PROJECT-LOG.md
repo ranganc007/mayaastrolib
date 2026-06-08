@@ -6,6 +6,51 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 042 — Long-tail Vedic: KP horary cusps + Tajika yogas
+
+Branch `task-042-vedic-longtail`. Item 6 of the autonomous run.
+
+### What was done
+
+- **KP horary chart with house cusps** (`vedic.kp.kp_horary_chart`). The
+  prashna number 1..249 fixes the horary Ascendant; the 12 cusps are
+  placed equal-house and each is resolved to its full KP chain (sign /
+  star / sub / sub-sub lord, plus a `cusp` index). Closes the
+  "full horary chart with house cusps" follow-up the old `kp_horary`
+  flagged. 9 tests.
+- **Higher-order Tajika yogas** (`vedic.tajika_aspects.tajika_yogas`):
+  Kamboola (Moon in Ithasala — auspicious), Gairi-Kamboola (Moon in
+  Isharafa), Khallasara (no Ithasala anywhere — the "void" condition).
+  These derive cleanly from the existing Ithasala/Isharafa engine. 7 tests.
+
+### Decision — Sahams NOT expanded (principled, not an omission)
+
+The remaining ~36 Sahams and the finer Tajika-yoga grading are genuinely
+**source-variant** — the exact term pairs and day/night reversibility
+differ between Tajika Neelakanthi, Raman's *Varshaphala*, and other
+texts. Per this project's working agreement ("if a task is ambiguous,
+stop and ask rather than guess") and its established no-fabrication ethos,
+I did **not** pad the Saham table with formulas I cannot attest. Instead I
+delivered the two parts of the long tail that are deterministic
+(KP cusps) or definitional on existing machinery (the three Moon/chart
+Tajika yogas). Expanding Sahams should be a sourced, deliberate pass
+against a single named edition, not a guess.
+
+### Verification
+
+- mypy clean (47 files). ruff clean. 614 tests + 87 subtests pass (+16).
+  Coverage 94.49%.
+
+### Follow-ups
+
+- A sourced Saham expansion (pick one edition, add house-cusp term
+  resolution for the cusp-referencing Sahams). The finer Kamboola grading
+  (full / half / quarter by the Moon's angularity, keyed to the Lord of
+  the Year) and Radda / Duruph (Ithasala spoiled by retrogression /
+  debility). Item 7 (golden charts) still pending.
+
+---
+
 ## 2026-06-08 — Task 041 — Full six-fold Shadbala
 
 Branch `task-041-shadbala`. Same autonomous session as 039/040; first of
