@@ -6,6 +6,30 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 046 — full_report facade (0.5.0 #2)
+
+Branch `task-046-facade`.
+
+### What was done
+
+- New `mayaastrolib/report.py` — `full_report(date, pos, *, hsys, IDs,
+  zodiac, ayanamsa, aspects=True, dignities=True, vedic="auto")` builds a
+  `Chart` and returns its `to_dict()`. `vedic="auto"` includes the Vedic
+  block iff sidereal; `True`/`False` force it. `full_report_json(...)`
+  returns the JSON string.
+- Exposed `mayaastrolib.full_report` / `full_report_json` at the package
+  top level via a PEP 562 `__getattr__`, so `import mayaastrolib` does
+  NOT import the swisseph-loading calc stack (verified by a test:
+  `swisseph` absent from `sys.modules` after `import mayaastrolib`).
+- 16 tests in `tests/test_report_facade.py`.
+
+### Verification
+
+- mypy clean (48 files). ruff clean. 657 tests + 230 subtests pass (+16).
+  Coverage 94.95%.
+
+---
+
 ## 2026-06-08 — Task 045 — Chart serialization (0.5.0 #1)
 
 Branch `task-045-serialization`. First of the three 0.5.0 "Consumption"

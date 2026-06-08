@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. Format foll
 ## [Unreleased]
 
 ### Added
+- **`full_report` facade** (`mayaastrolib.report`, also
+  `mayaastrolib.full_report`) — one call from a `Datetime` + `GeoPos` to
+  the full serialized report dict (Western + dignities by default; the
+  Vedic block auto-included for sidereal charts). `full_report_json`
+  returns the JSON string. Exposed at the package top level lazily, so
+  `import mayaastrolib` stays swisseph-free.
 - **Chart serialization** — `Chart.to_dict()` / `Chart.to_json()` emit a
   stable, versioned JSON schema (`schema_version`, `meta`, `objects`,
   `houses`, `angles`, `aspects`) designed for web apps and AI tooling.

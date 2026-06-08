@@ -16,3 +16,18 @@ except PackageNotFoundError:
 # Library and resource paths
 PATH_LIB = os.path.dirname(__file__) + os.sep
 PATH_RES = PATH_LIB + "resources" + os.sep
+
+
+def __getattr__(name):
+    """Lazily expose the high-level facade at the package top level.
+
+    ``mayaastrolib.full_report`` / ``full_report_json`` resolve on first
+    access without importing the (swisseph-loading) calculation stack at
+    ``import mayaastrolib`` time — so Western-only and metadata-only users
+    pay no startup cost.
+    """
+    if name in ("full_report", "full_report_json"):
+        from . import report
+
+        return getattr(report, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
