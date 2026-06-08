@@ -1,19 +1,22 @@
-name: Publish to PyPI
+name: Package
 
-# Publishes to PyPI via Trusted Publishing (OIDC) — no API token stored
-# anywhere. Fires when a GitHub Release is published (e.g. via
-# `gh release create vX.Y.Z`). One-time setup required on PyPI: add a
-# trusted publisher for this repo (see docs/RELEASING.md).
+# Builds the sdist + wheel and proves the wheel actually works on every push
+# and PR — not just at release time. This is the early-warning version of the
+# verify step in publish.yml: it catches packaging regressions (a dropped
+# subpackage, a missing data file, broken metadata) the moment they land,
+# instead of when a release is cut. No PyPI credentials are involved.
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [development, master]
+  pull_request:
+    branches: [development]
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  package:
     name: Build and verify distributions
     runs-on: ubuntu-latest
     steps:
@@ -33,9 +36,10 @@ jobs:
         run: twine check dist/*
 
       - name: Verify the built wheel actually works
-        # Guards against shipping a broken wheel (e.g. a dropped
-        # subpackage): install the wheel into a clean venv, outside the
-        # source tree, and compute a real Western + Vedic chart.
+        # Install the wheel into a clean venv, outside the source tree (so an
+        # editable install can't mask a missing module), and compute a real
+        # Western + Vedic chart. If a subpackage was dropped from the build,
+        # this fails here rather than on PyPI.
         run: |
           python -m venv /tmp/verify
           /tmp/verify/bin/pip install dist/*.whl
@@ -54,28 +58,3 @@ jobs:
           assert janma_nakshatra(vc).name  # vedic subpackage must ship and work
           print("verified wheel:", m.__version__)
           PY
-
-      - name: Upload built distributions
-        uses: actions/upload-artifact@v7
-        with:
-          name: dist
-          path: dist/
-
-  publish:
-    name: Publish to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/mayaastrolib/
-    permissions:
-      id-token: write  # required for Trusted Publishing (OIDC)
-    steps:
-      - name: Download built distributions
-        uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1

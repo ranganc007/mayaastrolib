@@ -37,10 +37,17 @@ reviewers) so a human must approve each publish.
 
 ## Manual fallback
 
-If Trusted Publishing is unavailable, build and upload by hand:
+Trusted Publishing is the only standing path — **no API token is kept on disk
+or in GitHub secrets.** If you ever must upload by hand (CI down, emergency
+hotfix), mint a **fresh, project-scoped** token at upload time and revoke it
+immediately afterwards. Never keep a long-lived token lying around "just in
+case"; a stored upload credential is a liability with no offsetting benefit
+once Trusted Publishing works.
 
 ```sh
 python -m build
 twine check dist/*
-twine upload dist/*          # username: __token__ , password: a PyPI API token
+# Create a token scoped to the `mayaastrolib` project at
+# https://pypi.org/manage/account/token/ , use it once, then delete it.
+twine upload dist/*          # username: __token__ , password: the fresh token
 ```
