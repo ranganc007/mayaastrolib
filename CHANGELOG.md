@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.0] — 2026-06-08
 
 ### Added
 - **Async helpers** (`mayaastrolib.aio`) — `achart`, `afull_report`, and
