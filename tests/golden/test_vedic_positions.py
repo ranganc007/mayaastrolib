@@ -98,17 +98,15 @@ class VedicSiderealGoldenTests(unittest.TestCase):
                     f"diff {diff * 60:.2f}' > tolerance {TOLERANCE_ARCMIN}'",
                 )
 
-    def test_einstein_sidereal_positions(self):
+    def test_all_fixtures_sidereal_positions(self):
+        """Every fixture chart's sidereal positions match Skyfield-tropical
+        minus the Lahiri ayanamsa, within ±2 arcmin. Iterates the whole
+        fixture set, so adding a chart to ``fixtures.json`` automatically
+        extends sidereal golden coverage."""
         fixtures = _load_fixtures()
-        self._check_chart(next(f for f in fixtures if f["name"] == "Albert Einstein"))
-
-    def test_kahlo_sidereal_positions(self):
-        fixtures = _load_fixtures()
-        self._check_chart(next(f for f in fixtures if f["name"] == "Frida Kahlo"))
-
-    def test_amundsen_sidereal_positions(self):
-        fixtures = _load_fixtures()
-        self._check_chart(next(f for f in fixtures if f["name"] == "Roald Amundsen"))
+        self.assertGreaterEqual(len(fixtures), 3)
+        for fixture in fixtures:
+            self._check_chart(fixture)
 
 
 class VedicSiderealInvariantTests(unittest.TestCase):

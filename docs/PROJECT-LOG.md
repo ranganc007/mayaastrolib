@@ -6,6 +6,48 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 043 — More golden charts
+
+Branch `task-043-golden-charts`. Item 7 (final) of the autonomous run.
+
+### What was done
+
+- Added **4 reference charts** to `tests/golden/generate_fixtures.py` and
+  regenerated `fixtures.json` (3 → 7): Carl Jung (1875, Switzerland, LMT),
+  Marilyn Monroe (1926, LA, PST), Diana Spencer (1961, UK, BST), Barack
+  Obama (1961, Honolulu, HST). Extends the epoch range to 1961, adds
+  Pacific longitude and modern fixed-offset civil times (PST/BST/HST)
+  alongside the original LMT charts. All four match Skyfield to ±2 arcmin
+  in **both** tropical and sidereal frames.
+- Made `test_vedic_positions.py` **iterate all fixtures** (was 3 named
+  methods) so any new fixture extends sidereal golden coverage
+  automatically.
+- Refactored `test_self_consistency.py` to **derive its chart list from
+  fixtures.json** + 3 synthetic geography-stress charts (Sydney −34°,
+  Quito ~0°, Invercargill −46°), so the house/planet/aspect/symbolic
+  invariants now run in the southern hemisphere, on the equator, and at a
+  high southern latitude — geographies the named set never reached.
+
+### Findings
+
+- mayaastrolib's Swiss Ephemeris and Skyfield (independent JPL DE-series)
+  agree to ≤2′ on all 7 charts × ~10 planets, tropical and sidereal — the
+  strongest cross-engine correctness evidence to date.
+- The skyfield cache (`tests/golden/.skyfield-data`, de440s.bsp ~17 MB)
+  stays gitignored; only the small `fixtures.json` is committed.
+
+### Verification
+
+- mypy clean (47 files). ruff clean. 612 tests + 230 subtests pass
+  (golden subtests 70 → 230). Coverage 94.49%.
+
+### Follow-ups
+
+- A near-polar (>66°) chart would test where Placidus genuinely breaks;
+  deliberately left out for now (degenerate cusps need separate handling).
+
+---
+
 ## 2026-06-08 — Task 042 — Long-tail Vedic: KP horary cusps + Tajika yogas
 
 Branch `task-042-vedic-longtail`. Item 6 of the autonomous run.

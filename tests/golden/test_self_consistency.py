@@ -12,21 +12,55 @@ No external dependency.
 
 from __future__ import annotations
 
+import json
 import unittest
+from datetime import datetime
+from pathlib import Path
 
 from mayaastrolib import aspects, const
 from mayaastrolib.chart import Chart
 from mayaastrolib.datetime import Datetime
 from mayaastrolib.geopos import GeoPos
 
-# Three test charts at varied latitudes / dates for invariant testing.
-# Times are UTC; LMT-to-UTC was hand-computed in
-# tests/golden/generate_fixtures.py.
-TEST_CHARTS: list[tuple[str, str, str, str, float, float]] = [
-    ("temperate_einstein", "1879/03/14", "10:50:00", "+00:00", 48.4, 10.0),
-    ("tropical_kahlo", "1907/07/06", "15:06:40", "+00:00", 19.333, -99.167),
-    ("high_lat_amundsen", "1872/07/16", "02:46:48", "+00:00", 59.383, 10.8),
+FIXTURES_PATH = Path(__file__).parent / "fixtures.json"
+
+
+def _charts_from_fixtures() -> list[tuple[str, str, str, str, float, float]]:
+    """Every reference chart in fixtures.json, as (name, date, time,
+    offset, lat, lon). Adding a fixture automatically extends every
+    invariant test below."""
+    with open(FIXTURES_PATH) as f:
+        fixtures = json.load(f)
+    out = []
+    for fx in fixtures:
+        dt = datetime.fromisoformat(fx["date_utc"])
+        loc = fx["location"]
+        out.append(
+            (
+                fx["name"],
+                dt.strftime("%Y/%m/%d"),
+                dt.strftime("%H:%M:%S"),
+                "+00:00",
+                loc["lat"],
+                loc["lon"],
+            )
+        )
+    return out
+
+
+# Synthetic charts purely for invariant stress at geographies the named
+# reference set doesn't reach: southern hemisphere, the equator, and a
+# high southern latitude. Planet positions are location-independent, so
+# these need no external reference — only the invariants must hold.
+_GEOGRAPHIC_STRESS_CHARTS: list[tuple[str, str, str, str, float, float]] = [
+    ("southern_sydney", "1990/12/21", "03:00:00", "+00:00", -33.8688, 151.2093),
+    ("equatorial_quito", "1985/03/21", "12:00:00", "+00:00", -0.1807, -78.4678),
+    ("high_south_invercargill", "1975/06/21", "23:30:00", "+00:00", -46.4132, 168.3538),
 ]
+
+TEST_CHARTS: list[tuple[str, str, str, str, float, float]] = (
+    _charts_from_fixtures() + _GEOGRAPHIC_STRESS_CHARTS
+)
 
 
 def _build(name: str, date_str: str, time_str: str, offset: str, lat: float, lon: float) -> Chart:

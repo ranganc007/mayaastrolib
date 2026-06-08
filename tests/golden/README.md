@@ -46,16 +46,29 @@ fail the comparison.
 
 ## Reference charts
 
-| Chart | Date (LMT → UTC) | Location | Lat | Rodden |
+| Chart | Date (local → UTC) | Location | Lat | Rodden |
 |---|---|---|---:|---|
-| Albert Einstein | 1879-03-14 11:30 → 10:50 UTC | Ulm, Germany | 48°N | AA |
-| Frida Kahlo | 1907-07-06 08:30 → 15:06:40 UTC | Coyoacán, Mexico | 19°N | AA |
-| Roald Amundsen | 1872-07-16 03:30 → 02:46:48 UTC | Borge, Norway | 59°N | B |
+| Albert Einstein | 1879-03-14 11:30 LMT → 10:50 UTC | Ulm, Germany | 48°N | AA |
+| Frida Kahlo | 1907-07-06 08:30 LMT → 15:06:40 UTC | Coyoacán, Mexico | 19°N | AA |
+| Roald Amundsen | 1872-07-16 03:30 LMT → 02:46:48 UTC | Borge, Norway | 59°N | B |
+| Carl Jung | 1875-07-26 19:32 LMT → 18:54:44 UTC | Kesswil, Switzerland | 48°N | AA |
+| Marilyn Monroe | 1926-06-01 09:30 PST → 17:30 UTC | Los Angeles, USA | 34°N | AA |
+| Diana Spencer | 1961-07-01 19:45 BST → 18:45 UTC | Sandringham, UK | 53°N | AA |
+| Barack Obama | 1961-08-04 19:24 HST → 1961-08-05 05:24 UTC | Honolulu, USA | 21°N | AA |
 
 The Amundsen chart at 59°N is deliberately included to exercise
 Placidus stability near the boundary where it begins to behave
 irregularly. As of Task 014 it produces consistent, ordered house
 cusps — no instability surfaced.
+
+Task 043 added the lower four charts, extending the epoch range to 1961
+and the longitude range across the Pacific (Honolulu) and adding modern
+fixed-offset civil times (PST/BST/HST) alongside the original LMT
+charts. All four match Skyfield to ±2 arcmin in both tropical and
+sidereal frames. The self-consistency suite additionally runs three
+synthetic geography-stress charts (Sydney −34°, Quito ~0°, Invercargill
+−46°) so house invariants are checked in the southern hemisphere, on the
+equator, and at a high southern latitude.
 
 ## LMT-to-UTC conversion
 

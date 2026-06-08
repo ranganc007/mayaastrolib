@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file. Format foll
 ## [Unreleased]
 
 ### Added
+- **Wider golden-test coverage.** The Skyfield-anchored reference set grew
+  from 3 charts to 7 (added Carl Jung, Marilyn Monroe, Diana Spencer,
+  Barack Obama), extending the epoch range to 1961 and adding Pacific
+  longitudes and modern civil-time zones. All match Swiss Ephemeris to
+  ±2 arcmin in both tropical and sidereal frames. The self-consistency
+  suite now also runs southern-hemisphere, equatorial, and high-southern
+  geography-stress charts.
 - **KP horary chart with house cusps** (`vedic.kp.kp_horary_chart`). A
   prashna number (1–249) now yields a full 12-cusp horary chart — each
   cusp placed equal-house from the horary Ascendant and resolved to its

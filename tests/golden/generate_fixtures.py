@@ -82,6 +82,42 @@ CHARTS = [
         "rodden_rating": "B",
         "source": "Public biographical record",
     },
+    {
+        "name": "Carl Jung",
+        "date_utc": "1875-07-26T18:54:44",
+        # 19:32 LMT at Kesswil (9.3174°E = +0:37:16 from UTC)
+        # → 19:32:00 - 0:37:16 = 18:54:44 UTC
+        "location": {"lat": 47.5996, "lon": 9.3174, "elevation_m": 400},
+        "rodden_rating": "AA",
+        "source": "Astro-Databank",
+    },
+    {
+        "name": "Marilyn Monroe",
+        "date_utc": "1926-06-01T17:30:00",
+        # 09:30 PST at Los Angeles (PST = UTC-8; no US DST in 1926)
+        # → 09:30 + 8:00 = 17:30 UTC
+        "location": {"lat": 34.0522, "lon": -118.2437, "elevation_m": 89},
+        "rodden_rating": "AA",
+        "source": "Astro-Databank",
+    },
+    {
+        "name": "Diana Spencer",
+        "date_utc": "1961-07-01T18:45:00",
+        # 19:45 BST at Sandringham (BST = UTC+1 in summer 1961)
+        # → 19:45 - 1:00 = 18:45 UTC
+        "location": {"lat": 52.8309, "lon": 0.5125, "elevation_m": 20},
+        "rodden_rating": "AA",
+        "source": "Astro-Databank",
+    },
+    {
+        "name": "Barack Obama",
+        "date_utc": "1961-08-05T05:24:00",
+        # 19:24 HST at Honolulu (HST = UTC-10) on 1961-08-04
+        # → 19:24 + 10:00 = 05:24 UTC the next day
+        "location": {"lat": 21.3069, "lon": -157.8583, "elevation_m": 6},
+        "rodden_rating": "AA",
+        "source": "Birth certificate (Astro-Databank)",
+    },
 ]
 
 

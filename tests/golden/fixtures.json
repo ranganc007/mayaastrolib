@@ -73,5 +73,105 @@
     },
     "tolerance_arcmin": 2.0,
     "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Carl Jung",
+    "date_utc": "1875-07-26T18:54:44",
+    "location": {
+      "lat": 47.5996,
+      "lon": 9.3174,
+      "elevation_m": 400
+    },
+    "rodden_rating": "AA",
+    "source": "Astro-Databank",
+    "expected_positions": {
+      "Sun": 123.31115801336936,
+      "Moon": 45.519483772189396,
+      "Mercury": 103.76943327048129,
+      "Venus": 107.49949983330588,
+      "Mars": 261.3721718494853,
+      "Jupiter": 203.7991185128881,
+      "Saturn": 324.1951443193976,
+      "Uranus": 134.805168124285,
+      "Neptune": 33.042296291002,
+      "Pluto": 53.51186825501303
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Marilyn Monroe",
+    "date_utc": "1926-06-01T17:30:00",
+    "location": {
+      "lat": 34.0522,
+      "lon": -118.2437,
+      "elevation_m": 89
+    },
+    "rodden_rating": "AA",
+    "source": "Astro-Databank",
+    "expected_positions": {
+      "Sun": 70.44456015773004,
+      "Moon": 319.1013663097075,
+      "Mercury": 66.77910684677667,
+      "Venus": 28.750658658051766,
+      "Mars": 350.7317232567384,
+      "Jupiter": 326.82572050130415,
+      "Saturn": 231.44164138504476,
+      "Uranus": 358.99488565800215,
+      "Neptune": 142.2227804814095,
+      "Pluto": 103.39161758116909
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Diana Spencer",
+    "date_utc": "1961-07-01T18:45:00",
+    "location": {
+      "lat": 52.8309,
+      "lon": 0.5125,
+      "elevation_m": 20
+    },
+    "rodden_rating": "AA",
+    "source": "Astro-Databank",
+    "expected_positions": {
+      "Sun": 99.66315365028468,
+      "Moon": 325.0393708080769,
+      "Mercury": 93.2013545119592,
+      "Venus": 54.39994467383243,
+      "Mars": 151.6457744824048,
+      "Jupiter": 305.09707439444935,
+      "Saturn": 297.8140012717693,
+      "Uranus": 143.33603405048376,
+      "Neptune": 218.6366779499698,
+      "Pluto": 156.0440396490685
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
+  },
+  {
+    "name": "Barack Obama",
+    "date_utc": "1961-08-05T05:24:00",
+    "location": {
+      "lat": 21.3069,
+      "lon": -157.8583,
+      "elevation_m": 6
+    },
+    "rodden_rating": "AA",
+    "source": "Birth certificate (Astro-Databank)",
+    "expected_positions": {
+      "Sun": 132.54801674028062,
+      "Moon": 63.35866278298276,
+      "Mercury": 122.33180490901884,
+      "Venus": 91.78947069716608,
+      "Mars": 172.57666361886777,
+      "Jupiter": 300.8586156385593,
+      "Saturn": 295.33074268232923,
+      "Uranus": 145.27084036020022,
+      "Neptune": 218.60595125609873,
+      "Pluto": 156.9777621565893
+    },
+    "tolerance_arcmin": 2.0,
+    "generated_by": "skyfield (de440s.bsp)"
   }
 ]
