@@ -56,18 +56,27 @@ SWE_HOUSESYS = {
 # ==== Internal functions ==== #
 
 
+# pyswisseph wraps the Swiss Ephemeris C library, which is NOT fully
+# thread-safe: ``set_sid_mode`` mutates process-global state, and the
+# library keeps internal static buffers/caches across calls. This single
+# reentrant lock serialises EVERY swisseph entry point, so the engine is
+# safe to drive from a thread pool (e.g. FastAPI under load via the async
+# helpers in ``mayaastrolib.aio``). It is an RLock because a few helpers
+# nest swisseph calls (e.g. ``sweFixedStar`` → ``_fixstar_mag``).
+#
+# swisseph calls are fast (µs–ms), so serialising them trades a little
+# parallelism for correctness; the async helpers keep the event loop free
+# regardless. See docs/CONCURRENCY.md.
+_SWE_LOCK = threading.RLock()
+
+
 def setPath(path):
     """Sets the path for the swe files."""
-    swisseph.set_ephe_path(path)
+    with _SWE_LOCK:
+        swisseph.set_ephe_path(path)
 
 
 # === Sidereal mode plumbing (Task 017) === #
-
-# pyswisseph's ``set_sid_mode`` mutates process-global state. This lock
-# guards the ``(set_sid_mode, calc_ut)`` pair so concurrent sidereal
-# computations for different ayanamsas don't interleave. Tropical calls
-# pass no ``FLG_SIDEREAL`` flag and bypass this lock entirely.
-_SIDEREAL_CALC_LOCK = threading.Lock()
 
 
 def _sidereal_calc_ut(jd, sweObj, ayanamsa):
@@ -78,7 +87,7 @@ def _sidereal_calc_ut(jd, sweObj, ayanamsa):
     """
     from mayaastrolib.vedic.ayanamsa import _swe_mode_for
 
-    with _SIDEREAL_CALC_LOCK:
+    with _SWE_LOCK:
         swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
         return swisseph.calc_ut(jd, sweObj, swisseph.FLG_SIDEREAL)
 
@@ -87,7 +96,7 @@ def _sidereal_houses_ex(jd, lat, lon, hsys, ayanamsa):
     """Thread-safe sidereal :func:`swisseph.houses_ex` call."""
     from mayaastrolib.vedic.ayanamsa import _swe_mode_for
 
-    with _SIDEREAL_CALC_LOCK:
+    with _SWE_LOCK:
         swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
         return swisseph.houses_ex(jd, lat, lon, hsys, swisseph.FLG_SIDEREAL)
 
@@ -106,10 +115,11 @@ def sweObject(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAH
         ayanamsa: Used only when ``zodiac == ZODIAC_SIDEREAL``.
     """
     sweObj = SWE_OBJECTS[obj]
-    if zodiac == const.ZODIAC_SIDEREAL:
-        sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
-    else:
-        sweList, flg = swisseph.calc_ut(jd, sweObj)
+    with _SWE_LOCK:
+        if zodiac == const.ZODIAC_SIDEREAL:
+            sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
+        else:
+            sweList, flg = swisseph.calc_ut(jd, sweObj)
     return {
         "id": obj,
         "lon": sweList[0],
@@ -125,10 +135,11 @@ def sweObjectLon(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_
     See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
     """
     sweObj = SWE_OBJECTS[obj]
-    if zodiac == const.ZODIAC_SIDEREAL:
-        sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
-    else:
-        sweList, flg = swisseph.calc_ut(jd, sweObj)
+    with _SWE_LOCK:
+        if zodiac == const.ZODIAC_SIDEREAL:
+            sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
+        else:
+            sweList, flg = swisseph.calc_ut(jd, sweObj)
     return sweList[0]
 
 
@@ -139,7 +150,8 @@ def sweNextTransit(obj, jd, lat, lon, flag):
     """
     sweObj = SWE_OBJECTS[obj]
     flag = swisseph.CALC_RISE if flag == "RISE" else swisseph.CALC_SET
-    trans = swisseph.rise_trans(jd, sweObj, flag, (lon, lat, 0))
+    with _SWE_LOCK:
+        trans = swisseph.rise_trans(jd, sweObj, flag, (lon, lat, 0))
     return trans[1][0]
 
 
@@ -152,10 +164,11 @@ def sweHouses(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.A
     See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
     """
     hsys_b = SWE_HOUSESYS[hsys]
-    if zodiac == const.ZODIAC_SIDEREAL:
-        hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
-    else:
-        hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
+    with _SWE_LOCK:
+        if zodiac == const.ZODIAC_SIDEREAL:
+            hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
+        else:
+            hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
     # Add first house to the end of 'hlist' so that we
     # can compute house sizes with an iterator
     hlist += (hlist[0],)
@@ -179,10 +192,11 @@ def sweHouses(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.A
 def sweHousesLon(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
     """Returns lists with house and angle longitudes."""
     hsys_b = SWE_HOUSESYS[hsys]
-    if zodiac == const.ZODIAC_SIDEREAL:
-        hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
-    else:
-        hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
+    with _SWE_LOCK:
+        if zodiac == const.ZODIAC_SIDEREAL:
+            hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
+        else:
+            hlist, ascmc = swisseph.houses(jd, lat, lon, hsys_b)
     angles = [ascmc[0], ascmc[1], angle.norm(ascmc[0] + 180), angle.norm(ascmc[1] + 180)]
     return (hlist, angles)
 
@@ -205,12 +219,14 @@ def _fixstar_mag(star):
     stars at most) is safe and gives a hundreds-of-x speedup on
     bulk access.
     """
-    return swisseph.fixstar2_mag(star)
+    with _SWE_LOCK:
+        return swisseph.fixstar2_mag(star)
 
 
 def sweFixedStar(star, jd):
     """Returns a fixed star from the Ephemeris."""
-    sweList, stnam, flg = swisseph.fixstar2_ut(star, jd)
+    with _SWE_LOCK:
+        sweList, stnam, flg = swisseph.fixstar2_ut(star, jd)
     mag = _fixstar_mag(star)
     return {"id": star, "mag": mag, "lon": sweList[0], "lat": sweList[1]}
 
@@ -221,7 +237,8 @@ def sweFixedStar(star, jd):
 def solarEclipseGlobal(jd, backward):
     """Returns the jd details of previous or next global solar eclipse."""
 
-    sweList = swisseph.sol_eclipse_when_glob(jd, backwards=backward)
+    with _SWE_LOCK:
+        sweList = swisseph.sol_eclipse_when_glob(jd, backwards=backward)
     return {
         "maximum": sweList[1][0],
         "begin": sweList[1][2],
@@ -236,7 +253,8 @@ def solarEclipseGlobal(jd, backward):
 def lunarEclipseGlobal(jd, backward):
     """Returns the jd details of previous or next global lunar eclipse."""
 
-    sweList = swisseph.lun_eclipse_when(jd, backwards=backward)
+    with _SWE_LOCK:
+        sweList = swisseph.lun_eclipse_when(jd, backwards=backward)
     return {
         "maximum": sweList[1][0],
         "partial_begin": sweList[1][2],

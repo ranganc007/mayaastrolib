@@ -6,6 +6,44 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 047 — async + thread-safety (0.5.0 #3)
+
+Branch `task-047-async`. Last of the three 0.5.0 "Consumption" items.
+
+### What was done
+
+- **Thread safety:** generalised the single-purpose sidereal lock in
+  `ephem/swe.py` into one module-level `threading.RLock()` (`_SWE_LOCK`)
+  that now guards EVERY swisseph entry point (calc_ut/houses/houses_ex/
+  rise_trans/fixstar2_ut/fixstar2_mag/eclipses/set_ephe_path), not just
+  the sidereal `set_sid_mode` pair. RLock because `sweFixedStar` nests
+  `_fixstar_mag`. The Swiss Ephemeris C library keeps global state +
+  static buffers, so this is required for safe multi-threaded use.
+- **Async:** new `mayaastrolib/aio.py` — `achart`, `afull_report`,
+  `afull_report_json` run the sync work in `loop.run_in_executor` so an
+  asyncio event loop stays free.
+- **Docs:** `docs/CONCURRENCY.md` (thread-safety guarantee, the
+  lock/parallelism trade-off, async usage, a FastAPI example).
+- 7 tests in `tests/test_concurrency.py`: a mixed tropical/sidereal
+  work-list hammered across an 8-thread pool must equal the serial
+  reference byte-for-byte; fixed-star pulls under threads (RLock
+  reentrancy); the async helpers match their sync counterparts and run
+  under `asyncio.gather`.
+
+### Findings
+
+- Before this, the tropical `calc_ut`/`houses` paths were unlocked — only
+  sidereal was guarded. A concurrent sidereal `set_sid_mode` couldn't
+  corrupt a tropical calc (no FLG_SIDEREAL), but swisseph's internal
+  buffers made *any* concurrent calls a latent risk. Now closed.
+
+### Verification
+
+- mypy clean (49 files). ruff clean. 664 tests + 230 subtests pass (+7).
+  Coverage 95.03%.
+
+---
+
 ## 2026-06-08 — Task 046 — full_report facade (0.5.0 #2)
 
 Branch `task-046-facade`.

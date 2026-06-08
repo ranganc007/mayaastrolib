@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. Format foll
 ## [Unreleased]
 
 ### Added
+- **Async helpers** (`mayaastrolib.aio`) — `achart`, `afull_report`, and
+  `afull_report_json` run the synchronous, CPU-bound computation in a
+  thread-pool executor so an asyncio event loop (FastAPI, an MCP server,
+  an agent loop) stays responsive.
 - **`full_report` facade** (`mayaastrolib.report`, also
   `mayaastrolib.full_report`) — one call from a `Datetime` + `GeoPos` to
   the full serialized report dict (Western + dignities by default; the
@@ -18,6 +22,14 @@ All notable changes to this project will be documented in this file. Format foll
   `vedic=True` (ayanamsa value, Moon/Asc nakshatras, the active
   Vimshottari MD/AD/Pratyantar dasha, detected yogas, and a Shadbala
   summary). `Object`/`House`/`FixedStar`/`Aspect` each gained a `to_dict()`.
+
+### Changed
+- **Thread safety hardened.** Every Swiss Ephemeris entry point in
+  `ephem.swe` is now serialised behind a single reentrant lock (previously
+  only the sidereal `set_sid_mode` pair was guarded), so charts can be
+  built concurrently from a thread pool — mixing tropical and sidereal —
+  without corrupting swisseph's global state. Documented in
+  `docs/CONCURRENCY.md`.
 
 ## [0.4.0] — 2026-06-08
 
