@@ -20,13 +20,22 @@ There are also methods to access fixed stars.
 
 """
 
+from __future__ import annotations
+
 import copy as _copy
 import math
+from typing import TYPE_CHECKING, Any
 
 from . import angle, const, utils
 from .datetime import Datetime
 from .ephem import ephem
 from .lists import GenericList, HouseList, ObjectList
+
+if TYPE_CHECKING:
+    from .geopos import GeoPos
+    from .object import FixedStar, GenericObject, House, Object
+    from .predictives.primarydirections import PrimaryDirections
+    from .tools.planetarytime import HourTable
 
 # ------------------ #
 #    Chart Class     #
@@ -36,7 +45,18 @@ from .lists import GenericList, HouseList, ObjectList
 class Chart:
     """This class represents an astrology chart."""
 
-    def __init__(self, date, pos, **kwargs):
+    date: Datetime
+    pos: GeoPos
+    hsys: str
+    zodiac: str
+    ayanamsa: str
+    is_symbolic: bool
+    symbolic_kind: str | None
+    objects: ObjectList
+    houses: HouseList
+    angles: GenericList
+
+    def __init__(self, date: Datetime, pos: GeoPos, **kwargs: Any) -> None:
         """Creates an astrology chart for a given
         date and location.
 
@@ -89,12 +109,12 @@ class Chart:
         )
         self._link_objects_to_houses()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.is_symbolic:
             return f"<{type(self).__name__} ({self.symbolic_kind}) {self.date}>"
         return f"<{type(self).__name__} {self.date}>"
 
-    def _link_objects_to_houses(self):
+    def _link_objects_to_houses(self) -> None:
         """Stamp `obj.house` on every Object and `house.objects` on every House.
 
         Uses HouseList.getObjectHouse, which iterates the houses and returns
@@ -108,7 +128,7 @@ class Chart:
         for house in self.houses:
             house.objects = [o for o in self.objects if o.house is house]
 
-    def copy(self):
+    def copy(self) -> Chart:
         """Returns a deep copy of this chart."""
         chart = Chart.__new__(Chart)
         chart.date = self.date
@@ -125,19 +145,19 @@ class Chart:
 
     # === Properties === #
 
-    def getObject(self, ID):
+    def getObject(self, ID: str) -> Object:
         """Returns an object from the chart."""
         return self.objects.get(ID)
 
-    def getHouse(self, ID):
+    def getHouse(self, ID: str) -> House:
         """Returns an house from the chart."""
         return self.houses.get(ID)
 
-    def getAngle(self, ID):
+    def getAngle(self, ID: str) -> GenericObject:
         """Returns an angle from the chart."""
         return self.angles.get(ID)
 
-    def get(self, ID):
+    def get(self, ID: str) -> GenericObject:
         """Return the object, house, or angle with the given ID.
 
         Dispatches by list membership against the canonical lists in
@@ -158,7 +178,7 @@ class Chart:
             return self.getAngle(ID)
         return self.getObject(ID)
 
-    def houseOf(self, obj):
+    def houseOf(self, obj: GenericObject | str) -> House | None:
         """Return the House containing obj, or None if obj is not in any house.
 
         Equivalent to ``obj.house``, provided for callers who have the chart
@@ -179,7 +199,7 @@ class Chart:
                 return None
         return getattr(obj, "house", None)
 
-    def objectsInHouse(self, house_id):
+    def objectsInHouse(self, house_id: str) -> list[Object]:
         """Return the list of Objects in the named house.
 
         Args:
@@ -202,25 +222,25 @@ class Chart:
     # so the access must be made directly to the
     # ephemeris only when needed.
 
-    def getFixedStar(self, ID):
+    def getFixedStar(self, ID: str) -> FixedStar:
         """Returns a fixed star from the ephemeris."""
         return ephem.getFixedStar(ID, self.date)
 
-    def getFixedStars(self):
+    def getFixedStars(self) -> Any:
         """Returns a list with all fixed stars."""
         IDs = const.LIST_FIXED_STARS
         return ephem.getFixedStarList(IDs, self.date)
 
     # === Houses and angles === #
 
-    def isHouse1Asc(self):
+    def isHouse1Asc(self) -> bool:
         """Returns true if House1 is the same as the Asc."""
         house1 = self.getHouse(const.HOUSE1)
         asc = self.getAngle(const.ASC)
         dist = angle.closestdistance(house1.lon, asc.lon)
         return abs(dist) < 0.0003  # 1 arc-second
 
-    def isHouse10MC(self):
+    def isHouse10MC(self) -> bool:
         """Returns true if House10 is the same as the MC."""
         house10 = self.getHouse(const.HOUSE10)
         mc = self.getAngle(const.MC)
@@ -229,7 +249,7 @@ class Chart:
 
     # === Other properties === #
 
-    def isDiurnal(self):
+    def isDiurnal(self) -> bool:
         """Returns true if this chart is diurnal."""
         sun = self.getObject(const.SUN)
         mc = self.getAngle(const.MC)
@@ -241,7 +261,7 @@ class Chart:
         mcRA, mcDecl = utils.eqCoords(mc.lon, 0)
         return utils.isAboveHorizon(sunRA, sunDecl, mcRA, lat)
 
-    def getMoonPhase(self):
+    def getMoonPhase(self) -> str:
         """Returns the phase of the moon."""
         sun = self.getObject(const.SUN)
         moon = self.getObject(const.MOON)
@@ -257,7 +277,7 @@ class Chart:
 
     # === Symbolic charts === #
 
-    def _copy_for_symbolic(self, symbolic_kind):
+    def _copy_for_symbolic(self, symbolic_kind: str) -> Chart:
         """Return a deep-copied chart with the symbolic flag set.
 
         Internal helper for :meth:`profected` and any future symbolic
@@ -270,7 +290,7 @@ class Chart:
         new.symbolic_kind = symbolic_kind
         return new
 
-    def _years_to(self, target_date):
+    def _years_to(self, target_date: Datetime) -> float:
         """Return the rotation angle (degrees) for a profection from
         ``self.date`` to ``target_date``.
 
@@ -297,7 +317,7 @@ class Chart:
         age = math.floor((target_date.jd - self.date.jd) / 365.25)
         return 30 * age + sub_year
 
-    def profected(self, years=None, target_date=None):
+    def profected(self, years: float | None = None, target_date: Datetime | None = None) -> Chart:
         """Return a profected chart — natal positions rotated forward by
         one sign per year of age.
 
@@ -334,6 +354,7 @@ class Chart:
         if target_date is not None:
             rotation = self._years_to(target_date)
         else:
+            assert years is not None  # guaranteed by the exactly-one check above
             rotation = (years % 12) * 30
 
         new = self._copy_for_symbolic(symbolic_kind="profection")
@@ -345,7 +366,7 @@ class Chart:
 
     # === Solar returns === #
 
-    def solarReturn(self, year=None, target_date=None):
+    def solarReturn(self, year: int | None = None, target_date: Datetime | None = None) -> Chart:
         """Return this chart's solar return for a calendar year or near a date.
 
         A solar return is a real chart computed from ephemeris for the
@@ -383,6 +404,7 @@ class Chart:
         if year is not None:
             anchor = Datetime(f"{year}/01/01", "00:00", self.date.utcoffset)
         else:
+            assert target_date is not None  # guaranteed by the exactly-one check above
             anchor = target_date
         srDate = ephem.nextSolarReturn(
             anchor,
@@ -400,7 +422,7 @@ class Chart:
 
     # === Other predictives and tools (Task 013) === #
 
-    def directions(self):
+    def directions(self) -> PrimaryDirections:
         """Return a :class:`PrimaryDirections` instance for this chart.
 
         Primary directions are a symbolic predictive technique mapping
@@ -437,7 +459,7 @@ class Chart:
 
         return PrimaryDirections(self)
 
-    def arabicPart(self, part_id):
+    def arabicPart(self, part_id: str) -> GenericObject:
         """Compute an Arabic part (lot) for this chart.
 
         Args:
@@ -457,7 +479,7 @@ class Chart:
 
         return _getPart_impl(part_id, self)
 
-    def planetaryHour(self, date=None):
+    def planetaryHour(self, date: Datetime | None = None) -> HourTable:
         """Return the planetary :class:`HourTable` for this chart.
 
         Convenience wrapper around

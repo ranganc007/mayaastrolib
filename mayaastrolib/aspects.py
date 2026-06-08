@@ -29,8 +29,15 @@ passive object.
 
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from . import angle, const
 from ._compat import property_with_method_compat
+
+if TYPE_CHECKING:
+    from .object import GenericObject, Object
 
 # Orb for minor and exact aspects
 MAX_MINOR_ASP_ORB = 3
@@ -40,7 +47,7 @@ MAX_EXACT_ORB = 0.3
 # === Private functions === #
 
 
-def _orbList(obj1, obj2, aspList):
+def _orbList(obj1: GenericObject, obj2: GenericObject, aspList: list[int]) -> list[dict[str, Any]]:
     """Returns a list with the orb and angular
     distances from obj1 to obj2, considering a
     list of possible aspects.
@@ -58,7 +65,9 @@ def _orbList(obj1, obj2, aspList):
     ]
 
 
-def _aspectDict(obj1, obj2, aspList):
+def _aspectDict(
+    obj1: GenericObject, obj2: GenericObject, aspList: list[int]
+) -> dict[str, Any] | None:
     """Returns the properties of the aspect of
     obj1 to obj2, considering a list of possible
     aspects.
@@ -108,7 +117,7 @@ def _aspectDict(obj1, obj2, aspList):
     return None
 
 
-def _aspectProperties(obj1, obj2, aspDict):
+def _aspectProperties(obj1: Object, obj2: Object, aspDict: dict[str, Any]) -> dict[str, Any]:
     """Returns the properties of an aspect between
     obj1 and obj2, given by 'aspDict'.
 
@@ -167,18 +176,22 @@ def _aspectProperties(obj1, obj2, aspDict):
         # if it has a different direction..
         # Note: Non-planets have zero speed
         prop2["movement"] = const.NO_MOVEMENT
-        obj2speed = obj2.lonspeed if obj2.isPlanet() else 0.0
-        sameDir = obj1.lonspeed * obj2speed >= 0
+        # Non-planets contribute zero speed. ``lonspeed`` is a real float
+        # for ephemeris objects here; ``or 0.0`` only coalesces the
+        # undefined (None) speed of symbolic positions, leaving every real
+        # value — including negative (retrograde) speeds — untouched.
+        obj2speed = (obj2.lonspeed or 0.0) if obj2.isPlanet() else 0.0
+        sameDir = (obj1.lonspeed or 0.0) * obj2speed >= 0
         if not sameDir:
             prop2["movement"] = prop1["movement"]
 
     return prop
 
 
-def _getActivePassive(obj1, obj2):
+def _getActivePassive(obj1: Object, obj2: Object) -> dict[str, Object]:
     """Returns which is the active and the passive objects."""
-    speed1 = abs(obj1.lonspeed) if obj1.isPlanet() else -1.0
-    speed2 = abs(obj2.lonspeed) if obj2.isPlanet() else -1.0
+    speed1 = abs(obj1.lonspeed or 0.0) if obj1.isPlanet() else -1.0
+    speed2 = abs(obj2.lonspeed or 0.0) if obj2.isPlanet() else -1.0
     if speed1 > speed2:
         return {"active": obj1, "passive": obj2}
     else:
@@ -188,7 +201,7 @@ def _getActivePassive(obj1, obj2):
 # === Public functions === #
 
 
-def aspectType(obj1, obj2, aspList):
+def aspectType(obj1: Object, obj2: Object, aspList: list[int]) -> int:
     """Returns the aspect type between objects considering
     a list of possible aspect types.
 
@@ -198,7 +211,7 @@ def aspectType(obj1, obj2, aspList):
     return aspDict["type"] if aspDict else const.NO_ASPECT
 
 
-def hasAspect(obj1, obj2, aspList):
+def hasAspect(obj1: Object, obj2: Object, aspList: list[int]) -> bool:
     """Returns if there is an aspect between objects
     considering a list of possible aspect types.
 
@@ -207,7 +220,7 @@ def hasAspect(obj1, obj2, aspList):
     return aspType != const.NO_ASPECT
 
 
-def isAspecting(obj1, obj2, aspList):
+def isAspecting(obj1: GenericObject, obj2: GenericObject, aspList: list[int]) -> bool:
     """Returns if obj1 aspects obj2 within its orb,
     considering a list of possible aspect types.
 
@@ -218,7 +231,7 @@ def isAspecting(obj1, obj2, aspList):
     return False
 
 
-def getAspect(obj1, obj2, aspList):
+def getAspect(obj1: Object, obj2: Object, aspList: list[int]) -> Aspect | None:
     """Return the Aspect between two objects, or None if no aspect exists.
 
     Args:
@@ -247,7 +260,7 @@ def getAspect(obj1, obj2, aspList):
     return Aspect(aspProp, activeObj=ap["active"], passiveObj=ap["passive"])
 
 
-def getAspectOrSentinel(obj1, obj2, aspList):
+def getAspectOrSentinel(obj1: Object, obj2: Object, aspList: list[int]) -> Aspect:
     """[DEPRECATED] Return the Aspect, or a sentinel with ``type == NO_ASPECT``.
 
     This preserves the pre-Task-009 behaviour of :func:`getAspect`. Use
@@ -286,7 +299,11 @@ class AspectObject:
 
     """
 
-    def __init__(self, properties):
+    id: str
+    inOrb: bool
+    movement: str
+
+    def __init__(self, properties: dict[str, Any]) -> None:
         self.__dict__.update(properties)
 
 
@@ -304,10 +321,34 @@ class Aspect:
     aspect-relative, while ``aspect.activeObj.movement`` is planet-relative.
     """
 
-    def __init__(self, properties, activeObj=None, passiveObj=None):
-        self.__dict__.update(properties)
-        self.active = AspectObject(self.active)
-        self.passive = AspectObject(self.passive)
+    # ``type`` is the aspect angle (const.CONJUNCTION..const.OPPOSITION,
+    # or const.NO_ASPECT == -1). ``direction``/``condition`` are string
+    # constants once an aspect exists, but carry the int -1 sentinel on the
+    # no-aspect path (see _aspectProperties).
+    type: int
+    orb: float
+    direction: int | str
+    condition: int | str
+    active: AspectObject
+    passive: AspectObject
+    activeObj: Object | None
+    passiveObj: Object | None
+
+    def __init__(
+        self,
+        properties: dict[str, Any],
+        activeObj: Object | None = None,
+        passiveObj: Object | None = None,
+    ) -> None:
+        # Explicit assignment (rather than self.__dict__.update) so the
+        # attribute set is statically known. ``properties`` always carries
+        # exactly these keys, built by _aspectProperties / the sentinel path.
+        self.type = properties["type"]
+        self.orb = properties["orb"]
+        self.direction = properties["direction"]
+        self.condition = properties["condition"]
+        self.active = AspectObject(properties["active"])
+        self.passive = AspectObject(properties["passive"])
         # Original Object references (Task 009). May be None for sentinel
         # Aspects constructed via the legacy getAspectOrSentinel path when
         # no aspect exists.
@@ -315,7 +356,7 @@ class Aspect:
         self.passiveObj = passiveObj
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Human-readable aspect name (e.g. ``"Trine"``, ``"Square"``).
 
         Returns ``"No Aspect"`` for sentinel Aspects with ``type ==
@@ -324,12 +365,12 @@ class Aspect:
         """
         return const.ASPECT_NAMES.get(self.type, "No Aspect")
 
-    def exists(self):
+    def exists(self) -> bool:
         """Returns if this aspect is valid."""
         return self.type != const.NO_ASPECT
 
     @property_with_method_compat
-    def movement(self):
+    def movement(self) -> str:
         """Returns the movement of this aspect.
         The movement is the one of the active object, except
         if the active is separating but within less than 1
@@ -341,18 +382,18 @@ class Aspect:
             mov = const.EXACT
         return mov
 
-    def mutualAspect(self):
+    def mutualAspect(self) -> bool:
         """Returns if both object are within aspect orb."""
         return self.active.inOrb is True and self.passive.inOrb is True
 
-    def mutualMovement(self):
+    def mutualMovement(self) -> bool:
         """Returns if both objects are mutually applying or
         separating.
 
         """
         return self.active.movement == self.passive.movement
 
-    def getRole(self, ID):
+    def getRole(self, ID: str) -> dict[str, Any] | None:
         """Returns the role (active or passive) of an object
         in this aspect.
 
@@ -367,7 +408,7 @@ class Aspect:
             }
         return None
 
-    def inOrb(self, ID):
+    def inOrb(self, ID: str) -> bool | None:
         """Returns if the object (given by ID) is within orb
         in the Aspect.
 
@@ -375,7 +416,7 @@ class Aspect:
         role = self.getRole(ID)
         return role["inOrb"] if role else None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s %s %s %s %s>" % (
             self.active.id,
             self.passive.id,

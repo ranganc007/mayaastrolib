@@ -100,9 +100,8 @@ class sign:
     _modes = [const.CARDINAL, const.FIXED, const.MUTABLE]
     mode = dict(zip(_signs, _modes * 4, strict=False))
 
-    # Sun Season
-    _sunseasons = [[season] * 3 for season in base.sunseasons]
-    _sunseasons = sum(_sunseasons, [])
+    # Sun Season — each season repeated 3× (one per sign in the season)
+    _sunseasons = [s for season in base.sunseasons for s in [season] * 3]
     sunseason = dict(zip(_signs, _sunseasons, strict=False))
 
     # Simple properties

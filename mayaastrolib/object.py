@@ -9,7 +9,10 @@ and Fixed-Stars.
 
 """
 
+from __future__ import annotations
+
 import warnings
+from typing import Any
 
 from . import angle, const, props, utils
 from ._compat import property_with_method_compat
@@ -26,7 +29,18 @@ class GenericObject:
 
     """
 
-    def __init__(self):
+    id: str
+    type: str
+    lon: float
+    lat: float
+    sign: str
+    signlon: float
+    # Stamped on Object instances by Chart._link_objects_to_houses.
+    # Declared here (not assigned) so static analysis knows the attribute
+    # may exist; it is read via getattr() where absence is possible.
+    house: House | None
+
+    def __init__(self) -> None:
         self.id = const.NO_PLANET
         self.type = const.OBJ_GENERIC
         self.lon = 0.0
@@ -35,31 +49,31 @@ class GenericObject:
         self.signlon = 0.0
 
     @classmethod
-    def fromDict(cls, _dict):
+    def fromDict(cls, _dict: dict[str, Any]) -> GenericObject:
         """Builds instance from dictionary of properties."""
         obj = cls()
         obj.__dict__.update(_dict)
         return obj
 
-    def copy(self):
+    def copy(self) -> GenericObject:
         """Returns a deep copy of this object."""
         return self.fromDict(self.__dict__)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s %s %s>" % (self.id, self.sign, angle.toString(self.signlon))
 
     # === Properties === #
 
     @property_with_method_compat
-    def orb(self):
+    def orb(self) -> float:
         """Returns the orb of this object."""
         return -1.0
 
-    def isPlanet(self):
+    def isPlanet(self) -> bool:
         """Returns if this object is a planet."""
         return self.type == const.OBJ_PLANET
 
-    def eqCoords(self, zerolat=False):
+    def eqCoords(self, zerolat: bool = False) -> tuple[float, float]:
         """Returns the Equatorial Coordinates of this object.
         Receives a boolean parameter to consider a zero latitude.
 
@@ -69,7 +83,7 @@ class GenericObject:
 
     # === Functions === #
 
-    def with_longitude(self, lon, *, preserve_speed=False):
+    def with_longitude(self, lon: float, *, preserve_speed: bool = False) -> GenericObject:
         """Return a new object instance at the given longitude.
 
         This is a coordinate transform — it does NOT recompute orbital
@@ -108,7 +122,7 @@ class GenericObject:
                 new.latspeed = None
         return new
 
-    def relocate(self, lon):
+    def relocate(self, lon: float) -> None:
         """[DEPRECATED] In-place relocate. Use ``with_longitude(lon)`` instead.
 
         ``relocate()`` mutates ``lon`` / ``signlon`` / ``sign`` but
@@ -132,7 +146,7 @@ class GenericObject:
         self.signlon = self.lon % 30
         self.sign = const.LIST_SIGNS[int(self.lon / 30.0)]
 
-    def antiscion(self):
+    def antiscion(self) -> GenericObject:
         """Return the antiscion of this object — a new instance reflected
         across the 0° Cancer / 0° Capricorn axis.
 
@@ -144,7 +158,7 @@ class GenericObject:
         new.type = const.OBJ_GENERIC
         return new
 
-    def cantiscion(self):
+    def cantiscion(self) -> GenericObject:
         """Return the contra-antiscion of this object — a new instance
         reflected across the 0° Aries / 0° Libra axis.
 
@@ -154,7 +168,7 @@ class GenericObject:
         new.type = const.OBJ_GENERIC
         return new
 
-    def antiscia(self):
+    def antiscia(self) -> GenericObject:
         """[DEPRECATED] Use :meth:`antiscion` instead.
 
         Returns the same antiscion object. Will be removed in 1.0.
@@ -167,7 +181,7 @@ class GenericObject:
         )
         return self.antiscion()
 
-    def cantiscia(self):
+    def cantiscia(self) -> GenericObject:
         """[DEPRECATED] Use :meth:`cantiscion` instead.
 
         Returns the same cantiscion object. Will be removed in 1.0.
@@ -193,13 +207,18 @@ class Object(GenericObject):
 
     """
 
-    def __init__(self):
+    # ``lonspeed`` / ``latspeed`` are None for symbolic positions whose
+    # orbital dynamics are undefined (e.g. profected planets, Task 010).
+    lonspeed: float | None
+    latspeed: float | None
+
+    def __init__(self) -> None:
         super().__init__()
         self.type = const.OBJ_PLANET
         self.lonspeed = 0.0
         self.latspeed = 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         string = super().__str__()[:-1]
         speed = "—" if self.lonspeed is None else angle.toString(self.lonspeed)
         return "%s %s>" % (string, speed)
@@ -207,17 +226,17 @@ class Object(GenericObject):
     # === Properties === #
 
     @property_with_method_compat
-    def orb(self):
+    def orb(self) -> float:
         """Returns the orb of this object."""
         return props.object.orb[self.id]
 
     @property_with_method_compat
-    def meanMotion(self):
+    def meanMotion(self) -> float:
         """Returns the mean daily motion of this object."""
         return props.object.meanMotion[self.id]
 
     @property_with_method_compat
-    def movement(self):
+    def movement(self) -> str | None:
         """Returns if this object is direct, retrograde or stationary.
 
         Returns ``None`` for symbolic positions where ``lonspeed`` is
@@ -236,23 +255,23 @@ class Object(GenericObject):
             return const.RETROGRADE
 
     @property_with_method_compat
-    def gender(self):
+    def gender(self) -> str:
         """Returns the gender of this object."""
         return props.object.gender[self.id]
 
     @property_with_method_compat
-    def faction(self):
+    def faction(self) -> str:
         """Returns the faction of this object."""
         return props.object.faction[self.id]
 
     @property_with_method_compat
-    def element(self):
+    def element(self) -> str:
         """Returns the element of this object."""
         return props.object.element[self.id]
 
     # === Functions === #
 
-    def isDirect(self):
+    def isDirect(self) -> bool | None:
         """Returns if this object is in direct motion, or ``None`` for
         symbolic positions with undefined speed.
         """
@@ -260,7 +279,7 @@ class Object(GenericObject):
             return None
         return self.movement == const.DIRECT
 
-    def isRetrograde(self):
+    def isRetrograde(self) -> bool | None:
         """Returns if this object is in retrograde motion, or ``None``
         for symbolic positions with undefined speed.
         """
@@ -268,7 +287,7 @@ class Object(GenericObject):
             return None
         return self.movement == const.RETROGRADE
 
-    def isStationary(self):
+    def isStationary(self) -> bool | None:
         """Returns if this object is stationary, or ``None`` for
         symbolic positions with undefined speed.
         """
@@ -276,7 +295,7 @@ class Object(GenericObject):
             return None
         return self.movement == const.STATIONARY
 
-    def isFast(self):
+    def isFast(self) -> bool | None:
         """Returns if this object is in fast motion.
 
         Returns ``None`` for symbolic positions where ``lonspeed`` is
@@ -318,7 +337,12 @@ class House(GenericObject):
     # learned the old name. Slated for removal in 1.0.
     _OFFSET = _CUSP_TOLERANCE_DEG
 
-    def __init__(self):
+    size: float
+    _num: int
+    # Stamped on House instances by Chart._link_objects_to_houses.
+    objects: list[Object]
+
+    def __init__(self) -> None:
         super().__init__()
         self.type = const.OBJ_HOUSE
         self.size = 30.0
@@ -327,13 +351,14 @@ class House(GenericObject):
         self._num = 0
 
     @classmethod
-    def fromDict(cls, _dict):
+    def fromDict(cls, _dict: dict[str, Any]) -> House:
         """Build a House and cache its number from the id."""
         obj = super().fromDict(_dict)
+        assert isinstance(obj, House)
         obj._set_num_from_id()
         return obj
 
-    def _set_num_from_id(self):
+    def _set_num_from_id(self) -> None:
         """Resolve self._num via list lookup so we don't parse the id string.
 
         Falls back to 0 if the id isn't a recognised house — defensive
@@ -344,14 +369,14 @@ class House(GenericObject):
         except ValueError:
             self._num = 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         string = super().__str__()[:-1]
         return "%s %s>" % (string, self.size)
 
     # === Properties === #
 
     @property_with_method_compat
-    def num(self):
+    def num(self) -> int:
         """Returns the number of this house [1..12].
 
         Resolved via :data:`mayaastrolib.const.LIST_HOUSES` once at
@@ -361,7 +386,7 @@ class House(GenericObject):
         return self._num
 
     @property_with_method_compat
-    def condition(self):
+    def condition(self) -> str:
         """Returns the condition of this house.
         The house can be angular, succedent or cadent.
 
@@ -369,17 +394,17 @@ class House(GenericObject):
         return props.house.condition[self.id]
 
     @property_with_method_compat
-    def gender(self):
+    def gender(self) -> str:
         """Returns the gender of this house."""
         return props.house.gender[self.id]
 
     # === Functions === #
 
-    def isAboveHorizon(self):
+    def isAboveHorizon(self) -> bool:
         """Returns true if this house is above horizon."""
         return self.id in props.house.aboveHorizon
 
-    def inHouse(self, lon):
+    def inHouse(self, lon: float) -> bool:
         """Return True if the longitude ``lon`` falls inside this house.
 
         The house is taken to span ``[cusp − 5°, cusp + 25°)`` — i.e.
@@ -389,7 +414,7 @@ class House(GenericObject):
         dist = angle.distance(self.lon + House._CUSP_TOLERANCE_DEG, lon)
         return dist < self.size
 
-    def hasObject(self, obj):
+    def hasObject(self, obj: GenericObject) -> bool:
         """Returns true if an object is in this house."""
         return self.inHouse(obj.lon)
 
@@ -402,12 +427,14 @@ class House(GenericObject):
 class FixedStar(GenericObject):
     """This class represents a generic fixed star."""
 
-    def __init__(self):
+    mag: float
+
+    def __init__(self) -> None:
         super().__init__()
         self.type = const.OBJ_FIXED_STAR
         self.mag = 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         string = super().__str__()[:-1]
         return "%s %s>" % (string, self.mag)
 
@@ -417,7 +444,7 @@ class FixedStar(GenericObject):
     _ORBS = [[2, 7.5], [3, 5.5], [4, 3.5], [5, 1.5]]
 
     @property_with_method_compat
-    def orb(self):
+    def orb(self) -> float:
         """Returns the orb of this fixed star."""
         for mag, orb in FixedStar._ORBS:
             if self.mag < mag:
@@ -426,7 +453,7 @@ class FixedStar(GenericObject):
 
     # === Functions === #
 
-    def aspects(self, obj):
+    def aspects(self, obj: GenericObject) -> bool:
         """Returns true if this star aspects another object.
         Fixed stars only aspect by conjunctions.
 

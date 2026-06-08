@@ -95,7 +95,7 @@ class PrimaryDirections:
     """
 
     # Define common significators
-    SIG_HOUSES = []
+    SIG_HOUSES: list[str] = []
     SIG_ANGLES = [const.ASC, const.MC]
     SIG_OBJECTS = [
         const.SUN,

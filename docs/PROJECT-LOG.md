@@ -6,6 +6,82 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Tasks 039 + 040 — Release hygiene + finish public-API type hints
+
+Autonomous multi-task session (user authorised running items 1–7 without
+intermediate input). This entry covers the first four items; the Vedic
+work (Shadbala, long-tail features, golden charts) follows in later entries.
+
+### Task 039 — Release hygiene (branch `task-039-release-hygiene`)
+
+- **Removed the on-disk PyPI token.** Deleted the local `pypi.dnv` API
+  token; with Trusted Publishing live (0.3.2) no standing credential is
+  needed. `docs/RELEASING.md` now documents the token-on-demand stance
+  for the manual fallback. (PyPI-side revocation is the user's click; the
+  local liability is gone.)
+- **Bumped all GitHub Actions to their Node 24 majors** (`checkout@v6`,
+  `setup-python@v6`, `upload-artifact@v7`, `download-artifact@v8`) across
+  `publish.yml` and `test.yml` — clears the Node 20 deprecation warning.
+  Verified the real latest majors via the GitHub API before bumping so a
+  non-existent tag couldn't break the release pipeline.
+- **Added `package.yml`** — builds sdist+wheel, `twine check`, and a
+  clean-venv wheel chart computation on *every push/PR*, not just at
+  release. The early-warning version of `publish.yml`'s verify step; it
+  would have caught the 0.3.1 `vedic`-drop before upload. Verified in CI:
+  both Package and Tests run green on `development`.
+
+### Task 040 — Public-API type hints, finished (branch `task-040-public-api-typehints`)
+
+- Typed `object.py`, `chart.py`, `aspects.py` — the three modules Task 038
+  deferred. The blocker was the `__dict__.update` (Aspect/AspectObject)
+  and externally-stamped (`obj.house`, `house.objects`) dynamic-attribute
+  patterns. Resolved by **class-level attribute annotations** plus a small
+  `Aspect.__init__` restructure (explicit field assignment instead of
+  `self.__dict__.update(properties)`, so the attribute set is statically
+  known). The feared ~30-error cascade never materialised — only 2 real
+  errors surfaced (the mutually-exclusive-kwargs invariant in
+  `profected`/`solarReturn`, fixed with narrowing asserts).
+- Fixed the 2 pre-existing baseline mypy errors (`props.py` sum-flatten,
+  `primarydirections.py` `SIG_HOUSES` annotation). **mypy is now fully
+  clean: `Success: no issues found in 46 source files`** — a first for the
+  project.
+- **Added `mayaastrolib/py.typed`** (PEP 561) + wired it into
+  `package-data`, so the hints are actually consumed by downstream type
+  checkers. Verified it ships in the built wheel. Without this the typing
+  work would be invisible to pip-installed users.
+
+### Findings / decisions
+
+- Aspect `type` is an **int** (the angle: NO_ASPECT=−1, CONJUNCTION=0…),
+  while movement/direction/condition are **str** — except direction/
+  condition carry an int −1 sentinel on the no-aspect path, so they're
+  typed `int | str`. Caught by mypy, not by reading the code.
+- `lonspeed` arithmetic in `aspects._aspectProperties`/`_getActivePassive`:
+  coalesced `None → 0.0` with `or 0.0`. Preserves behaviour for every real
+  input (including negative retrograde speeds); the only change is that a
+  symbolic object's undefined speed yields 0.0 instead of a TypeError —
+  a code path that previously crashed and is never exercised by real charts.
+- Used `TYPE_CHECKING` imports for object classes in `aspects.py`/`chart.py`
+  to avoid runtime circular imports (lists.py imports aspects); safe because
+  `from __future__ import annotations` makes all annotations strings.
+
+### Verification
+
+- mypy: clean (was 2 errors). ruff format + ruff check: clean.
+- Tests: 553 + 87 subtests pass. Coverage 94.21% (≥80 gate).
+- Wheel: builds, `twine check` passes, ships `py.typed`, computes a real
+  Western+Vedic chart in a clean venv.
+
+### Follow-ups
+
+- `chart.getFixedStars` typed loosely (`Any`) where the return is a
+  `FixedStarList`; lists.py itself remains untyped — a future pass could
+  type the lists module and tighten these.
+- Items 5–7 (Shadbala, long-tail Vedic, golden charts) still pending in
+  this session.
+
+---
+
 ## 2026-05-11 — Task 038 — Public-API Type Hints (datetime.py)
 
 Branch: `task-038-public-api-type-hints`. Continues the public-API

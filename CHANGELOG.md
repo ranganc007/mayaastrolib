@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **PEP 561 inline type hints.** `object.py`, `chart.py`, and `aspects.py`
+  are now fully type-hinted (completing the public-API pass started in
+  earlier tasks), and the package ships a `py.typed` marker — so
+  downstream projects' type checkers (mypy, Pyright) now see
+  `mayaastrolib`'s types. `Chart`, `Object`/`House`/`FixedStar`, and the
+  `Aspect` API carry full signatures.
+- **`package.yml` CI workflow** — builds the sdist+wheel, runs
+  `twine check`, and verifies the wheel computes a real Western+Vedic
+  chart in a clean venv on every push/PR (not just at release), catching
+  packaging regressions early.
+
+### Changed
+- GitHub Actions bumped to their current Node 24 majors (`checkout@v6`,
+  `setup-python@v6`, `upload-artifact@v7`, `download-artifact@v8`),
+  clearing the Node 20 deprecation warning.
+- `Aspect.__init__` now assigns its fields explicitly instead of
+  `self.__dict__.update(properties)`. Behaviour is unchanged; the
+  attribute set is now statically analysable.
+
+### Internal
+- `mypy mayaastrolib/` is now fully clean (was 2 baseline errors); the two
+  pre-existing errors in `props.py` and `predictives/primarydirections.py`
+  are fixed.
+- Removed the on-disk PyPI API token in favour of Trusted Publishing only;
+  `docs/RELEASING.md` documents minting a fresh project-scoped token on
+  demand for the manual fallback.
+
 ## [0.3.2] — 2026-06-07
 
 ### Added

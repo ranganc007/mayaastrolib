@@ -58,6 +58,7 @@ include = ["mayaastrolib*", "flatlib*"]
 
 [tool.setuptools.package-data]
 mayaastrolib = [
+    "py.typed",  # PEP 561 — ship inline type hints to downstream type checkers
     "resources/README.md",
     "resources/swefiles/*.se1",
     "resources/swefiles/*.cat",
