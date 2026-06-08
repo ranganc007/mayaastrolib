@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. Format foll
 ## [Unreleased]
 
 ### Added
+- **Six-fold Shadbala** (`mayaastrolib.vedic.shadbala`). `shadbala(chart)`
+  computes the classical planetary strength — Sthana, Dig, Kala, Cheshta,
+  Naisargika, and Drik bala — in Virupas for the seven classical planets,
+  with per-planet required minimums and a strong/weak verdict. Builds on
+  genuine 5-fold compound friendships, declination-based Ayana bala, and
+  the divisional charts; works on tropical and sidereal charts alike.
 - **PEP 561 inline type hints.** `object.py`, `chart.py`, and `aspects.py`
   are now fully type-hinted (completing the public-API pass started in
   earlier tasks), and the package ships a `py.typed` marker — so

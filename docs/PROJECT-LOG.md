@@ -6,6 +6,48 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 041 — Full six-fold Shadbala
+
+Branch `task-041-shadbala`. Same autonomous session as 039/040; first of
+the three Vedic items (5–7).
+
+### What was done
+
+- New `mayaastrolib/vedic/shadbala.py` — `shadbala(chart, ayanamsa=...)`
+  computes the classical six-fold planetary strength in Virupas (60 =
+  1 Rupa) for the seven classical planets: **Sthana** (Uchcha,
+  Saptavargaja via genuine 5-fold compound friendship, Oja-Yugma,
+  Kendradi, Drekkana), **Dig**, **Kala** (Nathonnatha, Paksha [Moon
+  doubled], Tribhaga, Vara, Hora, Ayana [Sun doubled]), **Cheshta**
+  (Sun←Ayana, Moon←Paksha, others by avastha), **Naisargika** (exact
+  rank/7×60), **Drik** (net benefic−malefic graha drishti / 4). Returns
+  per-planet totals, `REQUIRED_RUPAS` minimums and a `sufficient` verdict.
+- 45 tests in `tests/test_vedic_shadbala.py`.
+
+### Findings / decisions
+
+- **Frame bug caught via the tropical-vs-sidereal test:** on a sidereal
+  chart `obj.lon` is already sidereal, so Ayana (declination) and Dig were
+  using the wrong longitude. `_gather` now tracks three frames — sidereal
+  (dignity), chart-native (Dig, ayanamsa cancels), and true tropical
+  (declination only). The two chart types now agree to ≤0.75 rupa.
+- Documented simplifications (consistent with `tajika_bala`): Kala omits
+  Abda/Masa/Yuddha; Nathonnatha/Tribhaga use a fixed 6:00/18:00 day; Drik
+  is sign-based. Relative ordering and strong/weak verdict track the
+  classical method; absolute totals are approximate.
+
+### Verification
+
+- mypy clean (47 files). ruff clean. 598 tests + 87 subtests pass (+45).
+  Coverage 94.46%.
+
+### Follow-ups
+
+- Faithful Yuddha + Abda/Masa lords + degree-graded Sripati Drik would
+  tighten absolute totals. Items 6 and 7 still pending.
+
+---
+
 ## 2026-06-08 — Tasks 039 + 040 — Release hygiene + finish public-API type hints
 
 Autonomous multi-task session (user authorised running items 1–7 without
