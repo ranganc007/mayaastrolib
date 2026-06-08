@@ -23,6 +23,7 @@ There are also methods to access fixed stars.
 from __future__ import annotations
 
 import copy as _copy
+import json
 import math
 from typing import TYPE_CHECKING, Any
 
@@ -36,6 +37,12 @@ if TYPE_CHECKING:
     from .object import FixedStar, GenericObject, House, Object
     from .predictives.primarydirections import PrimaryDirections
     from .tools.planetarytime import HourTable
+
+# Version of the to_dict()/to_json() serialization schema. Bump on any
+# breaking change to the emitted shape (per the public-API stability
+# policy in CLAUDE.md). Consumers can branch on meta-less top-level
+# ``schema_version``.
+SCHEMA_VERSION = 1
 
 # ------------------ #
 #    Chart Class     #
@@ -142,6 +149,178 @@ class Chart:
         chart.houses = self.houses.copy()
         chart.angles = self.angles.copy()
         return chart
+
+    # === Serialization === #
+
+    def to_dict(
+        self,
+        *,
+        aspects: bool = True,
+        dignities: bool = False,
+        vedic: bool = False,
+    ) -> dict[str, Any]:
+        """Return a JSON-serialisable dict of this chart (schema v1).
+
+        The shape is a stable, versioned contract (see
+        :data:`SCHEMA_VERSION`) intended for web apps and AI tooling:
+
+        - ``schema_version``: the integer schema version.
+        - ``meta``: ``datetime`` (ISO, with offset), ``utcoffset`` (hours),
+          ``jd``, ``pos`` (lat/lon), ``zodiac``, ``ayanamsa`` (``None`` when
+          tropical), ``hsys``.
+        - ``objects`` / ``houses`` / ``angles``: lists of per-item dicts
+          (see each class's ``to_dict``).
+        - ``aspects`` (when ``aspects=True``, default): the major aspects
+          among the chart's objects.
+
+        Optional opt-in blocks:
+
+        - ``dignities`` (when ``dignities=True``): per-planet essential
+          dignities (ruler, exalt, term, face, …).
+        - ``vedic`` (when ``vedic=True``): ayanamsa value, Moon/Asc
+          nakshatras, the active Vimshottari MD/AD/Pratyantar dasha, the
+          detected yogas, and a Shadbala strength summary.
+
+        Args:
+            aspects: Include the ``aspects`` list. Default True.
+            dignities: Include the ``dignities`` block. Default False.
+            vedic: Include the ``vedic`` block. Default False.
+
+        Returns:
+            A plain ``dict`` of JSON-native types (str/float/int/bool/
+            None/list/dict).
+        """
+        pydate = self.date.to_pydatetime()
+        is_sidereal = self.zodiac == const.ZODIAC_SIDEREAL
+        result: dict[str, Any] = {
+            "schema_version": SCHEMA_VERSION,
+            "meta": {
+                "datetime": pydate.isoformat(),
+                "utcoffset": self.date.utcoffset.value,
+                "jd": self.date.jd,
+                "pos": {"lat": self.pos.lat, "lon": self.pos.lon},
+                "zodiac": self.zodiac,
+                "ayanamsa": self.ayanamsa if is_sidereal else None,
+                "hsys": self.hsys,
+            },
+            "objects": [o.to_dict() for o in self.objects],
+            "houses": [h.to_dict() for h in self.houses],
+            "angles": [a.to_dict() for a in self.angles],
+        }
+        if aspects:
+            result["aspects"] = self._aspects_list()
+        if dignities:
+            result["dignities"] = self._dignities_block()
+        if vedic:
+            result["vedic"] = self._vedic_block()
+        return result
+
+    def to_json(
+        self,
+        *,
+        aspects: bool = True,
+        dignities: bool = False,
+        vedic: bool = False,
+        indent: int | None = None,
+    ) -> str:
+        """Serialize this chart to a JSON string. See :meth:`to_dict` for
+        the flags; ``indent`` is forwarded to :func:`json.dumps`."""
+        return json.dumps(
+            self.to_dict(aspects=aspects, dignities=dignities, vedic=vedic),
+            indent=indent,
+        )
+
+    def _aspects_list(self) -> list[dict[str, Any]]:
+        """The major aspects among the chart's objects, as dicts."""
+        from . import aspects as _aspects
+
+        objs = list(self.objects)
+        out = []
+        for i in range(len(objs)):
+            for j in range(i + 1, len(objs)):
+                asp = _aspects.getAspect(objs[i], objs[j], const.MAJOR_ASPECTS)
+                if asp is not None:
+                    out.append(asp.to_dict())
+        return out
+
+    def _dignities_block(self) -> dict[str, Any]:
+        """Per-planet essential dignities (ruler/exalt/term/face/…)."""
+        from .dignities import essential
+
+        out: dict[str, Any] = {}
+        for o in self.objects:
+            if o.type == const.OBJ_PLANET:
+                out[o.id] = essential.getInfo(o)
+        return out
+
+    def _sidereal_lon(self, lon: float) -> float:
+        """Sidereal longitude of a chart-native longitude (for the Vedic
+        block; a sidereal chart's longitudes are already sidereal)."""
+        if self.zodiac == const.ZODIAC_SIDEREAL:
+            return lon % 360.0
+        from .vedic import ayanamsa as _ay
+
+        return _ay.to_sidereal(lon, self.date, ayanamsa=self.ayanamsa)
+
+    def _vedic_block(self) -> dict[str, Any]:
+        """Ayanamsa value, nakshatras, active dasha, yogas, and a Shadbala
+        summary — the opt-in Jyotisha layer of the serialization."""
+        from .vedic import ayanamsa as _ay
+        from .vedic import dasha as _dasha
+        from .vedic import nakshatras as _nak
+        from .vedic import shadbala as _shad
+        from .vedic import yogas as _yogas
+
+        def _nak_dict(n: Any) -> dict[str, Any]:
+            return {"name": n.name, "lord": n.lord, "pada": n.pada, "index": n.index}
+
+        def _period(p: Any) -> dict[str, Any] | None:
+            if p is None:
+                return None
+            return {
+                "lord": p.lord,
+                "level": p.level,
+                "start": p.start.to_pydatetime().isoformat(),
+                "end": p.end.to_pydatetime().isoformat(),
+            }
+
+        moon = self.getObject(const.MOON)
+        asc = self.getAngle(const.ASC)
+        vim = _dasha.vimshottari(self, target=self.date, ayanamsa=self.ayanamsa)
+        shad = _shad.shadbala(self, ayanamsa=self.ayanamsa)
+        yogas = _yogas.detect_yogas(self, ayanamsa=self.ayanamsa)
+
+        return {
+            "ayanamsa": self.ayanamsa,
+            "ayanamsa_value": _ay.get(self.ayanamsa, self.date),
+            "nakshatras": {
+                "Moon": _nak_dict(_nak.of_longitude(self._sidereal_lon(moon.lon))),
+                "Asc": _nak_dict(_nak.of_longitude(self._sidereal_lon(asc.lon))),
+            },
+            "dasha": {
+                "maha": _period(vim.current_md),
+                "antar": _period(vim.current_ad),
+                "pratyantar": _period(vim.current_pratyantar),
+            },
+            "yogas": [
+                {
+                    "name": y.name,
+                    "sanskrit": y.sanskrit,
+                    "planets": list(y.planets),
+                    "description": y.description,
+                }
+                for y in yogas
+            ],
+            "shadbala": {
+                p: {
+                    "total_rupas": e["total_rupas"],
+                    "total_virupas": e["total_virupas"],
+                    "required_rupas": e["required_rupas"],
+                    "sufficient": e["sufficient"],
+                }
+                for p, e in shad.items()
+            },
+        }
 
     # === Properties === #
 

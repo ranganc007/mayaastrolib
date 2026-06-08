@@ -6,6 +6,44 @@ Each entry should follow this template:
 
 ---
 
+## 2026-06-08 — Task 045 — Chart serialization (0.5.0 #1)
+
+Branch `task-045-serialization`. First of the three 0.5.0 "Consumption"
+items (serialization / facade / async); MCP deferred to 0.6.0.
+
+### What was done
+
+- `Chart.to_dict()` / `Chart.to_json()` — a stable, versioned JSON schema
+  (`SCHEMA_VERSION = 1`): `schema_version`, `meta` (datetime+offset, jd,
+  pos, zodiac, ayanamsa, hsys), `objects`, `houses`, `angles`, `aspects`.
+- `to_dict()` on `GenericObject` (+ `Object` adds lonspeed/latspeed/
+  movement/house, `House` adds num/size/objects, `FixedStar` adds mag)
+  and on `Aspect` (active/passive ids, type, name, orb, direction,
+  condition, movement).
+- Opt-in blocks: `dignities=True` (per-planet essential dignities via
+  `dignities.essential.getInfo`) and `vedic=True` (ayanamsa value,
+  Moon/Asc nakshatras, active Vimshottari MD/AD/Pratyantar, detected
+  yogas, Shadbala summary). Vedic imports are lazy so non-Vedic users
+  pay nothing.
+- 29 tests in `tests/test_serialization.py`, including a JSON-native
+  assertion on every block, to_json round-trip, house↔object id
+  consistency, and symbolic-chart (profected) serialization.
+
+### Notes
+
+- `movement` is `None` for symbolic positions (undefined speed); the
+  `_DualAccess` property is stringified via `str()` (no deprecation
+  warning — that only fires on call). Aspects compute on symbolic charts
+  too without crashing thanks to the `lonspeed or 0.0` coalescing added
+  in the typing pass.
+
+### Verification
+
+- mypy clean (47 files). ruff clean. 641 tests + 230 subtests pass (+29).
+  Coverage 94.92%.
+
+---
+
 ## 2026-06-08 — Task 043 — More golden charts
 
 Branch `task-043-golden-charts`. Item 7 (final) of the autonomous run.

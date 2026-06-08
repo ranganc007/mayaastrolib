@@ -59,6 +59,22 @@ class GenericObject:
         """Returns a deep copy of this object."""
         return self.fromDict(self.__dict__)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serialisable dict of this object's core attributes.
+
+        Keys: ``id``, ``type``, ``lon``, ``lat``, ``sign``, ``signlon``.
+        Subclasses extend this with their own fields. Part of the v1
+        serialization schema (see :meth:`mayaastrolib.chart.Chart.to_dict`).
+        """
+        return {
+            "id": self.id,
+            "type": self.type,
+            "lon": self.lon,
+            "lat": self.lat,
+            "sign": self.sign,
+            "signlon": self.signlon,
+        }
+
     def __str__(self) -> str:
         return "<%s %s %s>" % (self.id, self.sign, angle.toString(self.signlon))
 
@@ -223,6 +239,22 @@ class Object(GenericObject):
         speed = "—" if self.lonspeed is None else angle.toString(self.lonspeed)
         return "%s %s>" % (string, speed)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Extend the base dict with speed, movement, and house.
+
+        Adds ``lonspeed``, ``latspeed``, ``movement`` (``None`` for
+        symbolic positions with undefined speed), and ``house`` (the
+        containing House's id, or ``None`` if unlinked).
+        """
+        d = super().to_dict()
+        d["lonspeed"] = self.lonspeed
+        d["latspeed"] = self.latspeed
+        movement = self.movement
+        d["movement"] = None if movement is None else str(movement)
+        house = getattr(self, "house", None)
+        d["house"] = house.id if house is not None else None
+        return d
+
     # === Properties === #
 
     @property_with_method_compat
@@ -373,6 +405,17 @@ class House(GenericObject):
         string = super().__str__()[:-1]
         return "%s %s>" % (string, self.size)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Extend the base dict with ``num``, ``size``, and ``objects``
+        (the ids of the objects this house contains, if linked)."""
+        d = super().to_dict()
+        d["num"] = self._num
+        d["size"] = self.size
+        objects = getattr(self, "objects", None)
+        if objects is not None:
+            d["objects"] = [o.id for o in objects]
+        return d
+
     # === Properties === #
 
     @property_with_method_compat
@@ -437,6 +480,12 @@ class FixedStar(GenericObject):
     def __str__(self) -> str:
         string = super().__str__()[:-1]
         return "%s %s>" % (string, self.mag)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Extend the base dict with the star's magnitude ``mag``."""
+        d = super().to_dict()
+        d["mag"] = self.mag
+        return d
 
     # === Properties === #
 

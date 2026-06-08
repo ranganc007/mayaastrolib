@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Chart serialization** — `Chart.to_dict()` / `Chart.to_json()` emit a
+  stable, versioned JSON schema (`schema_version`, `meta`, `objects`,
+  `houses`, `angles`, `aspects`) designed for web apps and AI tooling.
+  Opt-in blocks: `dignities=True` (per-planet essential dignities) and
+  `vedic=True` (ayanamsa value, Moon/Asc nakshatras, the active
+  Vimshottari MD/AD/Pratyantar dasha, detected yogas, and a Shadbala
+  summary). `Object`/`House`/`FixedStar`/`Aspect` each gained a `to_dict()`.
+
 ## [0.4.0] — 2026-06-08
 
 ### Added

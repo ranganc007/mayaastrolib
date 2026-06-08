@@ -382,6 +382,25 @@ class Aspect:
             mov = const.EXACT
         return mov
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serialisable dict of this aspect.
+
+        Keys: ``active`` / ``passive`` (the object ids), ``type`` (the
+        aspect angle), ``name``, ``orb``, ``direction``, ``condition``,
+        and ``movement``. Part of the v1 serialization schema.
+        """
+        movement = self.movement
+        return {
+            "active": self.active.id,
+            "passive": self.passive.id,
+            "type": self.type,
+            "name": self.name,
+            "orb": self.orb,
+            "direction": self.direction,
+            "condition": self.condition,
+            "movement": None if movement is None else str(movement),
+        }
+
     def mutualAspect(self) -> bool:
         """Returns if both object are within aspect orb."""
         return self.active.inOrb is True and self.passive.inOrb is True
