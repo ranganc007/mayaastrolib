@@ -6,6 +6,26 @@ All notable changes to this project will be documented in this file. Format foll
 
 ### Removed (BREAKING)
 
+#### The `flatlib` compatibility package
+
+`import flatlib` now raises `ModuleNotFoundError`. Versions 0.3.0–0.5.0 shipped
+a top-level `flatlib` package that re-exported `mayaastrolib` (and stitched
+`sys.modules["flatlib.<sub>"]`) with a `DeprecationWarning`, so code written
+against upstream flatlib kept running unchanged.
+
+Migration — rewrite the imports; the module layout is otherwise identical:
+
+```python
+from flatlib import const            →  from mayaastrolib import const
+from flatlib.chart import Chart      →  from mayaastrolib.chart import Chart
+```
+
+Pin `mayaastrolib<1.0` if you need the shim while migrating. Built wheels and
+sdists now contain only `mayaastrolib` (`[tool.setuptools.packages.find]` no
+longer globs `flatlib*`).
+
+#### Deprecated functions and methods
+
 Every symbol below shipped with a `DeprecationWarning` that said it would be
 removed in 1.0. This honours that. All replacements already existed — in most
 cases both spellings called the same implementation.

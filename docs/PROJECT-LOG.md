@@ -6,6 +6,65 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-03 — remove the flatlib compatibility package
+
+Branch `v1.0-03-remove-flatlib-shim`.
+
+### What was done
+
+- Deleted `flatlib/` (6 files: the top-level shim plus `dignities`, `ephem`,
+  `predictives`, `protocols`, `tools` sub-shims).
+- `pyproject.toml`: `[tool.setuptools.packages.find] include` narrowed from
+  `["mayaastrolib*", "flatlib*"]` to `["mayaastrolib*"]`.
+- Rewrote the four **live** docs that told readers the shim works:
+  `README.md` "Migrating from flatlib", `docs/FAQ.md`,
+  `docs/source/installation.rst`, and the `CLAUDE.md` package-name bullet.
+  Each now gives the import rewrite plus the `mayaastrolib<1.0` pin as the
+  escape hatch.
+
+### Corrections to the prompt's premises
+
+- **"`tests/test_compat.py` … the shim's own tests — importing flatlib,
+  asserting the warning, asserting re-export identity — is deleted."** Wrong
+  file. `tests/test_compat.py` tests `mayaastrolib/_compat.py`'s
+  `property_with_method_compat` decorator and contains **no** flatlib
+  assertions at all. It was kept in full; deleting it would have dropped 12
+  tests covering the `_DualAccess` wrapper, including the falsy-value
+  `__bool__` regression that motivated the decorator.
+- **The shim had zero test coverage.** `grep -rn flatlib tests/` returns
+  nothing. So there was nothing to delete from `tests/`, and no test ever
+  verified the shim worked — worth noting given it was a shipped public
+  entry point for three releases.
+- **`MANIFEST.in` had no flatlib references** (scope item 3 was a no-op).
+
+### What was deliberately left alone
+
+`flatlib` still appears ~40 times across the repo. Nearly all are provenance
+or history and were kept: the `"This file is part of mayaastrolib, a fork of
+flatlib - (C) FlatAngle"` header on 32 inherited source files (the copyright
+chain), `docs/FORK-RATIONALE.md`, the `[project] description` and `Upstream`
+URL in `pyproject.toml`, the dated `PROJECT-BRIEF-*` snapshots, `RECON.md`,
+`CONTRIBUTION-PLAN.md`'s Task 001/005 specs, and `CHANGELOG` history. Only
+forward-looking "you can import flatlib" claims were changed.
+
+### Verification
+
+- `import flatlib` → `ModuleNotFoundError: No module named 'flatlib'`.
+- `import mayaastrolib` + a real chart still works (Sun Pisces +22:47:25).
+- `python -m build`: neither the wheel nor the sdist contains any `flatlib`
+  entry; the wheel's only top-level package is `mayaastrolib`.
+- `655 passed, 230 subtests`; coverage 95%; ruff format/check and mypy clean.
+  Test count unchanged from v1.0-02 — nothing was deleted, confirming the
+  shim was untested.
+
+### Follow-ups needed
+
+- `mayaastrolib/predictives/profections.py` was kept as an empty module in
+  v1.0-02 *only* because `flatlib/predictives/__init__.py` imported it by
+  name. That constraint is now gone, so it can be deleted in v1.0-05.
+
+---
+
 ## 2026-07-25 — Task v1.0-02 — remove the deprecated function/method APIs
 
 Branch `v1.0-02-remove-deprecated-apis`. All eight symbols in the prompt's

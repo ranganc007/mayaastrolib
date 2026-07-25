@@ -109,7 +109,7 @@ mayaastrolib itself is MIT-licensed and free for commercial use. **However**, it
 4. Adds property-style ergonomics (e.g. `obj.house` instead of an O(12) probe)
 5. Ships type hints throughout
 
-A `flatlib` compatibility shim is included; existing code that imports `flatlib` continues to work with a `DeprecationWarning`.
+Versions 0.3.0–0.5.0 shipped a `flatlib` compatibility package so existing `import flatlib` code kept working with a `DeprecationWarning`. It was removed in 1.0 — rewrite the imports to `mayaastrolib` (the module layout is otherwise unchanged), or pin `mayaastrolib<1.0` while you migrate.
 
 ### Where does the name come from?
 

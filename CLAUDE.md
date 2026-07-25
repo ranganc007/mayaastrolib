@@ -100,7 +100,7 @@ These should not be modified without explicit instruction:
 
 Last updated by Task v1.0-02 remove-deprecated-APIs (2026-07-25, branch `development`).
 
-- **Package name:** `mayaastrolib/` — rename from `flatlib/` completed in Task 005. Canonical import: `from mayaastrolib import ...`. The `flatlib/` directory still exists as a compatibility shim (emits `DeprecationWarning`; will be removed in 1.0).
+- **Package name:** `mayaastrolib/` — rename from `flatlib/` completed in Task 005. Canonical import: `from mayaastrolib import ...`. The `flatlib/` compatibility shim was **deleted in Task v1.0-03**; `import flatlib` now raises `ModuleNotFoundError`. `mayaastrolib` is the only top-level package built.
 - **Version:** 0.5.0, published on PyPI (`pip install mayaastrolib`) — unified via `importlib.metadata.version("mayaastrolib")` in `pyproject.toml`. `development` currently carries unreleased **breaking** changes for 1.0.
 - **pyproject.toml:** EXISTS — PEP 621, setuptools backend; single source of truth for version, ruff, mypy, pytest, and coverage config. `pythonpath = ["."]` set. UP031 in `[tool.ruff.lint] ignore`.
 - **setup.py:** DELETED — build system is pyproject.toml only.

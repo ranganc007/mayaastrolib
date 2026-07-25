@@ -132,9 +132,17 @@ instead (e.g. for development), see the [Development](#development) section belo
 
 ### Migrating from flatlib
 
-`mayaastrolib` ships a compatibility shim: existing `import flatlib` and `from flatlib.x import Y`
-calls keep working but emit a `DeprecationWarning`. Update imports to `mayaastrolib` at your
-convenience; the shim is removed in version 1.0.
+Rewrite `flatlib` imports to `mayaastrolib` — the module layout is otherwise unchanged:
+
+```python
+from flatlib import const              →  from mayaastrolib import const
+from flatlib.chart import Chart        →  from mayaastrolib.chart import Chart
+```
+
+Versions 0.3.0–0.5.0 shipped a `flatlib` compatibility package that re-exported
+`mayaastrolib` with a `DeprecationWarning`. **It was removed in 1.0** — `import flatlib`
+now raises `ModuleNotFoundError`. Pin `mayaastrolib<1.0` if you need the shim while you
+migrate.
 
 ## Development
 
