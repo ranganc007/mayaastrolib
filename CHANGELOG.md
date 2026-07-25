@@ -2,7 +2,34 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.0] — 2026-07-25
+
+**1.0 freezes the public API and clears every deprecation that named 1.0 as its
+removal.** It is a breaking release by design: the whole point of the major
+number is to stop carrying migration scaffolding.
+
+### Migrating from 0.x
+
+Three things can break, all of them mechanical:
+
+1. **`import flatlib` is gone.** Rewrite to `mayaastrolib` — the module layout
+   is otherwise identical.
+2. **Seven deprecated functions/methods are gone.** Each had shipped a
+   `DeprecationWarning` naming 1.0; the replacement table is below.
+3. **Method-style property access is gone.** `obj.movement()` → `obj.movement`.
+
+If you need more time, pin `mayaastrolib<1.0` — 0.5.0 still has all of it,
+warnings and all. Nothing else in the surface moved: no public symbol was
+renamed in this release.
+
+From here on, what is public is explicit and enforced. A name is public **if
+and only if** it appears in its module's `__all__`, and
+[`docs/API-STABILITY.md`](docs/API-STABILITY.md) is the contract — including the
+policy for how anything may be removed after 1.0 (one minor release of
+deprecation warning naming the replacement, a `Removed (BREAKING)` entry, then
+a major bump).
+
+There are now **no `DeprecationWarning`s anywhere in the package.**
 
 ### Removed (BREAKING)
 
