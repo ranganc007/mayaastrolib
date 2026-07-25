@@ -205,3 +205,42 @@ class ReadmeQuickStartTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DocstringCoverageTests(unittest.TestCase):
+    """The public surface must be 100% documented (Task v1.0-06).
+
+    `CLAUDE.md` requires Google-style docstrings on all public functions and
+    classes. This enforces it on exactly the frozen surface — the names in
+    each module's `__all__` — rather than on the whole tree, so internal
+    helpers stay exempt without weakening the public guarantee.
+    """
+
+    def test_every_public_callable_has_a_docstring(self):
+        import inspect
+
+        undocumented = []
+        for name in ALL_MODULES:
+            mod = importlib.import_module(name)
+            if not (inspect.getdoc(mod) or "").strip():
+                undocumented.append(f"{name} (module)")
+            for symbol in mod.__all__:
+                obj = getattr(mod, symbol)
+                if not (inspect.isfunction(obj) or inspect.isclass(obj)):
+                    continue  # module-level constants take no docstring
+                if not (inspect.getdoc(obj) or "").strip():
+                    undocumented.append(f"{name}.{symbol}")
+                if inspect.isclass(obj):
+                    for meth_name, meth in inspect.getmembers(obj, inspect.isfunction):
+                        if meth_name.startswith("_"):
+                            continue
+                        if meth.__qualname__.split(".")[0] != obj.__name__:
+                            continue  # inherited; documented on the base class
+                        if not (inspect.getdoc(meth) or "").strip():
+                            undocumented.append(f"{name}.{symbol}.{meth_name}")
+
+        self.assertEqual(
+            undocumented,
+            [],
+            f"{len(undocumented)} public symbols lack a docstring: {undocumented}",
+        )
