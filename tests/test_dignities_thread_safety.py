@@ -5,7 +5,6 @@ Regression tests for the global-state bug fixed in Task 008.
 
 import threading
 import unittest
-import warnings
 
 from mayaastrolib import const
 from mayaastrolib.chart import Chart
@@ -15,7 +14,6 @@ from mayaastrolib.dignities.tables import (
     EGYPTIAN_TERMS,
     LILLY_TERMS,
     TETRABIBLOS_TERMS,
-    TRIPLICITY_FACES,
 )
 from mayaastrolib.geopos import GeoPos
 
@@ -111,30 +109,6 @@ class ParameterApiTests(unittest.TestCase):
         for variant in (EGYPTIAN_TERMS, TETRABIBLOS_TERMS, LILLY_TERMS):
             t = essential.term(self.sun.sign, self.sun.signlon, terms_variant=variant)
             self.assertIsNotNone(t)
-
-
-class DeprecatedSettersTests(unittest.TestCase):
-    def test_setFaces_emits_warning(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            essential.setFaces(TRIPLICITY_FACES)
-            self.assertTrue(
-                any(issubclass(w.category, DeprecationWarning) for w in caught),
-                "setFaces() should emit DeprecationWarning",
-            )
-        # Reset the global so other tests are not affected.
-        essential.setFaces(essential.CHALDEAN_FACES)
-
-    def test_setTerms_emits_warning(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            essential.setTerms(LILLY_TERMS)
-            self.assertTrue(
-                any(issubclass(w.category, DeprecationWarning) for w in caught),
-                "setTerms() should emit DeprecationWarning",
-            )
-        # Reset.
-        essential.setTerms(EGYPTIAN_TERMS)
 
 
 if __name__ == "__main__":

@@ -11,17 +11,16 @@ almutems.
 
 Most functions accept ``terms_variant`` and ``faces_variant`` as
 keyword-only parameters. Pass these for thread-safe variant
-selection. The legacy module-level globals (``TERMS``, ``FACES``)
-and the ``setTerms`` / ``setFaces`` mutators are still honoured but
-deprecated — they are not thread-safe and will be removed in 1.0.
+selection. The module-level globals (``TERMS``, ``FACES``) remain as
+the defaults when no variant is passed; the ``setTerms`` / ``setFaces``
+mutators that used to rebind them were removed in 1.0 because mutating
+process-global state is not thread-safe.
 
 The convenience functions ``score(obj)``, ``getInfo(obj)``, and
 ``isPeregrine(obj)`` accept an Object instance directly to spare
 callers the ``obj.id, obj.sign, obj.signlon`` boilerplate.
 
 """
-
-import warnings
 
 from mayaastrolib import const
 
@@ -36,54 +35,10 @@ EGYPTIAN_TERMS = "Egyptian Terms"
 TETRABIBLOS_TERMS = "Tetrabiblos Terms"
 LILLY_TERMS = "Lilly Terms"
 
-# Defaults (legacy module-level state — see setTerms/setFaces)
+# Module-level defaults, used when no *_variant argument is passed.
 FACES = tables.CHALDEAN_FACES
 TERMS = tables.EGYPTIAN_TERMS
 TABLE = tables.ESSENTIAL_DIGNITIES
-
-
-def setFaces(variant):
-    """[DEPRECATED] Set the global faces variant.
-
-    Module-level state is not thread-safe. Pass
-    ``faces_variant=...`` to dignity functions instead. This function
-    will be removed in version 1.0.
-    """
-    warnings.warn(
-        "setFaces() mutates global state and is not thread-safe. "
-        "Pass faces_variant=... to dignity functions instead. "
-        "setFaces() will be removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    global FACES
-    if variant == CHALDEAN_FACES:
-        FACES = tables.CHALDEAN_FACES
-    else:
-        FACES = tables.TRIPLICITY_FACES
-
-
-def setTerms(variant):
-    """[DEPRECATED] Set the global terms variant.
-
-    Module-level state is not thread-safe. Pass
-    ``terms_variant=...`` to dignity functions instead. This function
-    will be removed in version 1.0.
-    """
-    warnings.warn(
-        "setTerms() mutates global state and is not thread-safe. "
-        "Pass terms_variant=... to dignity functions instead. "
-        "setTerms() will be removed in version 1.0.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    global TERMS
-    if variant == EGYPTIAN_TERMS:
-        TERMS = tables.EGYPTIAN_TERMS
-    elif variant == TETRABIBLOS_TERMS:
-        TERMS = tables.TETRABIBLOS_TERMS
-    elif variant == LILLY_TERMS:
-        TERMS = tables.LILLY_TERMS
 
 
 # === Table properties === #
@@ -142,10 +97,9 @@ def term(sign, lon, *, terms_variant=None):
         lon: Longitude within the sign (0-30).
         terms_variant: One of EGYPTIAN_TERMS, TETRABIBLOS_TERMS,
             LILLY_TERMS table dicts (from
-            ``mayaastrolib.dignities.tables``). Defaults to the value
-            most recently passed to ``setTerms()`` (or
-            ``EGYPTIAN_TERMS`` if never set), but passing this
-            parameter is preferred and thread-safe.
+            ``mayaastrolib.dignities.tables``). Defaults to the module-level
+            ``TERMS`` (``EGYPTIAN_TERMS``); passing this parameter is
+            preferred and thread-safe.
 
     Returns:
         The term lord (a planet ID string).
@@ -165,9 +119,8 @@ def face(sign, lon, *, faces_variant=None):
         sign: Sign constant.
         lon: Longitude within the sign (0-30).
         faces_variant: One of CHALDEAN_FACES, TRIPLICITY_FACES table
-            dicts (from ``mayaastrolib.dignities.tables``). Defaults
-            to the value most recently passed to ``setFaces()`` (or
-            ``CHALDEAN_FACES`` if never set), but passing this
+            dicts (from ``mayaastrolib.dignities.tables``). Defaults to the
+            module-level ``FACES`` (``CHALDEAN_FACES``); passing this
             parameter is preferred and thread-safe.
 
     Returns:
