@@ -78,6 +78,20 @@ Notes:
   `docs/CONCURRENCY.md`.
 
 ### Added
+- **Published API documentation.** Sphinx `autodoc` + `napoleon` now generate
+  a per-module API reference from the frozen `__all__`, so the reference and
+  the stability contract cannot drift apart. `.readthedocs.yaml` is committed
+  (`fail_on_warning: true`); enabling the RTD project is a one-time dashboard
+  step documented in `docs/RELEASING.md`. A pinned `docs` extra was added to
+  `pyproject.toml`.
+
+  The previous `docs/source/conf.py` was the 2015 flatlib `sphinx-quickstart`
+  output with `extensions = []` — it generated **no** API documentation at all
+  — and a hard-coded version that had drifted to `0.3.1`. The version is now
+  read from package metadata.
+- **100% docstring coverage on the public surface**, enforced by
+  `tests/test_public_api.py`. Filled the seven gaps (the `props` namespace
+  classes) and fixed 15 malformed docstrings that broke the docs build.
 - **The public API is now explicit and frozen** — `docs/API-STABILITY.md`.
   Before 1.0 "public" meant "whatever the README happened to mention". The
   rule is now: **a name is public if and only if it appears in its module's

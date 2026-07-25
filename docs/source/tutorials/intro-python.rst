@@ -16,7 +16,7 @@ To start the interactive interpreter, open the terminal (command prompt in Windo
 .. image:: ../_static/python-interpreter-osx.png
    :align: center
    
-.. Cimage:: ../_static/python-interpreter-win32.png
+.. image:: ../_static/python-interpreter-win32.png
    :align: center
    
 In the interactive interpreter, you can enter commands and the Python interpreter will execute those commands and 

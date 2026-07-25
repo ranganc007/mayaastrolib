@@ -6,6 +6,99 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-06 — Sphinx/ReadTheDocs, docstrings, README accuracy
+
+Branch `v1.0-06-docs-sphinx-readme`.
+
+### What was found
+
+`docs/source/` existed but was the **2015 flatlib `sphinx-quickstart` output**,
+inherited unchanged through the fork: `extensions = []`, so it generated no API
+documentation whatsoever — the tree looked like working docs infrastructure and
+was not. `version`/`release` were hard-coded to `0.3`/`0.3.1`, three releases
+stale. It had never been built in CI, so nothing caught either.
+
+### What was done
+
+- Rewrote `conf.py`: autodoc + napoleon + viewcode + intersphinx + myst,
+  version read from `importlib.metadata` (cannot drift again), and
+  `autodoc_mock_imports = ["swisseph"]` so RTD never has to build the C
+  extension.
+- Generated 26 `automodule` stubs under `docs/source/api/` from the frozen
+  `__all__` (12 core + 13 vedic + an index), wired into the toctree.
+- `.readthedocs.yaml` with `fail_on_warning: true`; pinned `docs` extra
+  (`sphinx==9.1.0`, `sphinx-rtd-theme==3.1.0`, `myst-parser==5.1.0`,
+  `interrogate==1.7.0`) for the same reproducibility reason as v1.0-01's
+  ruff/mypy pins. `docs/Makefile` BUILDDIR `build` → `_build`; gitignored.
+
+### Getting to zero warnings under -W
+
+The first `-W` build produced **48** warnings. In three groups:
+
+1. **33 duplicate object descriptions.** The frozen dataclasses
+   (`DashaPeriod`, `YogaResult`, `UpagrahaResult`, `TajikaAspect`, ...)
+   document their fields in a Google-style `Attributes:` block *and* carry the
+   annotation autodoc documents, so napoleon's default `.. attribute::`
+   rendering collided with autodoc's. `napoleon_use_ivar = True` renders them
+   as `:ivar:` fields on the class instead — reads the same, collides with
+   nothing. (Trying `autodoc_typehints = "signature"` first changed nothing;
+   that was not the cause.)
+2. **14 malformed docstrings** — real defects, fixed in the source, not
+   suppressed: five module docstrings had a bullet list with no blank line
+   before it (RST requires one), and four `Returns:` blocks had an inline
+   ``literal`` spanning a line break. Reflowed those into prose with
+   self-contained literals.
+3. **One `.. Cimage::`** directive in `tutorials/intro-python.rst` — a typo
+   inherited from flatlib in 2015, never noticed because the docs were never
+   built.
+
+`sphinx-build -W` now succeeds with zero warnings.
+
+### Docstring coverage
+
+`interrogate` reported 93.2% over the whole tree, but the prompt's bar is 100%
+**on the public surface**, which is a different set — it excludes internal
+helpers and includes only names in `__all__`. Wrote that check directly
+(`DocstringCoverageTests`) rather than tuning an interrogate threshold to
+approximate it. It found exactly 7 gaps, all the `props.py` namespace classes
+(`base`, `sign`, `object`, `house`, `aspect`, `fixedStar`, `houseSystem`);
+all filled. 200 public callables/classes now checked, 0 gaps.
+
+### README accuracy
+
+Every quantitative claim had drifted, in each case understating the project:
+
+| Claim | Was | Now |
+|---|---|---|
+| Vedic subsystem | ~3,600 LOC, 12 modules | ~4,500 LOC, 13 modules |
+| Tests | 553 (+87 subtests) | 670+ |
+| Coverage | 94% | 96% |
+| Golden charts | 3 (Einstein, Kahlo, Amundsen) | 7, both hemispheres, tropical *and* sidereal |
+| Type hints | "rolling out ... core classes in progress" | done, with `py.typed` |
+
+The one claim corrected *downward* is the important one: the heading said
+"**A complete** Vedic (Jyotisha) subsystem". The subsystem is broad but several
+techniques ship documented approximations. The heading now drops "complete" and
+a new **On completeness** note names them explicitly — the Shadbala absolute
+totals, `panchavargiya_bala`, `lord_of_year`, `gulika_longitude`, and the Saham
+table at 14 of ~50 — and points at the API-STABILITY fidelity tiering. This is
+the same honesty gap flagged in `docs/PROJECT-BRIEF-2026-07-25.md`; it now
+reaches the README, which is where most readers form their expectations.
+
+### Verification
+
+- `sphinx-build -W`: **0 warnings**.
+- Public-surface docstring coverage: **100%** (200 symbols), enforced by test.
+- `671 passed, 716 subtests`; coverage 95.70%; ruff and mypy clean.
+
+### Follow-ups needed
+
+- The docs build is not yet a CI job. It is gated locally and on RTD, but a
+  `sphinx -W` step in `test.yml` would stop a warning-introducing docstring
+  from landing. Worth adding in v1.0-08 or 1.1.
+
+---
+
 ## 2026-07-25 — Task v1.0-05 — declare and freeze the public API
 
 Branch `v1.0-05-freeze-public-api`.
