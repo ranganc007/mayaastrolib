@@ -32,6 +32,11 @@ from .datetime import Datetime
 from .ephem import ephem
 from .lists import GenericList, HouseList, ObjectList
 
+__all__ = [
+    "SCHEMA_VERSION",
+    "Chart",
+]
+
 if TYPE_CHECKING:
     from .geopos import GeoPos
     from .object import FixedStar, GenericObject, House, Object

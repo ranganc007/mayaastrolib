@@ -18,6 +18,16 @@ can mimic different namespaces in a single python module.
 
 from . import const
 
+__all__ = [
+    "base",
+    "sign",
+    "object",
+    "house",
+    "aspect",
+    "fixedStar",
+    "houseSystem",
+]
+
 # ------------------- #
 #   Base Properties   #
 # ------------------- #

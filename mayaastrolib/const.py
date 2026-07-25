@@ -453,3 +453,9 @@ LIST_FIXED_STARS = [
     STAR_DENEB_ADIGE,
     STAR_ACHERNAR,
 ]
+
+
+# `const` defines only constants and imports nothing, so the public surface
+# is exactly its non-underscore module-level names. Computed rather than
+# hand-listed (200+ names) so it cannot drift out of sync.
+__all__ = [_name for _name in dir() if not _name.startswith("_")]

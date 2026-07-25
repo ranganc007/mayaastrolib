@@ -16,6 +16,13 @@ from typing import Any
 from . import angle, const, props, utils
 from ._compat import property_with_method_compat
 
+__all__ = [
+    "GenericObject",
+    "Object",
+    "House",
+    "FixedStar",
+]
+
 # ------------------ #
 #   Generic Object   #
 # ------------------ #

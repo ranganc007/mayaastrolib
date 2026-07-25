@@ -33,6 +33,11 @@ from mayaastrolib import const
 from mayaastrolib.vedic import ayanamsa as _ay
 from mayaastrolib.vedic import divisional as _div
 
+__all__ = [
+    "harsha_bala",
+    "panchavargiya_bala",
+]
+
 _CLASSICAL_PLANETS = (
     const.SUN,
     const.MOON,

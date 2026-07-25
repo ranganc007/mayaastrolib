@@ -36,6 +36,17 @@ from typing import TYPE_CHECKING, Any
 from . import angle, const
 from ._compat import property_with_method_compat
 
+__all__ = [
+    "MAX_MINOR_ASP_ORB",
+    "MAX_EXACT_ORB",
+    "aspectType",
+    "hasAspect",
+    "isAspecting",
+    "getAspect",
+    "AspectObject",
+    "Aspect",
+]
+
 if TYPE_CHECKING:
     from .object import GenericObject, Object
 

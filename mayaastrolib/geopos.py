@@ -13,6 +13,17 @@ from __future__ import annotations
 
 from . import angle
 
+__all__ = [
+    "LAT",
+    "LON",
+    "SIGN",
+    "CHAR",
+    "toFloat",
+    "toList",
+    "toString",
+    "GeoPos",
+]
+
 # Modes
 LAT = 0
 LON = 1

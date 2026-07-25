@@ -33,6 +33,20 @@ from dataclasses import dataclass
 
 from mayaastrolib import const
 
+__all__ = [
+    "DEEPTAMSHA",
+    "ASPECT_ANGLES",
+    "ITHASALA",
+    "ISHARAFA",
+    "NAKTA",
+    "KAMBOOLA",
+    "GAIRI_KAMBOOLA",
+    "KHALLASARA",
+    "TajikaAspect",
+    "tajika_aspects",
+    "tajika_yogas",
+]
+
 _CLASSICAL_PLANETS = (
     const.SUN,
     const.MOON,
