@@ -11,7 +11,6 @@ from mayaastrolib import const
 from mayaastrolib.chart import Chart
 from mayaastrolib.datetime import Datetime
 from mayaastrolib.geopos import GeoPos
-from mayaastrolib.predictives import profections
 
 # Build a chart for a date and location
 date = Datetime("2011/03/13", "17:00", "+00:00")
@@ -20,7 +19,7 @@ chart = Chart(date, pos)
 
 # Get the profection Chart for a date
 today = Datetime("2015/04/06", "10:40", "+01:00")
-pChart = profections.compute(chart, today)
+pChart = chart.profected(target_date=today)
 
 # Print the Asc
 asc = pChart.get(const.ASC)

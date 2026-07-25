@@ -22,8 +22,10 @@ class ProfectionsTests(unittest.TestCase):
     def test_module_imports(self):
         self.assertIsNotNone(profections)
 
-    def test_compute_returns_chart_with_asc(self):
-        pchart = profections.compute(self.chart, self.target)
+    def test_profected_chart_has_asc(self):
+        # profections.compute() was removed in 1.0; Chart.profected is the
+        # entry point. The module is kept importable for the 1.0 cycle.
+        pchart = self.chart.profected(target_date=self.target)
         asc = pchart.get(const.ASC)
         self.assertIsNotNone(asc)
         self.assertIsNotNone(asc.sign)

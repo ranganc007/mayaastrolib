@@ -10,7 +10,6 @@ the rest:
 - `Chart.arabicPart(part_id)` (new)
 - `Chart.planetaryHour(date=None)` (new)
 
-Plus deprecation of `tools.arabicparts.getPart()`.
 """
 
 import unittest
@@ -123,14 +122,19 @@ class ChartArabicPartTests(unittest.TestCase):
         deprecations = [w for w in captured if issubclass(w.category, DeprecationWarning)]
         self.assertEqual(deprecations, [])
 
-    def test_arabicPart_matches_legacy_getPart(self):
+    def test_arabicPart_returns_a_positioned_part(self):
+        """Replaces the old new-vs-legacy ``getPart`` comparison.
+
+        ``arabicparts.getPart(ID, chart)`` was removed in 1.0; both paths
+        always delegated to the same ``_getPart_impl``, so assert the part
+        itself is well-formed rather than that two spellings agree.
+        """
         from mayaastrolib.tools import arabicparts
 
-        new_part = self.chart.arabicPart(arabicparts.PARS_FORTUNA)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            legacy_part = arabicparts.getPart(arabicparts.PARS_FORTUNA, self.chart)
-        self.assertAlmostEqual(new_part.lon, legacy_part.lon, places=5)
+        part = self.chart.arabicPart(arabicparts.PARS_FORTUNA)
+        self.assertEqual(part.id, arabicparts.PARS_FORTUNA)
+        self.assertTrue(0.0 <= part.lon < 360.0)
+        self.assertIsNotNone(part.sign)
 
 
 class ChartPlanetaryHourTests(unittest.TestCase):
@@ -152,30 +156,6 @@ class ChartPlanetaryHourTests(unittest.TestCase):
         target = Datetime("2015/03/14", "06:00", "+00:00")
         ht = self.chart.planetaryHour(date=target)
         self.assertEqual(ht.date.jd, target.jd)
-
-
-class DeprecatedGetPartTests(unittest.TestCase):
-    def setUp(self):
-        self.chart = _sample_chart()
-
-    def test_get_part_warns(self):
-        from mayaastrolib.tools import arabicparts
-
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            arabicparts.getPart(arabicparts.PARS_FORTUNA, self.chart)
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "tools.arabicparts.getPart should emit DeprecationWarning",
-        )
-
-    def test_get_part_still_returns_correct_part(self):
-        from mayaastrolib.tools import arabicparts
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            part = arabicparts.getPart(arabicparts.PARS_FORTUNA, self.chart)
-        self.assertEqual(part.id, arabicparts.PARS_FORTUNA)
 
 
 if __name__ == "__main__":

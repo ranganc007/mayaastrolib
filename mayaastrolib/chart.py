@@ -475,7 +475,7 @@ class Chart:
 
         Combines integer years (30° each) with the fractional sub-year
         rotation, mirroring the existing
-        :func:`mayaastrolib.predictives.profections.compute` math so
+        legacy profection math so
         that ``Chart.profected(target_date=...)`` produces identical
         longitudes to the legacy API.
         """
@@ -513,7 +513,7 @@ class Chart:
                 exclusive with ``target_date``.
             target_date: A :class:`Datetime`. The rotation is derived
                 using the same math as
-                :func:`mayaastrolib.predictives.profections.compute`,
+                the pre-1.0 ``profections.compute``,
                 including the sub-year solar-return interpolation.
                 Mutually exclusive with ``years``.
 

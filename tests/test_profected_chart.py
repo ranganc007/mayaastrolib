@@ -5,17 +5,17 @@ sign per year. Because rotated positions are symbolic, planet speeds
 are cleared (``lonspeed = latspeed = None``) and dynamics-derived
 attributes (``movement``, ``isRetrograde``) return ``None``. This is
 the bug fix the task exists to deliver — the legacy
-``profections.compute()`` left speeds stale.
+``profections.compute()`` left speeds stale. That function was removed
+in 1.0; the longitudes it produced are pinned below as literals so the
+equivalence it used to prove is still guarded.
 """
 
 import unittest
-import warnings
 
 from mayaastrolib import const
 from mayaastrolib.chart import Chart
 from mayaastrolib.datetime import Datetime
 from mayaastrolib.geopos import GeoPos
-from mayaastrolib.predictives import profections
 
 
 def _natal():
@@ -123,60 +123,28 @@ class ProfectedTargetDateTests(unittest.TestCase):
         self.assertEqual(p.symbolic_kind, "profection")
 
     def test_target_date_matches_legacy_compute_longitudes(self):
-        """The new chart.profected and the legacy compute() must produce
-        identical longitudes — same math, just different speed handling.
+        """Pins the longitudes the pre-1.0 ``profections.compute()`` produced.
+
+        The two paths were verified byte-identical (delta 0.0) against the
+        legacy implementation immediately before it was deleted in Task
+        v1.0-02; these literals were captured from that run. They keep the
+        profection math itself under regression test now that there is no
+        second implementation to compare against.
         """
         new = self.natal.profected(target_date=self.target)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            legacy = profections.compute(self.natal, self.target)
-        for pid in (const.SUN, const.MOON, const.MARS, const.JUPITER):
+        legacy_longitudes = [
+            (const.SUN, 264.5077101262),
+            (const.MOON, 297.6290048171),
+            (const.MARS, 346.7533196812),
+            (const.JUPITER, 333.7673974701),
+        ]
+        for pid, expected in legacy_longitudes:
             self.assertAlmostEqual(
                 new.get(pid).lon,
-                legacy.get(pid).lon,
+                expected,
                 places=4,
-                msg=f"{pid} longitude differs between new and legacy paths",
+                msg=f"{pid} longitude drifted from the pre-1.0 profection math",
             )
-
-
-class DeprecatedProfectionsComputeTests(unittest.TestCase):
-    def setUp(self):
-        self.natal = _natal()
-        self.target = Datetime("2022/06/15", "12:00", "+00:00")
-
-    def test_compute_warns(self):
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            profections.compute(self.natal, self.target)
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "profections.compute should emit DeprecationWarning",
-        )
-
-    def test_compute_returns_symbolic_chart(self):
-        """Behaviour change: compute() now returns symbolic chart with
-        cleared speeds, fixing the stale-speed bug.
-        """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            result = profections.compute(self.natal, self.target)
-        self.assertTrue(result.is_symbolic)
-        self.assertIsNone(result.get(const.SUN).lonspeed)
-
-
-class DeprecatedRelocateTests(unittest.TestCase):
-    def test_relocate_warns(self):
-        date = Datetime("2015/03/13", "17:00", "+00:00")
-        pos = GeoPos("38n32", "8w54")
-        chart = Chart(date, pos)
-        sun = chart.get(const.SUN)
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            sun.relocate(100.0)
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "Object.relocate should emit DeprecationWarning",
-        )
 
 
 if __name__ == "__main__":

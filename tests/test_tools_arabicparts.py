@@ -21,8 +21,10 @@ class ArabicPartsTests(unittest.TestCase):
     def test_module_imports(self):
         self.assertIsNotNone(arabicparts)
 
-    def test_get_part_returns_generic_object(self):
-        part = arabicparts.getPart(arabicparts.PARS_FORTUNA, self.chart)
+    def test_arabic_part_returns_generic_object(self):
+        # getPart(ID, chart) was removed in 1.0; Chart.arabicPart is the
+        # public entry point onto the same implementation.
+        part = self.chart.arabicPart(arabicparts.PARS_FORTUNA)
         self.assertIsInstance(part, GenericObject)
         self.assertIsNotNone(part.sign)
 

@@ -17,8 +17,8 @@ date = Datetime("2015/03/13", "17:00", "+00:00")
 pos = GeoPos("38n32", "8w54")
 chart = Chart(date, pos)
 
-# Retrieve the Pars Spirit via the discoverable Chart method (Task 013).
-# The legacy `arabicparts.getPart(arabicparts.PARS_SPIRIT, chart)` still
-# works but emits a DeprecationWarning and will be removed in 1.0.
+# Retrieve the Pars Spirit via the Chart method. The module-level
+# `arabicparts.getPart(ID, chart)` was removed in 1.0; the part IDs
+# (PARS_FORTUNA, PARS_SPIRIT, ...) still live in `arabicparts`.
 parsSpirit = chart.arabicPart(arabicparts.PARS_SPIRIT)
 print(parsSpirit)  # <Pars Spirit Sagittarius +03:52:01>
