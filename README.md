@@ -37,7 +37,7 @@ print(sun)
 packaging, had no type hints, ~34% test coverage, and no sidereal/Vedic support.
 `mayaastrolib` keeps the calculation core's correctness and rebuilds everything around it:
 
-### 🪔 A complete Vedic (Jyotisha) subsystem — *new, ~3,600 LOC, 12 modules*
+### 🪔 A Vedic (Jyotisha) subsystem — *new, ~4,500 LOC across 13 modules*
 
 flatlib is tropical-only. `mayaastrolib` adds a full sidereal engine behind one switch
 (`Chart(zodiac=const.ZODIAC_SIDEREAL, ayanamsa=const.AYANAMSA_LAHIRI)`):
@@ -53,22 +53,35 @@ flatlib is tropical-only. `mayaastrolib` adds a full sidereal engine behind one 
 | `vedic.sadesati` | Sade Sati phases + small-panoti (ashtama/kantaka shani) |
 | `vedic.upagrahas` | Sun-derived upagrahas + Gulika/Mandi |
 | `vedic.tajika` (+`_bala`, `_aspects`) | annual charts (Varshaphala), Mudda dasha, Sahams, Harsha/Panchavargiya Bala, Ithasala/Isharafa/Nakta |
-| `vedic.kp` | Krishnamurti Paddhati — 249-row sub-lord table, sub-sub-lord, horary, Ruling Planets |
+| `vedic.kp` | Krishnamurti Paddhati — 249-row sub-lord table, sub-sub-lord, horary chart with cusps, Ruling Planets |
+| `vedic.shadbala` | the six-fold planetary strength (Sthana, Dig, Kala, Cheshta, Naisargika, Drik) |
+
+**On completeness:** the module list is broad, but some techniques ship a
+*documented approximation* of the classical formula rather than a faithful
+replica — notably the absolute Shadbala totals, `tajika_bala.panchavargiya_bala`,
+`tajika.lord_of_year`, `upagrahas.gulika_longitude`, and the Saham table (14 of
+roughly 50). Each says so in its own docstring, and
+[docs/API-STABILITY.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/API-STABILITY.md)
+tiers every `vedic` module by fidelity so you can tell at a glance which results
+are determinate and which may be refined in a later release.
 
 ### ⚙️ Modern engineering — *the whole codebase brought to current standards*
 
 - **Python 3.10+** baseline (3.12 target); all Python-2 compatibility code removed.
-- **Type hints** rolling out across the public API (`geopos`, `datetime` done; core classes in progress).
+- **Type hints** across the public API, with a `py.typed` marker so downstream type checkers see them.
 - **Modern packaging** — single `pyproject.toml` (PEP 621); `setup.py`, `requirements.txt`, and `README.rst` deleted.
-- **ruff** format + lint (clean across 121 files) and **mypy** in CI.
-- **CI** — GitHub Actions matrix on Python 3.10 / 3.11 / 3.12.
+- **ruff** format + lint and **mypy** (zero errors) in CI, both pinned for reproducibility.
+- **CI** — GitHub Actions matrix on Python 3.10 / 3.11 / 3.12, plus a packaging job
+  that installs the built wheel into a clean venv and computes a real chart.
+- **An explicit, frozen public API** — see [docs/API-STABILITY.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/API-STABILITY.md).
 
-### 🧪 Real correctness guarantees — *coverage 34% → 94%*
+### 🧪 Real correctness guarantees — *coverage 34% → 96%*
 
-- **553 tests** (+87 subtests), all passing, **94% coverage** (80% CI floor).
+- **670+ tests**, all passing, **96% coverage** (80% CI floor).
 - **Golden tests** anchor planet positions against [Skyfield](https://rhodesmill.org/skyfield/)
-  — an *independent* ephemeris — at ±2 arc-minutes for reference charts (Einstein, Kahlo, Amundsen),
-  plus astronomical-invariant suites (houses sum to 360°, cusps ordered, etc.).
+  — an *independent* ephemeris — at ±2 arc-minutes across 7 reference charts spanning
+  1875–1961 and both hemispheres, in tropical *and* sidereal frames, plus
+  astronomical-invariant suites (houses sum to 360°, cusps ordered, etc.).
 
 ### ✨ API ergonomics & correctness fixes
 
@@ -92,7 +105,7 @@ agentic CLI), with **minimal line-by-line human review** of individual diffs.
 That makes the test discipline the load-bearing part of this project, by design — correctness
 is *verified*, not taken on trust:
 
-- **Structural tests** pin every public function's contract (553 tests, 94% coverage).
+- **Structural tests** pin every public function's contract (670+ tests, 96% coverage).
 - **Golden tests** anchor the astronomical output against [Skyfield](https://rhodesmill.org/skyfield/)
   — a completely independent ephemeris — at ±2 arc-minutes for known reference charts, so a
   wrong calculation fails CI rather than shipping silently.
