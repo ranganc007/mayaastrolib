@@ -106,6 +106,24 @@ using accidental dignity rather than full Shadbala) are documented honestly in
 
 ---
 
+## API stability
+
+From 1.0, a name is public **if and only if** it appears in its module's `__all__`.
+[docs/API-STABILITY.md](https://github.com/ranganc007/mayaastrolib/blob/master/docs/API-STABILITY.md)
+is the contract: it lists the frozen surface, tiers the `vedic` subsystem by fidelity
+(exact vs documented-approximation), names the modules that are deliberately *not*
+covered, and states the deprecation policy for breaking changes. It is enforced by
+`tests/test_public_api.py`.
+
+The everyday entry points are also available from the top level:
+
+```python
+from mayaastrolib import Chart, Datetime, GeoPos, const
+```
+
+These resolve lazily, so `import mayaastrolib` never loads Swiss Ephemeris or its
+~6 MB of data — useful if you only need `const` or `__version__`.
+
 ## Documentation
 
 Start here:
