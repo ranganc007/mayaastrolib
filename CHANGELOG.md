@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Removed (BREAKING)
+
+Every symbol below shipped with a `DeprecationWarning` that said it would be
+removed in 1.0. This honours that. All replacements already existed — in most
+cases both spellings called the same implementation.
+
+| Removed | Use instead |
+|---|---|
+| `aspects.getAspectOrSentinel(obj1, obj2, aspList)` | `aspects.getAspect(...)`, which returns `None` when no aspect exists. Replace `if asp.exists():` / `if asp.type == const.NO_ASPECT:` with `if asp is not None:` / `if asp is None:`. |
+| `dignities.essential.setTerms(variant)` | `terms_variant=` keyword on `term()`, `getInfo()`, `isPeregrine()`, `score()` |
+| `dignities.essential.setFaces(variant)` | `faces_variant=` keyword on `face()`, `getInfo()`, `isPeregrine()`, `score()` |
+| `Object.relocate(lon)` | `Object.with_longitude(lon)` — returns a new object instead of mutating, and clears stale speeds |
+| `Object.antiscia()` / `Object.cantiscia()` | `Object.antiscion()` / `Object.cantiscion()` |
+| `predictives.profections.compute(chart, date)` | `Chart.profected(target_date=date)` |
+| `tools.arabicparts.getPart(ID, chart)` | `Chart.arabicPart(ID)` |
+| `House._OFFSET` | `House._CUSP_TOLERANCE_DEG` (private; the alias existed only for external code that had learned the old name) |
+
+Notes:
+
+- `compute(..., fixedObjects=True)` — natal object positions with only houses
+  and angles rotated — has **no** replacement. It was a niche legacy mode
+  never exposed on `Chart.profected`; callers needing it must inline the
+  rotation. This was flagged in the deprecation docstring.
+- `mayaastrolib.predictives.profections` remains importable (its module
+  docstring now points at `Chart.profected`); only `compute` is gone.
+- The `_compat.py` property migration is **not** affected — `obj.movement`
+  and `obj.movement()` both still work. That is tracked separately in
+  `docs/PROPERTY-MIGRATION.md`.
+- The `flatlib/` compatibility package is also unaffected here; its removal
+  is a separate task.
+
 ### Fixed
 - **Charts computed on a worker thread were silently less accurate (Linux).**
   The Swiss Ephemeris path was applied once at import, on the main thread.

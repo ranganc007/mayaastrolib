@@ -98,10 +98,10 @@ These should not be modified without explicit instruction:
 <!-- AUTO-MANAGED: project-description -->
 ## Current codebase state
 
-Last updated by Task 038 public-API type hints — datetime.py (2026-05-11, branch `development`).
+Last updated by Task v1.0-02 remove-deprecated-APIs (2026-07-25, branch `development`).
 
 - **Package name:** `mayaastrolib/` — rename from `flatlib/` completed in Task 005. Canonical import: `from mayaastrolib import ...`. The `flatlib/` directory still exists as a compatibility shim (emits `DeprecationWarning`; will be removed in 1.0).
-- **Version:** 0.3.0 — unified via `importlib.metadata.version("mayaastrolib")` in `pyproject.toml`.
+- **Version:** 0.5.0, published on PyPI (`pip install mayaastrolib`) — unified via `importlib.metadata.version("mayaastrolib")` in `pyproject.toml`. `development` currently carries unreleased **breaking** changes for 1.0.
 - **pyproject.toml:** EXISTS — PEP 621, setuptools backend; single source of truth for version, ruff, mypy, pytest, and coverage config. `pythonpath = ["."]` set. UP031 in `[tool.ruff.lint] ignore`.
 - **setup.py:** DELETED — build system is pyproject.toml only.
 - **requirements.txt:** DELETED — runtime dep (`pyswisseph>=2.10.3.2`) and dev extras live in pyproject.toml `[dev]` extras.
@@ -111,9 +111,12 @@ Last updated by Task 038 public-API type hints — datetime.py (2026-05-11, bran
 - **CI:** `.github/workflows/test.yml` EXISTS — GitHub Actions, matrix Python 3.10/3.11/3.12, runs ruff format check + ruff check + pytest + coverage against `mayaastrolib`.
 - **Dev venv:** `python3 -m venv .venv-<taskname>` then `pip install -e ".[dev]"`. Named per-task (`.venv-task002` through `.venv-task009`; no `.venv-task010` — Tasks 010–013 reused `.venv-task009`; `.venv-task014` created fresh because skyfield needed installing; Tasks 014, 015, and 016 all reused `.venv-task014` — no `.venv-task015` or `.venv-task016` created); all ignored by `.gitignore`.
 - **Python locally:** 3.14.3. CI targets 3.10–3.12.
-- **Tests:** 51 test files, 553 tests + 87 subtests, all passing. Coverage **94.12%** (`--cov=mayaastrolib --cov-fail-under=80`); `accidental.py` 100%, `temperament.py` 99%. **Status:** Phase 2 + 027–038 done. `mayaastrolib/vedic/` = 12 modules. **Type-hint pass:** `geopos.py` + `datetime.py` typed; `aspects.py`/`chart.py`/`object.py` deferred — their `self.__dict__.update(...)` (Aspect/AspectObject) and `_compat`-decorated (Object/House) patterns make adding signature annotations surface ~30 mypy "no attribute" errors; needs class-level attr annotations + a small `Aspect.__init__` restructure, i.e. a deliberate refactor. **Other remaining (genuine open work, none blocking):** full six-fold Shadbala yoga strength (accidental-dignity-weighted version is in) · the rest of the ~50 Sahams + the other 13 Tajika yogas (source-variant) · full KP horary chart with house cusps (the Lagna sub-lord chain is in). PyPI release and the cross-repo oracle-parity tests are out of scope per the user.
+- **Tests:** 57 test files, **655 tests + 230 subtests**, all passing. Coverage **95%** (`--cov=mayaastrolib --cov-fail-under=80`). `mayaastrolib/vedic/` = **14 modules**. **Type-hint pass: DONE** — `geopos`, `datetime`, `object`, `chart`, `aspects` all typed and the package ships `py.typed` (0.4.0). **Remaining genuine open work:** the rest of the ~50 Sahams + ~10 more Tajika yogas (source-variant); external reference values for the approximated Vedic techniques (Shadbala totals, Panchavargiya Bala, `lord_of_year`) — these are self-declared approximations with no independent oracle. Cross-repo oracle-parity tests are out of scope per the user.
+- **Road to 1.0:** `prompts/v1.0-00-INDEX.md` is the ordered backlog. Done: **v1.0-01** (pinned `ruff==0.15.16` / `mypy==2.1.0`, hermetic fixed-star tests), **v1.0-01b** (per-thread swisseph ephemeris path — see below), **v1.0-02** (deprecated-API removal). Note prompts **04** (type hints) and **07** (six-fold Shadbala, KP horary cusps) were largely delivered by 0.4.0 and need re-scoping before they are run.
+- **Deprecations — REMOVED in 1.0 (Task v1.0-02):** `getAspectOrSentinel()`, `setTerms()`/`setFaces()`, `Object.relocate()`, `Object.antiscia()`/`cantiscia()`, `profections.compute()`, `tools.arabicparts.getPart()`, `House._OFFSET`. See CHANGELOG "Removed (BREAKING)" for replacements. **Still present:** the `_compat.py` property migration (`obj.movement` *and* `obj.movement()` both work) and the `flatlib/` shim — both slated for removal by later v1.0 tasks.
+- **Threading:** every swisseph call goes through `ephem.swe._ephe_session()`, which takes the lock **and** re-applies the ephemeris path for the calling thread. Do not take `_SWE_LOCK` directly — the Linux wheels keep swisseph state thread-local, so a missed path re-apply silently downgrades results to the Moshier ephemeris. See `docs/CONCURRENCY.md`.
 - **Lint state:** `ruff format --check` PASSES. `ruff check` PASSES. UP031 deferred — see `docs/RUFF-DEBT.md`.
-- **mypy:** 2 errors with `--ignore-missing-imports` (pyswisseph has no stubs).
+- **mypy:** clean — *Success: no issues found in 49 source files*.
 - **Known bugs:** None open. Eclipse `backward=` kwarg bug fixed in Task 004 (see `docs/KNOWN-BUGS.md`).
 - **Dep graph:** clean DAG, no cycles; `dignities.essential` is the most-imported module.
 - **LICENSING.md:** EXISTS at repo root — documents MIT (mayaastrolib) + LGPL (pyswisseph) + GPL/commercial (Swiss Ephemeris) licensing situation.

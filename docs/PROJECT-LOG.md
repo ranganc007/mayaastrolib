@@ -6,6 +6,86 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-02 — remove the deprecated function/method APIs
+
+Branch `v1.0-02-remove-deprecated-apis`. All eight symbols in the prompt's
+inventory were present and were removed.
+
+### What was done
+
+Removed: `aspects.getAspectOrSentinel`, `essential.setTerms`/`setFaces`,
+`Object.relocate`, `Object.antiscia`/`cantiscia`,
+`predictives.profections.compute`, `tools.arabicparts.getPart`,
+`House._OFFSET`. Internal callers updated (there were none in library code
+beyond docstrings); `recipes/profections.py` migrated to
+`chart.profected(target_date=...)` and `recipes/arabicparts.py`'s comment
+corrected — it claimed the removed `getPart` "still works".
+
+### Judgement calls
+
+- **`profections.py` kept as an empty module.** Removing `compute` left the
+  file with nothing but its docstring. Deleting it outright would have broken
+  `flatlib/predictives/__init__.py`, which imports the module by name — and
+  the flatlib shim is not removed until v1.0-03. So the module stays,
+  importable, with a docstring pointing at `Chart.profected`. Deleting it is a
+  candidate for v1.0-03 or v1.0-05.
+- **`Aspect.exists()` kept.** It was not in the removal inventory and nothing
+  says it goes at 1.0. With `getAspectOrSentinel` gone the library no longer
+  *produces* `NO_ASPECT` Aspects, but the method still works on a
+  hand-constructed one.
+- **Historical documents left alone.** `docs/PROJECT-LOG.md`,
+  `docs/REVIEW-2026-05-08.md`, and `docs/AUDIT-INVESTIGATIONS.md` all mention
+  the removed symbols. They are records of what was true at the time and were
+  deliberately not rewritten; only `docs/PROPERTY-MIGRATION.md` (a live
+  reference) was updated.
+
+### Test changes
+
+Deleted the five warning-assertion classes (`DeprecatedAntisciaTests`,
+`DeprecatedSentinelTests`, `DeprecatedGetPartTests`, `DeprecatedSettersTests`,
+`DeprecatedProfectionsComputeTests`, `DeprecatedRelocateTests`). Three tests
+compared a new API against its legacy twin and had to be rebuilt rather than
+dropped:
+
+- `test_target_date_matches_legacy_compute_longitudes` — **the reference
+  values were captured from the legacy implementation before deleting it**
+  (checked out the old `profections.py` into a scratch module, ran both paths:
+  delta was exactly `0.0` for Sun/Moon/Mars/Jupiter) and pinned as literals.
+  The profection math stays under regression test with no second
+  implementation to compare against.
+- `test_no_aspect_name_for_sentinel` → `test_no_aspect_name_for_no_aspect_type`,
+  building the `NO_ASPECT` Aspect directly from a properties dict, since the
+  `name` lookup is what was under test, not how the Aspect was produced.
+- `test_arabicPart_matches_legacy_getPart` →
+  `test_arabicPart_returns_a_positioned_part` (both spellings always
+  delegated to the same `_getPart_impl`, so the comparison proved nothing
+  once one was gone).
+
+### Verification
+
+- `655 passed, 230 subtests` (was 664 + 230 — net −9 is the deleted
+  warning-assertion tests). Coverage **95%**; ruff format/check clean; mypy
+  clean.
+- `pytest -W error::DeprecationWarning` over the seven affected test modules:
+  **59 passed**, i.e. no deprecation warning is emitted on any surviving path
+  through them.
+- Re-grepped all eight symbols across `mayaastrolib/`, `tests/`, `recipes/`,
+  `flatlib/`, `README.md`: the only remaining hits are prose explaining the
+  removal. The only `DeprecationWarning` left in the package is in
+  `_compat.py` (the property migration — deliberately out of scope).
+- All 15 recipes executed. 13 run clean; `leapyears.py` and `solaryears.py`
+  fail on `ModuleNotFoundError: matplotlib` — **pre-existing**, verified by
+  stashing the change and re-running. matplotlib is not a dev dependency.
+
+### Follow-ups needed
+
+- `mayaastrolib/predictives/profections.py` is now an empty module — decide in
+  v1.0-03/05 whether it survives 1.0 at all.
+- `Aspect.exists()` and `const.NO_ASPECT` are now nearly vestigial; worth a
+  look during the v1.0-05 API freeze.
+
+---
+
 ## 2026-07-25 — Task v1.0-01b — per-thread Swiss Ephemeris path
 
 Branch `v1.0-01b-thread-ephe-path`. Not in the v1.0 backlog — inserted ahead

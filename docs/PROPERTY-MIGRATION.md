@@ -50,7 +50,7 @@ existing code does this, and the new code never should.
 | `Object.isPlanet`, `Object.isDirect`, `Object.isRetrograde`, `Object.isStationary`, `Object.isFast` | These have `is` prefix — they read like predicates and the convention is to keep them as methods. |
 | `House.isAboveHorizon`, `House.inHouse`, `House.hasObject` | `is` / `has` / `in` prefix — predicates, not getters. |
 | `FixedStar.aspects` | Takes an argument; not a getter. |
-| `Object.relocate`, `Object.antiscia`, `Object.cantiscia` | Have side effects or transform the object — semantically methods. As of Task 010, all three are deprecated and slated for 1.0 removal. Migrate to `obj.with_longitude(lon)` / `obj.antiscion()` / `obj.cantiscion()`. |
+| ~~`Object.relocate`, `Object.antiscia`, `Object.cantiscia`~~ | Had side effects or transformed the object — semantically methods, so never converted to properties. Deprecated in Task 010 and **removed in 1.0** (Task v1.0-02). Use `obj.with_longitude(lon)` / `obj.antiscion()` / `obj.cantiscion()`. |
 | `Object.eqCoords` | Takes an argument (`zerolat`). |
 | `GenericObject.copy` | Constructs a new object — semantically a method. |
 
@@ -64,6 +64,14 @@ existing code does this, and the new code never should.
 - `__hash__`, `__str__`, `__repr__`, `__int__`, `__float__` delegate to the value.
 
 Internal library code uses bare property access (`obj.movement`, no parens) so it never emits warnings against itself. External code keeps both styles working through 1.0.
+
+## Scope note (Task v1.0-02)
+
+The 1.0 removal of the *function/method-level* deprecations (Task v1.0-02)
+did **not** touch this property migration. `_compat.py` and every
+`@property_with_method_compat` decorator are still in place, so `obj.movement`
+and `obj.movement()` both still work. The removal plan below is a separate,
+still-pending piece of work.
 
 ## Removal plan (1.0)
 
