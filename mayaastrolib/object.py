@@ -14,7 +14,6 @@ from __future__ import annotations
 from typing import Any
 
 from . import angle, const, props, utils
-from ._compat import property_with_method_compat
 
 __all__ = [
     "GenericObject",
@@ -86,7 +85,7 @@ class GenericObject:
 
     # === Properties === #
 
-    @property_with_method_compat
+    @property
     def orb(self) -> float:
         """Returns the orb of this object."""
         return -1.0
@@ -213,17 +212,17 @@ class Object(GenericObject):
 
     # === Properties === #
 
-    @property_with_method_compat
+    @property
     def orb(self) -> float:
         """Returns the orb of this object."""
         return props.object.orb[self.id]
 
-    @property_with_method_compat
+    @property
     def meanMotion(self) -> float:
         """Returns the mean daily motion of this object."""
         return props.object.meanMotion[self.id]
 
-    @property_with_method_compat
+    @property
     def movement(self) -> str | None:
         """Returns if this object is direct, retrograde or stationary.
 
@@ -242,17 +241,17 @@ class Object(GenericObject):
         else:
             return const.RETROGRADE
 
-    @property_with_method_compat
+    @property
     def gender(self) -> str:
         """Returns the gender of this object."""
         return props.object.gender[self.id]
 
-    @property_with_method_compat
+    @property
     def faction(self) -> str:
         """Returns the faction of this object."""
         return props.object.faction[self.id]
 
-    @property_with_method_compat
+    @property
     def element(self) -> str:
         """Returns the element of this object."""
         return props.object.element[self.id]
@@ -371,7 +370,7 @@ class House(GenericObject):
 
     # === Properties === #
 
-    @property_with_method_compat
+    @property
     def num(self) -> int:
         """Returns the number of this house [1..12].
 
@@ -381,7 +380,7 @@ class House(GenericObject):
         """
         return self._num
 
-    @property_with_method_compat
+    @property
     def condition(self) -> str:
         """Returns the condition of this house.
         The house can be angular, succedent or cadent.
@@ -389,7 +388,7 @@ class House(GenericObject):
         """
         return props.house.condition[self.id]
 
-    @property_with_method_compat
+    @property
     def gender(self) -> str:
         """Returns the gender of this house."""
         return props.house.gender[self.id]
@@ -445,7 +444,7 @@ class FixedStar(GenericObject):
     # Map magnitudes to orbs
     _ORBS = [[2, 7.5], [3, 5.5], [4, 3.5], [5, 1.5]]
 
-    @property_with_method_compat
+    @property
     def orb(self) -> float:
         """Returns the orb of this fixed star."""
         for mag, orb in FixedStar._ORBS:

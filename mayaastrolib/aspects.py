@@ -35,7 +35,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from . import angle, const
-from ._compat import property_with_method_compat
 
 __all__ = [
     "MAX_MINOR_ASP_ORB",
@@ -358,7 +357,7 @@ class Aspect:
         """Returns if this aspect is valid."""
         return self.type != const.NO_ASPECT
 
-    @property_with_method_compat
+    @property
     def movement(self) -> str:
         """Returns the movement of this aspect.
         The movement is the one of the active object, except

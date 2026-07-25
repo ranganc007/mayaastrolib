@@ -24,6 +24,25 @@ Pin `mayaastrolib<1.0` if you need the shim while migrating. Built wheels and
 sdists now contain only `mayaastrolib` (`[tool.setuptools.packages.find]` no
 longer globs `flatlib*`).
 
+#### Method-style property access
+
+`obj.movement()`, `obj.orb()`, `obj.element()` and the rest of the
+method-style forms now raise `TypeError`. Use bare attribute access:
+
+```python
+obj.movement()   →  obj.movement
+house.num()      →  house.num
+aspect.movement()→  aspect.movement
+```
+
+Task 006 converted 12 methods to properties but kept the call form working
+behind a `DeprecationWarning` that named 1.0 as the removal. This honours it:
+`mayaastrolib/_compat.py` and its `property_with_method_compat` decorator are
+gone, and the 12 properties are plain `@property`. Nothing else changes —
+attribute access, the falsy-value truthiness fix, the `None` passthrough on
+symbolic charts, and the downstream types (`Object.movement` is `str | None`)
+all behave exactly as before. See `docs/PROPERTY-MIGRATION.md`.
+
 #### Deprecated functions and methods
 
 Every symbol below shipped with a `DeprecationWarning` that said it would be

@@ -6,6 +6,64 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-02b — finish the property migration
+
+Branch `v1.0-02b-remove-property-migration`. Not in the backlog — created
+because the **v1.0-08 release gate caught a contradiction** the earlier prompts
+had left behind.
+
+### The contradiction
+
+`_compat.py` emitted *"Method-style access will be removed in version 1.0."*,
+and `docs/PROPERTY-MIGRATION.md` said the same. But prompt v1.0-02 explicitly
+scoped that removal **out** ("Removing `_compat.py` ... not slated for 1.0
+removal"). So 1.0 was about to ship telling users something had been removed in
+1.0 that was still there. The v1.0-08 pre-flight gate ("no symbol still emits a
+'removed in version 1.0' DeprecationWarning") exists precisely to catch this,
+and it did — 4 of its 5 checks passed, this one failed.
+
+The prompt's instruction on a failed gate is explicit: *stop and fix in the
+appropriate earlier task's follow-up — do not paper over it in the release
+commit.* Surfaced to the maintainer with both options costed; they chose
+removal over retargeting the warning to 2.0.
+
+### What was done
+
+- The 12 `@property_with_method_compat` decorators (11 `object.py`, 1
+  `aspects.py`) became plain `@property`.
+- Deleted `mayaastrolib/_compat.py` and `tests/test_compat.py`.
+- `docs/PROPERTY-MIGRATION.md` rewritten as a completed record;
+  `docs/API-STABILITY.md` known-wrinkle entry removed.
+
+The change was mechanically clean because **nothing called the method form** —
+not the library, not the tests, not the recipes. Internal code had used bare
+access since Task 006 by design.
+
+### Verified after the change
+
+- `obj.movement` / `obj.element` / `house.num` read identically.
+- The **truthiness fix** that motivated the entire migration survives:
+  `bool(obj.movement)` reflects the value. A plain `@property` provides this
+  natively — the original bug was that a *bound method object* is always truthy.
+- `None` passthrough on symbolic charts: `obj.movement is None` still true when
+  `lonspeed` is `None`.
+- Downstream types unchanged: `Object.movement` reveals `str | None`,
+  `Object.element` reveals `str`.
+- `obj.movement()` now raises `TypeError: 'str' object is not callable`.
+- `660 passed, 716 subtests` (671 − 11, exactly the deleted `test_compat.py`
+  cases). mypy clean across 48 files (was 49). ruff clean.
+
+### Note on v1.0-04
+
+That task typed the decorator `Callable[[Any], _T] -> _T` to stop the 12
+properties resolving as `Any` downstream. Deleting the decorator supersedes
+that work — a plain `@property` yields the same types natively, and without the
+`# type: ignore` the annotation required. The v1.0-04 change was still correct
+for the tree as it stood; it simply had a shorter life than expected. Recording
+it so the history is not confusing.
+
+---
+
 ## 2026-07-25 — Task v1.0-06 — Sphinx/ReadTheDocs, docstrings, README accuracy
 
 Branch `v1.0-06-docs-sphinx-readme`.

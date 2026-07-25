@@ -13,7 +13,7 @@ A name is **public** if and only if it appears in its module's `__all__`.
 
 Two corollaries:
 
-- A leading underscore (`_ephe_session`, `_getPart_impl`, `mayaastrolib/_compat.py`)
+- A leading underscore (`_ephe_session`, `_getPart_impl`, `_aspectProperties`)
   always means internal. These can change or disappear in any release,
   including a patch.
 - **No underscore does not imply public.** A module-level name absent from
@@ -131,10 +131,6 @@ does not rename anything in it.
   `isDirect`, `arabicPart`) inherited from flatlib, against PEP 8. Renaming
   is tracked in `docs/IDEAS.md` and would be a 2.0 change under the policy
   above.
-- **`property_with_method_compat`.** `obj.movement` and `obj.movement()`
-  both work. Only property access is type-annotated; the call form is
-  deprecated and slated for removal with `_compat.py`. See
-  `docs/PROPERTY-MIGRATION.md`.
 - **`Aspect.exists()` / `const.NO_ASPECT`** are near-vestigial now that
   `getAspect()` returns `None` and the sentinel constructor is gone. Public,
   but no library code produces a `NO_ASPECT` Aspect.

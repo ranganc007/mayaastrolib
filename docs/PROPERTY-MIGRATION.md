@@ -1,6 +1,11 @@
 # Method-to-Property Migration
 
-This document tracks the methods that were converted to `@property_with_method_compat` in Task 006. The decorator (in `mayaastrolib/_compat.py`) makes both `obj.thing` (preferred) and `obj.thing()` (deprecated, with `DeprecationWarning`) return the same value. Both styles work until version 1.0, when the decorator and the method-style access will be removed.
+> **Status: complete.** The migration finished in 1.0 (Task v1.0-02b). The
+> methods below are now plain `@property`; `mayaastrolib/_compat.py` and the
+> deprecated method-style access (`obj.movement()`) are **gone**. This document
+> is kept as the record of what changed and why.
+
+This document tracks the methods converted to properties in Task 006. From Task 006 through 0.5.0 they used a `property_with_method_compat` decorator so that both `obj.thing` (preferred) and `obj.thing()` (deprecated, with `DeprecationWarning`) returned the same value. 1.0 removed the decorator and the method-style form, as every one of those warnings said it would.
 
 ## Why this exists
 
@@ -67,19 +72,35 @@ Internal library code uses bare property access (`obj.movement`, no parens) so i
 
 As of Task v1.0-04 the decorator is typed `Callable[[Any], _T] -> _T`, so each migrated property exposes its real value type to downstream type checkers (`Object.movement` reveals as `str | None`, `Object.element` as `str`; both were `Any`). The annotation models *property* access only — the deprecated `obj.movement()` call form is not typed and a type checker will flag it. That is intentional: it is the form being removed.
 
-## Scope note (Task v1.0-02)
+## Removal (Task v1.0-02b, shipped in 1.0)
 
-The 1.0 removal of the *function/method-level* deprecations (Task v1.0-02)
-did **not** touch this property migration. `_compat.py` and every
-`@property_with_method_compat` decorator are still in place, so `obj.movement`
-and `obj.movement()` both still work. The removal plan below is a separate,
-still-pending piece of work.
+Task v1.0-02 removed the *function/method-level* deprecations but deliberately
+left this migration alone. The v1.0-08 release gate then caught the
+contradiction: `_compat.py` was still emitting *"Method-style access will be
+removed in version 1.0"* while 1.0 was about to ship with it intact. Rather
+than retarget the warning to 2.0 and extend a deprecation past the version
+users were promised, the removal was done.
 
-## Removal plan (1.0)
+What changed:
 
-When the migration is removed:
+1. The 12 `@property_with_method_compat` decorators (11 in `object.py`, 1 in
+   `aspects.py`) became plain `@property`.
+2. `mayaastrolib/_compat.py` and `tests/test_compat.py` were deleted.
+3. Nothing else needed rewriting — the library, tests and recipes had **no**
+   method-style call sites; internal code had always used bare access.
 
-1. Delete `mayaastrolib/_compat.py`.
-2. Replace each `@property_with_method_compat` decorator with `@property` in `mayaastrolib/object.py` and `mayaastrolib/aspects.py`.
-3. Search for any remaining `obj.movement()` / `obj.orb()` etc. in tests, recipes, and dependent code, and rewrite to bare access.
-4. Drop this document.
+What is preserved, verified after the change:
+
+- `obj.movement`, `obj.element`, `house.num`, ... all read exactly as before.
+- The **truthiness fix** that motivated the whole migration: `bool(obj.movement)`
+  reflects the value. A plain `@property` gives this natively — it was the
+  bound-method object that was always truthy.
+- The `None` passthrough for symbolic charts: `obj.movement is None` still
+  works when `lonspeed` is `None`.
+- Downstream types: `Object.movement` still reveals as `str | None` and
+  `Object.element` as `str`. Task v1.0-04 achieved this by annotating the
+  decorator `Callable[[Any], _T] -> _T`; a plain `@property` gives the same
+  types natively, so that annotation (and its `# type: ignore`) is now
+  superseded.
+
+`obj.movement()` now raises `TypeError: 'str' object is not callable`.
