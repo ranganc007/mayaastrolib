@@ -277,7 +277,13 @@ class AspectObject:
     movement: str
 
     def __init__(self, properties: dict[str, Any]) -> None:
-        self.__dict__.update(properties)
+        # Explicit assignment (rather than self.__dict__.update) so the
+        # attribute set is statically known, matching Aspect.__init__.
+        # ``properties`` always carries exactly these three keys — see the
+        # ``prop1``/``prop2`` dicts built in _aspectProperties.
+        self.id = properties["id"]
+        self.inOrb = properties["inOrb"]
+        self.movement = properties["movement"]
 
 
 class Aspect:
