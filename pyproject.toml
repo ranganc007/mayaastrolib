@@ -47,6 +47,15 @@ dev = [
     "mypy==2.1.0",
     "skyfield>=1.46",  # tests/golden/generate_fixtures.py — MIT, dev-only
 ]
+# Pinned for the same reason as ruff/mypy above: the docs build runs under
+# `sphinx-build -W` (warnings are errors), and a new Sphinx or theme release
+# can introduce warnings in a tree that built clean at the last commit.
+docs = [
+    "sphinx==9.1.0",
+    "sphinx-rtd-theme==3.1.0",
+    "myst-parser==5.1.0",
+    "interrogate==1.7.0",  # docstring-coverage gate on the public surface
+]
 
 [project.urls]
 Homepage = "https://github.com/ranganc007/mayaastrolib"
