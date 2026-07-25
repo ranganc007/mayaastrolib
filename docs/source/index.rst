@@ -26,4 +26,5 @@ Contents
 
    installation
    tutorials/index
+   api/index
    faq

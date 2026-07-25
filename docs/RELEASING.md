@@ -51,3 +51,23 @@ twine check dist/*
 # https://pypi.org/manage/account/token/ , use it once, then delete it.
 twine upload dist/*          # username: __token__ , password: the fresh token
 ```
+
+## ReadTheDocs (one-time, manual)
+
+`.readthedocs.yaml` is committed and the Sphinx build is wired up, but
+**publishing still requires enabling the project once in the RTD dashboard** —
+that is a dashboard action, not a repo change:
+
+1. Sign in at <https://readthedocs.org> with the GitHub account that owns the
+   repo and *Import a Project* → `ranganc007/mayaastrolib`.
+2. RTD picks up `.readthedocs.yaml` automatically; no dashboard build settings
+   need changing.
+3. Enable *Build pull requests for this project* if you want doc previews on PRs.
+
+The build runs with `fail_on_warning: true`, matching the local gate
+(`sphinx-build -W`). Reproduce a failure locally with:
+
+```sh
+pip install -e ".[docs]"
+python -m sphinx -W -b html docs/source docs/_build
+```

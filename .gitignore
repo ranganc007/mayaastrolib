@@ -11,6 +11,7 @@
 
 # Documentation build
 docs/build
+docs/_build
 
 # Ignore specific files
 main.py
