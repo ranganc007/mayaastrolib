@@ -11,6 +11,7 @@ accessible.
 
 """
 
+import contextlib
 import functools
 import threading
 
@@ -67,13 +68,60 @@ SWE_HOUSESYS = {
 # swisseph calls are fast (µs–ms), so serialising them trades a little
 # parallelism for correctness; the async helpers keep the event loop free
 # regardless. See docs/CONCURRENCY.md.
+#
+# Do not take this lock directly in new code — use ``_ephe_session()`` below,
+# which also guarantees the ephemeris path for the calling thread.
 _SWE_LOCK = threading.RLock()
+
+# The Swiss Ephemeris C library can be compiled with its global state struct
+# (``swed``) in thread-local storage, and the Linux pyswisseph wheels are. On
+# those builds ``swe_set_ephe_path`` applies to the CALLING THREAD ONLY: a
+# worker thread starts with no ephemeris path, silently falls back to the
+# built-in Moshier ephemeris (positions off by ~0.02"), and cannot open the
+# fixed-star catalogue at all ("could not find star name ..."). macOS wheels
+# are built without thread-local ``swed``, which is why this never reproduced
+# locally — only in CI.
+#
+# So the path cannot be set once at import. Every thread must (re)apply it
+# before its first swisseph call. ``_ephe_session()`` below does that; use it
+# instead of taking ``_SWE_LOCK`` directly.
+_EPHE_PATH = None
+_ephe_thread_state = threading.local()
+
+
+def _ensure_ephe_path():
+    """Apply the configured ephemeris path if this thread hasn't yet.
+
+    Cheap: one thread-local attribute read on the hot path, and an actual
+    ``set_ephe_path`` call only the first time a given thread runs a swisseph
+    operation (or after :func:`setPath` changes the path).
+    """
+    path = _EPHE_PATH
+    if path is not None and getattr(_ephe_thread_state, "path", None) != path:
+        swisseph.set_ephe_path(path)
+        _ephe_thread_state.path = path
+
+
+@contextlib.contextmanager
+def _ephe_session():
+    """Serialise a swisseph operation AND guarantee this thread's ephe path.
+
+    Reentrant (``_SWE_LOCK`` is an RLock), so nested uses such as
+    ``sweFixedStar`` → ``_fixstar_mag`` are safe; the second
+    :func:`_ensure_ephe_path` is a no-op.
+    """
+    with _SWE_LOCK:
+        _ensure_ephe_path()
+        yield
 
 
 def setPath(path):
     """Sets the path for the swe files."""
+    global _EPHE_PATH
     with _SWE_LOCK:
+        _EPHE_PATH = path
         swisseph.set_ephe_path(path)
+        _ephe_thread_state.path = path
 
 
 # === Sidereal mode plumbing (Task 017) === #
@@ -87,7 +135,7 @@ def _sidereal_calc_ut(jd, sweObj, ayanamsa):
     """
     from mayaastrolib.vedic.ayanamsa import _swe_mode_for
 
-    with _SWE_LOCK:
+    with _ephe_session():
         swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
         return swisseph.calc_ut(jd, sweObj, swisseph.FLG_SIDEREAL)
 
@@ -96,7 +144,7 @@ def _sidereal_houses_ex(jd, lat, lon, hsys, ayanamsa):
     """Thread-safe sidereal :func:`swisseph.houses_ex` call."""
     from mayaastrolib.vedic.ayanamsa import _swe_mode_for
 
-    with _SWE_LOCK:
+    with _ephe_session():
         swisseph.set_sid_mode(_swe_mode_for(ayanamsa))
         return swisseph.houses_ex(jd, lat, lon, hsys, swisseph.FLG_SIDEREAL)
 
@@ -115,7 +163,7 @@ def sweObject(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAH
         ayanamsa: Used only when ``zodiac == ZODIAC_SIDEREAL``.
     """
     sweObj = SWE_OBJECTS[obj]
-    with _SWE_LOCK:
+    with _ephe_session():
         if zodiac == const.ZODIAC_SIDEREAL:
             sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
         else:
@@ -135,7 +183,7 @@ def sweObjectLon(obj, jd, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_
     See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
     """
     sweObj = SWE_OBJECTS[obj]
-    with _SWE_LOCK:
+    with _ephe_session():
         if zodiac == const.ZODIAC_SIDEREAL:
             sweList, flg = _sidereal_calc_ut(jd, sweObj, ayanamsa)
         else:
@@ -150,7 +198,7 @@ def sweNextTransit(obj, jd, lat, lon, flag):
     """
     sweObj = SWE_OBJECTS[obj]
     flag = swisseph.CALC_RISE if flag == "RISE" else swisseph.CALC_SET
-    with _SWE_LOCK:
+    with _ephe_session():
         trans = swisseph.rise_trans(jd, sweObj, flag, (lon, lat, 0))
     return trans[1][0]
 
@@ -164,7 +212,7 @@ def sweHouses(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.A
     See :func:`sweObject` for ``zodiac``/``ayanamsa`` semantics.
     """
     hsys_b = SWE_HOUSESYS[hsys]
-    with _SWE_LOCK:
+    with _ephe_session():
         if zodiac == const.ZODIAC_SIDEREAL:
             hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
         else:
@@ -192,7 +240,7 @@ def sweHouses(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.A
 def sweHousesLon(jd, lat, lon, hsys, zodiac=const.ZODIAC_TROPICAL, ayanamsa=const.AYANAMSA_LAHIRI):
     """Returns lists with house and angle longitudes."""
     hsys_b = SWE_HOUSESYS[hsys]
-    with _SWE_LOCK:
+    with _ephe_session():
         if zodiac == const.ZODIAC_SIDEREAL:
             hlist, ascmc = _sidereal_houses_ex(jd, lat, lon, hsys_b, ayanamsa)
         else:
@@ -219,13 +267,13 @@ def _fixstar_mag(star):
     stars at most) is safe and gives a hundreds-of-x speedup on
     bulk access.
     """
-    with _SWE_LOCK:
+    with _ephe_session():
         return swisseph.fixstar2_mag(star)
 
 
 def sweFixedStar(star, jd):
     """Returns a fixed star from the Ephemeris."""
-    with _SWE_LOCK:
+    with _ephe_session():
         sweList, stnam, flg = swisseph.fixstar2_ut(star, jd)
     mag = _fixstar_mag(star)
     return {"id": star, "mag": mag, "lon": sweList[0], "lat": sweList[1]}
@@ -237,7 +285,7 @@ def sweFixedStar(star, jd):
 def solarEclipseGlobal(jd, backward):
     """Returns the jd details of previous or next global solar eclipse."""
 
-    with _SWE_LOCK:
+    with _ephe_session():
         sweList = swisseph.sol_eclipse_when_glob(jd, backwards=backward)
     return {
         "maximum": sweList[1][0],
@@ -253,7 +301,7 @@ def solarEclipseGlobal(jd, backward):
 def lunarEclipseGlobal(jd, backward):
     """Returns the jd details of previous or next global lunar eclipse."""
 
-    with _SWE_LOCK:
+    with _ephe_session():
         sweList = swisseph.lun_eclipse_when(jd, backwards=backward)
     return {
         "maximum": sweList[1][0],

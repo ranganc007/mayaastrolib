@@ -9,6 +9,7 @@ tropical/sidereal concurrent computation cannot corrupt the global
 """
 
 import asyncio
+import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 
@@ -77,6 +78,73 @@ class ThreadSafetyTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=8) as ex:
             lons = list(ex.map(lambda _: grab(), range(32)))
         self.assertEqual(len(set(round(x, 9) for x in lons)), 1)
+
+
+class EphemerisPathPerThreadTests(unittest.TestCase):
+    """Regression tests for the thread-local ephemeris path (Task v1.0-01b).
+
+    The Swiss Ephemeris C library is built with its ``swed`` state struct in
+    thread-local storage on Linux, so ``swe_set_ephe_path`` — called once at
+    ``mayaastrolib.ephem`` import time, on the main thread — did not apply to
+    worker threads. Those threads silently fell back to the built-in Moshier
+    ephemeris (positions off by ~0.02") and could not open the fixed-star
+    catalogue at all.
+
+    These assert the path is now (re)applied per thread. They pass trivially
+    on macOS builds, where ``swed`` is process-global; they are the ones that
+    caught the Linux regression.
+    """
+
+    def _in_new_thread(self, fn):
+        box = {}
+
+        def run():
+            try:
+                box["value"] = fn()
+            except BaseException as exc:  # surface it in the parent
+                box["error"] = exc
+
+        t = threading.Thread(target=run)
+        t.start()
+        t.join()
+        if "error" in box:
+            raise box["error"]
+        return box["value"]
+
+    def test_worker_thread_has_the_ephemeris_path_applied(self):
+        from mayaastrolib.ephem import swe
+
+        self.assertIsNotNone(swe._EPHE_PATH, "ephemeris path was never configured")
+        seen = self._in_new_thread(
+            lambda: (
+                swe.sweObject(const.SUN, 2451545.0),
+                getattr(swe._ephe_thread_state, "path", None),
+            )[1]
+        )
+        self.assertEqual(
+            seen,
+            swe._EPHE_PATH,
+            "worker thread ran a swisseph call without the ephemeris path applied",
+        )
+
+    def test_worker_thread_positions_match_main_thread(self):
+        # The Moshier fallback differs from the .se1 files by ~0.02"; an exact
+        # match is the sharpest available assertion that both used the files.
+        from mayaastrolib.ephem import swe
+
+        expected = swe.sweObject(const.SUN, 2451545.0)
+        got = self._in_new_thread(lambda: swe.sweObject(const.SUN, 2451545.0))
+        self.assertEqual(got, expected)
+
+    @requires_fixstar_data
+    def test_worker_thread_can_read_the_star_catalogue(self):
+        # Fails outright (not just imprecisely) without a per-thread path:
+        # "swe_fixstar(): could not find star name algol".
+        from mayaastrolib.ephem import swe
+
+        expected = swe.sweFixedStar(const.STAR_ALGOL, 2451545.0)
+        got = self._in_new_thread(lambda: swe.sweFixedStar(const.STAR_ALGOL, 2451545.0))
+        self.assertEqual(got, expected)
 
 
 class AsyncHelperTests(unittest.TestCase):
