@@ -6,6 +6,77 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-04 — finish the public-API type hints
+
+Branch `v1.0-04-type-hints-core`. **Most of this prompt was already done** —
+0.4.0 typed `object.py`, `chart.py`, and `aspects.py`, restructured
+`Aspect.__init__` off `__dict__.update`, got mypy to zero, and shipped
+`py.typed`. Premises were re-verified before touching anything rather than
+re-doing finished work. Two genuine gaps remained.
+
+### Gap 1 — `AspectObject.__init__` still used `__dict__.update`
+
+0.4.0 fixed `Aspect.__init__` but not `AspectObject`, though the prompt asked
+for both ("Do the same for `AspectObject` if it uses the same pattern"). Now
+assigns `id` / `inOrb` / `movement` explicitly. `properties` always carries
+exactly those three keys — see the `prop1`/`prop2` dicts in
+`_aspectProperties`. No `__dict__.update` remains in the aspect model.
+
+(`object.py:54` `obj.__dict__.update(_dict)` in `GenericObject.fromDict` was
+left: it is a bulk-populate from an ephemeris dict, not a constructor
+enumerating a fixed field set, and the class-level annotations already teach
+mypy those attributes.)
+
+### Gap 2 — `_compat.py` was the last untyped module, and it mattered
+
+This was the real find. `property_with_method_compat` had no annotations, so
+mypy skipped its body **and** every property built with it resolved to `Any`
+for downstream consumers — while the package advertises `py.typed`. 13
+properties were affected across `Object`, `House`, and `Aspect`: `movement`,
+`element`, `gender`, `faction`, `meanMotion`, `orb`, `num`, `condition`.
+
+Typed as `Callable[[Any], _T] -> _T`. Measured before/after with
+`reveal_type` on a consumer-style script:
+
+| Expression | Before | After |
+|---|---|---|
+| `sun.movement` | `Any` | `str \| None` |
+| `sun.element` | `Any` | `str` |
+
+The annotation is a deliberate simplification, documented at the `return`:
+at runtime the decorator returns a `property` whose `__get__` yields a
+`_DualAccess` wrapper, not `_T`. But `_DualAccess` forwards `==`, `<`,
+`bool`, `str`, `hash`, `int`, `float` to the wrapped value, so `_T` is what
+attribute access effectively *is* for callers. The cost: the deprecated
+`obj.movement()` call form is no longer modelled and type checkers will flag
+it — which is the correct signal, since it goes away with the rest of the
+property migration. One narrow `# type: ignore[return-value]` at the
+decorator definition, as the prompt permitted, not scattered at call sites.
+
+### Surprises
+
+- Annotating the decorator made mypy start checking its body, which then
+  rejected `@property` applied to the nested `wrapper` ("property used with a
+  non-method"). Replaced with an explicit `return property(wrapper)` —
+  identical at runtime, and it sidesteps the mypy limitation without an
+  extra ignore.
+
+### Verification
+
+- `mypy mayaastrolib/` → *Success: no issues found in 49 source files*
+  (unchanged from the zero baseline; the point was the downstream types, not
+  the internal count).
+- `655 passed, 230 subtests`, **zero test edits** — as the prompt required,
+  since types are erased at runtime. Coverage 95%; ruff format/check clean.
+
+### Follow-ups needed
+
+- Prompt v1.0-07 should be re-scoped or retired the same way: 7a (six-fold
+  Shadbala) and 7c (KP horary cusps) shipped in 0.4.0. Only 7b (the Saham /
+  Tajika long tail) is genuinely open, and it is marked optional for 1.0.
+
+---
+
 ## 2026-07-25 — Task v1.0-03 — remove the flatlib compatibility package
 
 Branch `v1.0-03-remove-flatlib-shim`.

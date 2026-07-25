@@ -65,6 +65,8 @@ existing code does this, and the new code never should.
 
 Internal library code uses bare property access (`obj.movement`, no parens) so it never emits warnings against itself. External code keeps both styles working through 1.0.
 
+As of Task v1.0-04 the decorator is typed `Callable[[Any], _T] -> _T`, so each migrated property exposes its real value type to downstream type checkers (`Object.movement` reveals as `str | None`, `Object.element` as `str`; both were `Any`). The annotation models *property* access only — the deprecated `obj.movement()` call form is not typed and a type checker will flag it. That is intentional: it is the form being removed.
+
 ## Scope note (Task v1.0-02)
 
 The 1.0 removal of the *function/method-level* deprecations (Task v1.0-02)

@@ -78,6 +78,24 @@ Notes:
   `docs/CONCURRENCY.md`.
 
 ### Changed
+- **The `@property_with_method_compat` properties now carry real types.**
+  `mayaastrolib/_compat.py` was the last untyped module; because it returned
+  an unannotated decorator, all 13 properties built with it degraded to `Any`
+  for downstream type checkers — despite the package shipping `py.typed`.
+  It is now typed `Callable[[Any], _T] -> _T`, so e.g. `Object.movement`
+  reveals as `str | None` and `Object.element` as `str` (both were `Any`).
+  Affects `movement`, `element`, `gender`, `faction`, `meanMotion`, `orb`,
+  `num`, and `condition` on `Object` / `House` / `Aspect`.
+
+  Note the deliberate gap: the *deprecated* method-style call
+  (`obj.movement()`) is not modelled and a type checker will now flag it.
+  That is the intended signal — it is slated for removal with the rest of the
+  property migration (`docs/PROPERTY-MIGRATION.md`). Runtime behaviour is
+  unchanged; both spellings still work.
+- **`AspectObject.__init__` assigns its fields explicitly** instead of
+  `self.__dict__.update(properties)`, matching the `Aspect.__init__` change
+  made in 0.4.0. Behaviour identical; the attribute set is now statically
+  analysable. No `__dict__.update` remains in the aspect model.
 - **Dev tooling is pinned.** `ruff==0.15.16` and `mypy==2.1.0` in the `dev`
   extras (previously bare `"ruff"` / `"mypy"`). `ruff format` output and
   mypy's error set change between releases, so floating versions made the
