@@ -108,3 +108,57 @@ class MuddaDashaTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SahamTableIntegrityTests(unittest.TestCase):
+    """Guards for the Saham table itself (Task v1.0-07b).
+
+    The table is the place a mis-remembered classical formula would land,
+    and a wrong formula usually is not obviously wrong — it just quietly
+    duplicates one already present. These make that visible.
+    """
+
+    def _sahams_for(self, date, pos, year):
+        natal = Chart(date, pos, zodiac=const.ZODIAC_SIDEREAL)
+        annual = Chart(tajika.varshapravesh(natal, year), pos, zodiac=const.ZODIAC_SIDEREAL)
+        return tajika.sahams(annual)
+
+    def test_every_formula_is_a_four_tuple(self):
+        for name, formula in tajika._SAHAM_FORMULAS.items():
+            with self.subTest(saham=name):
+                self.assertEqual(len(formula), 4, f"{name}: expected (a, b, c, reversible)")
+
+    def test_no_two_sahams_are_the_same_point(self):
+        """Two Sahams landing on the same degree means the same formula twice.
+
+        `a - b + c` is commutative in a and c, so distinct-looking entries
+        can be algebraically identical. Checked on two charts — one diurnal,
+        one nocturnal — because some collisions only show up in one, the
+        day/night term swap hiding them in the other.
+        """
+        charts = [
+            (Datetime("1990/06/15", "14:30", "+05:30"), GeoPos("28n36", "77e12"), 2020),
+            (Datetime("1961/08/04", "19:24", "-10:00"), GeoPos("21n18", "157w51"), 2005),
+        ]
+        for date, pos, year in charts:
+            sahams = self._sahams_for(date, pos, year)
+            seen = {}
+            for name, lon in sahams.items():
+                key = round(lon, 6)
+                with self.subTest(chart=str(date), saham=name):
+                    self.assertNotIn(
+                        key,
+                        seen,
+                        f"{name} lands on the same degree as {seen.get(key)} — "
+                        f"the two formulas are algebraically identical",
+                    )
+                seen[key] = name
+
+    def test_all_sahams_are_normalised(self):
+        sahams = self._sahams_for(
+            Datetime("1990/06/15", "14:30", "+05:30"), GeoPos("28n36", "77e12"), 2020
+        )
+        for name, lon in sahams.items():
+            with self.subTest(saham=name):
+                self.assertGreaterEqual(lon, 0.0)
+                self.assertLess(lon, 360.0)

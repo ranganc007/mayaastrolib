@@ -6,6 +6,65 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-07b — Saham long tail (attempted; engine only)
+
+Branch `v1.0-07b-saham-tajika-tail`, **not merged** — `development` is being
+held still so the release checklist's `git merge --ff-only v1.0-08-cut-release`
+keeps working. This is 1.1 material anyway; prompt 07 says so itself.
+
+### What happened
+
+The goal was to extend `_SAHAM_FORMULAS` from 14 toward the classical ~50.
+I generalised the engine, added ten Sahams from recalled classical formulas,
+and computed them on a real annual chart. Three landed on **exactly** the same
+degree as Sahams already in the table:
+
+- `Paradara` (Venus − Sun + Asc) == `Kalatra` — identical formula
+- `Santapa` (Saturn − Moon + Asc) == `Roga` — identical formula
+- `Gaurava` (Jupiter − Moon + Sun) == `Yasas` on a diurnal chart —
+  algebraically identical, since `Yasas = Jupiter − Punya + Asc` and
+  `Punya = Moon − Sun + Asc`
+
+Confirmed on two independent charts, so not a coincidence of one
+configuration. That is what a mis-remembered formula looks like: not
+obviously wrong, just a quiet duplicate.
+
+### Why the data was reverted
+
+Three of ten demonstrably wrong means the other seven are not trustworthy
+either, and there is no text here to check them against. This project's
+stated standard is that correctness is *verified, not taken on trust*, and
+`docs/PROJECT-BRIEF-2026-07-25.md` already names the absence of an external
+oracle for the approximated Vedic techniques as the top gap. Shipping seven
+unverifiable formulas would have widened exactly that gap while *looking*
+like progress — the Saham count in the README would have gone up.
+
+So the ten Sahams were reverted. The table stays at 14.
+
+### What was kept, because it is verifiable
+
+- **The engine generalisation.** Entries went from `(a, b, reversible)` to
+  `(a, b, c, reversible)` with an explicit third term — several classical
+  formulas add a planet rather than the Lagna (Gaurava adds the Sun, Jadya
+  Mercury, Bandhana the Moon) and the old shape could not express them. Also
+  added a `"LagnaLord"` term, resolved through the existing `_SIGN_LORDS`
+  table, for formulas keyed to the Lagna's ruler. A sourced addition is now
+  data entry rather than code.
+- **`SahamTableIntegrityTests`** — every entry must be a four-tuple, every
+  Saham must be normalised, and **no two Sahams may land on the same degree**,
+  checked on one diurnal and one nocturnal chart (some collisions hide on one
+  or the other, because the day/night term swap masks them). Verified
+  red/green by re-adding the bad `Paradara` entry: it fails on both charts.
+
+### What extending the table actually needs
+
+A source to check against — Tajika Neelakanthi or Raman's *Varshaphala* —
+rather than recall. Each new entry then has to clear the collision test. The
+`vedic.tajika` module comment now records this so the next attempt does not
+repeat the same mistake.
+
+---
+
 ## 2026-07-25 — Task v1.0-02b — finish the property migration
 
 Branch `v1.0-02b-remove-property-migration`. Not in the backlog — created

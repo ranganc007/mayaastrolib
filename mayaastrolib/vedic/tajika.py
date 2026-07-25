@@ -347,33 +347,52 @@ SAHAM_VYAPARA = "Vyapara"  # business / trade
 SAHAM_ROGA = "Roga"  # illness
 SAHAM_BANDHU = "Bandhu"  # relatives / kin
 
-# Each entry: name -> (term_a, term_b, reversible).
-# term_a / term_b are either a planet ID (resolved to its sidereal
-# longitude in the annual chart), the literal "Asc" (the annual Lagna),
-# or a SAHAM_* name (resolved to that Saham's longitude — note: Sahams
-# that reference other Sahams must appear after them in this dict).
-# "reversible" Sahams swap term_a and term_b for a nocturnal chart.
-# Day formula in all cases: term_a - term_b + Asc.
+# Each entry: name -> (term_a, term_b, term_c, reversible).
 #
-# Saham formulas vary across sources; these follow Tajika Neelakanthi as
-# commonly reproduced (e.g. in B.V. Raman, *Varshaphala*). This is a
-# curated subset of the ~50-Saham list — the rest is a follow-up.
+# Day formula in all cases: ``term_a - term_b + term_c``. A "reversible"
+# Saham swaps term_a and term_b for a nocturnal chart; term_c never moves.
+# Most Sahams use the Lagna as term_c, but a few classical formulas add a
+# planet instead (Gaurava adds the Sun, Jadya adds Mercury, Bandhana adds
+# the Moon), which is why the third term is explicit rather than assumed.
+#
+# Each term is one of:
+#   * a planet ID          -> its sidereal longitude in the annual chart
+#   * "Asc"                -> the annual Lagna
+#   * "LagnaLord"          -> the sidereal longitude of the Lagna sign's lord
+#   * a SAHAM_* name       -> that Saham's longitude (it must be defined
+#                             earlier in this dict)
+#
+# SOURCING: Saham formulas vary materially across sources. These 14 follow
+# Tajika Neelakanthi as commonly reproduced (e.g. in B.V. Raman,
+# *Varshaphala*).
+#
+# The classical list runs to roughly 50. Extending this table is deliberately
+# NOT a from-memory exercise: an attempt to add ten more (Task v1.0-07b)
+# produced three that were algebraically identical to entries already here
+# (Paradara == Kalatra, Santapa == Roga, and Gaurava == Yasas on a diurnal
+# chart), which is what a mis-remembered formula looks like. Adding the
+# remainder needs a text to check against, and each new entry must clear the
+# collision test in tests/test_vedic_tajika.py.
+#
+# The engine below is ready for them: it supports an explicit third term
+# (several classical formulas add a planet rather than the Lagna) and the
+# "LagnaLord" term, so a sourced addition is data entry, not code.
 _SAHAM_FORMULAS = {
-    SAHAM_PUNYA: (const.MOON, const.SUN, True),
-    SAHAM_VIDYA: (const.SUN, const.MOON, True),
-    SAHAM_KARMA: (const.MARS, const.SUN, True),
-    SAHAM_PITRI: (const.SUN, const.SATURN, True),
-    SAHAM_MATRI: (const.MOON, const.VENUS, True),
-    SAHAM_BHRATRI: (const.JUPITER, const.SATURN, True),
-    SAHAM_PUTRA: (const.JUPITER, const.MOON, True),
-    SAHAM_KALATRA: (const.VENUS, const.SUN, True),
-    SAHAM_JEEVA: (const.SATURN, const.JUPITER, True),
-    SAHAM_VIVAHA: (const.VENUS, const.SATURN, True),
-    SAHAM_VYAPARA: (const.MERCURY, const.SUN, True),
-    SAHAM_ROGA: (const.SATURN, const.MOON, True),
-    SAHAM_BANDHU: (const.MERCURY, const.MOON, True),
+    SAHAM_PUNYA: (const.MOON, const.SUN, "Asc", True),
+    SAHAM_VIDYA: (const.SUN, const.MOON, "Asc", True),
+    SAHAM_KARMA: (const.MARS, const.SUN, "Asc", True),
+    SAHAM_PITRI: (const.SUN, const.SATURN, "Asc", True),
+    SAHAM_MATRI: (const.MOON, const.VENUS, "Asc", True),
+    SAHAM_BHRATRI: (const.JUPITER, const.SATURN, "Asc", True),
+    SAHAM_PUTRA: (const.JUPITER, const.MOON, "Asc", True),
+    SAHAM_KALATRA: (const.VENUS, const.SUN, "Asc", True),
+    SAHAM_JEEVA: (const.SATURN, const.JUPITER, "Asc", True),
+    SAHAM_VIVAHA: (const.VENUS, const.SATURN, "Asc", True),
+    SAHAM_VYAPARA: (const.MERCURY, const.SUN, "Asc", True),
+    SAHAM_ROGA: (const.SATURN, const.MOON, "Asc", True),
+    SAHAM_BANDHU: (const.MERCURY, const.MOON, "Asc", True),
     # Yasas references the Punya Saham, so it comes last.
-    SAHAM_YASAS: (const.JUPITER, SAHAM_PUNYA, True),
+    SAHAM_YASAS: (const.JUPITER, SAHAM_PUNYA, "Asc", True),
 }
 
 # Bodies whose sidereal longitudes the Saham formulas may reference.
@@ -419,6 +438,11 @@ def sahams(annual_chart, ayanamsa=const.AYANAMSA_LAHIRI):
     def _term(t, computed):
         if t == "Asc":
             return asc
+        if t == "LagnaLord":
+            lord = _SIGN_LORDS[int(asc // 30)]
+            if lord not in body_lons:
+                raise ValueError(f"Lagna lord {lord!r} is not among the Saham bodies")
+            return body_lons[lord]
         if t in body_lons:
             return body_lons[t]
         if t in computed:
@@ -426,10 +450,11 @@ def sahams(annual_chart, ayanamsa=const.AYANAMSA_LAHIRI):
         raise ValueError(f"Unresolvable Saham term {t!r}")
 
     computed = {}
-    for name, (a, b, reversible) in _SAHAM_FORMULAS.items():
+    for name, (a, b, c, reversible) in _SAHAM_FORMULAS.items():
         va = _term(a, computed)
         vb = _term(b, computed)
+        vc = _term(c, computed)
         if reversible and not diurnal:
             va, vb = vb, va
-        computed[name] = (va - vb + asc) % 360.0
+        computed[name] = (va - vb + vc) % 360.0
     return computed
