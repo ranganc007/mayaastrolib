@@ -71,3 +71,59 @@ The build runs with `fail_on_warning: true`, matching the local gate
 pip install -e ".[docs]"
 python -m sphinx -W -b html docs/source docs/_build
 ```
+
+## Maintainer checklist — cutting 1.0.0
+
+Everything below the line has been prepared and verified on the
+`v1.0-08-cut-release` branch. The tag and the GitHub Release are deliberately
+**not** automated: publishing to PyPI is irreversible (a version can never be
+re-uploaded), so it stays a reviewed human action.
+
+Prepared and verified already:
+
+- [x] `pyproject.toml` version is `1.0.0`; `Development Status :: 5 -
+      Production/Stable`; `Typing :: Typed`; `requires-python >=3.10`; URLs and
+      README long-description in place.
+- [x] `CHANGELOG.md` has a dated `## [1.0.0]` section leading with the
+      "Migrating from 0.x" guide.
+- [x] Pre-flight gate: ruff format + ruff check + mypy clean; full suite green
+      with coverage well above the 80% floor; `python -m build` +
+      `twine check` clean; the wheel contains only `mayaastrolib`; **no
+      `DeprecationWarning` remains anywhere in the package**;
+      `docs/API-STABILITY.md` present and enforced by `tests/test_public_api.py`.
+- [x] `publish.yml` verifies the release tag matches the `pyproject.toml`
+      version before publishing, so a stale version cannot ship under a new tag.
+
+To actually release:
+
+```sh
+# 1. Land the release prep (it is on v1.0-08-cut-release, unmerged by design)
+git checkout development
+git merge --ff-only v1.0-08-cut-release
+git push origin development
+
+# 2. Promote to master — master is the release branch
+git checkout master
+git merge --ff-only development
+git push origin master
+
+# 3. Tag it
+git tag -a v1.0.0 -m "mayaastrolib 1.0.0 — frozen public API, deprecations cleared"
+git push origin v1.0.0
+
+# 4. Create the GitHub Release. Publishing it fires publish.yml, which builds,
+#    checks the tag against the version, smoke-tests the wheel in a clean venv,
+#    and uploads to PyPI via Trusted Publishing (OIDC — no token anywhere).
+gh release create v1.0.0 \
+  --title "mayaastrolib 1.0.0" \
+  --notes-file <(sed -n '/^## \[1.0.0\]/,/^## \[0.5.0\]/p' CHANGELOG.md | sed '$d')
+
+# 5. Watch it
+gh run watch --repo ranganc007/mayaastrolib
+```
+
+Afterwards:
+
+- [ ] Confirm <https://pypi.org/project/mayaastrolib/1.0.0/> exists.
+- [ ] `pip install mayaastrolib==1.0.0` in a scratch venv and compute a chart.
+- [ ] Enable the ReadTheDocs project (see the section above) if not already.
