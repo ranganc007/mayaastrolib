@@ -8,6 +8,7 @@ objects in mayaastrolib. An aspect is an angular relation
 between a planet and another object.
 
 This module has the following base terminology:
+
 - Active/Passive object: The active object is the planet
   responsible for the aspect.
 - Separation: the angular distance between the active and

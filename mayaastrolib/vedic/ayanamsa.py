@@ -4,6 +4,7 @@ The ayanamsa is a slowly-varying angle (~50 arcseconds/year) measuring
 precession of the equinoxes since the canonical epoch of each tradition.
 
 Supported:
+
 - **Lahiri** — the standard for Indian Vedic astrology; the Indian
   Astronomical Ephemeris uses it.
 - **Krishnamurti** — the KP system's ayanamsa (K.S. Krishnamurti's own
@@ -13,6 +14,7 @@ Supported:
   provided for comparison and Western-sidereal consumers).
 
 References:
+
 - Indian Astronomical Ephemeris (Lahiri canonical implementation)
 - pyswisseph ``swe.get_ayanamsa_ut(jd)`` with ``set_sid_mode``
 - IAU 1976 nutation/precession model

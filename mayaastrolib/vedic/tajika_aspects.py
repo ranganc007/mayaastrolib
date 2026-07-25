@@ -24,6 +24,7 @@ work on a real ephemeris chart (a varshapravesh / annual chart), not a
 symbolic one — a symbolic chart's planets have `lonspeed is None`.
 
 References:
+
 - Tajika Neelakanthi ch. 4-5 (the 16 Tajika yogas; Ithasala, Isharafa,
   Nakta, Yamaya, Kambula, ...)
 - B.V. Raman, *Varshaphala* (orb / deeptamsha tables)

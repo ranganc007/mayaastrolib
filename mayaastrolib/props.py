@@ -34,6 +34,12 @@ __all__ = [
 
 
 class base:
+    """Base qualities shared across the system.
+
+    Namespace for the elemental, temperament, and gender/faction tables
+    that the sign, object and house namespaces build on.
+    """
+
     # The four elements
     elements = [const.FIRE, const.EARTH, const.AIR, const.WATER]
 
@@ -104,6 +110,12 @@ class base:
 
 
 class sign:
+    """Properties of the twelve zodiac signs.
+
+    Element, quality (cardinal/fixed/mutable), gender, faction, ruler and
+    the seasonal/temperament associations for each sign.
+    """
+
     _signs = const.LIST_SIGNS
 
     # Modes
@@ -153,6 +165,12 @@ class sign:
 
 
 class object:  # noqa: A001 — public API; renaming is a breaking change deferred to a future major version
+    """Properties of the planets and other chart objects.
+
+    Orbs, mean daily motion, gender, faction, element and temperament per
+    object ID, plus the sect and joy tables used by the dignity engines.
+    """
+
     # Mean daily motions
     meanMotion = {
         const.NO_PLANET: 0,
@@ -265,6 +283,12 @@ class object:  # noqa: A001 — public API; renaming is a breaking change deferr
 
 
 class house:
+    """Properties of the twelve houses.
+
+    Condition (angular/succedent/cadent), gender, and the above/below the
+    horizon grouping.
+    """
+
     _houses = const.LIST_HOUSES
 
     # House conditions
@@ -300,6 +324,12 @@ class house:
 
 
 class aspect:
+    """Properties of the aspects.
+
+    Which aspects are major, minor or all, and the per-aspect metadata used
+    when computing an :class:`~mayaastrolib.aspects.Aspect`.
+    """
+
     # Names
     name = {
         # Major Aspects
@@ -327,6 +357,11 @@ class aspect:
 
 
 class fixedStar:
+    """Properties of the fixed stars.
+
+    The magnitude-to-orb mapping used to size a fixed star's orb.
+    """
+
     pass
 
 
@@ -336,4 +371,10 @@ class fixedStar:
 
 
 class houseSystem:
+    """Properties of the supported house systems.
+
+    Groups the house-system constants (Placidus, Koch, Whole Sign, ...) by
+    the characteristics that affect chart construction.
+    """
+
     pass

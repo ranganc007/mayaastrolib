@@ -299,8 +299,9 @@ def kp_horary(prashna_number):
     with house cusps from a fixed Ascendant degree is a follow-up.)
 
     Returns:
-        Dict ``{"prashna": int, "lagna_longitude": float, "lagna":
-        <sub_lord_at dict including sub_sub_lord>}``.
+        A dict with keys ``prashna`` (int), ``lagna_longitude`` (float),
+        and ``lagna`` — the :func:`sub_lord_at` chain, including
+        ``sub_sub_lord``.
     """
     lon = prashna_to_longitude(prashna_number)
     return {
@@ -329,10 +330,10 @@ def kp_horary_chart(prashna_number):
         prashna_number: An integer in ``[1, 249]``.
 
     Returns:
-        Dict ``{"prashna": int, "lagna_longitude": float, "houses":
-        [chain_1, ..., chain_12]}`` where each ``chain_i`` is the
-        :func:`sub_lord_at` result (with sub-sub-lord) for cusp ``i``,
-        carrying an extra ``"cusp"`` key (1..12).
+        A dict with keys ``prashna`` (int), ``lagna_longitude`` (float),
+        and ``houses`` — a list of 12 chains. Each chain is the
+        :func:`sub_lord_at` result (with sub-sub-lord) for that cusp,
+        carrying an extra ``cusp`` key numbered 1 to 12.
 
     Raises:
         ValueError: if ``prashna_number`` is outside ``[1, 249]``.

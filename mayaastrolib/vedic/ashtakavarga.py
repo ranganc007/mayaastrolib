@@ -7,6 +7,7 @@ Ascendant — hence "ashta", eight). The Sarvashtakavarga (SAV) sums the
 7 planetary BAVs per sign; the grand total is canonically 337.
 
 This module also provides:
+
 - the *prastara* (per-contributor breakdown) — `bhinnashtakavarga_prastara`;
 - the *shodhana* reductions — `trikona_shodhana` (by trine),
   `ekadhipatya_shodhana` (by co-rulership), and `shodhita_sarvashtakavarga`
@@ -18,6 +19,7 @@ House counting convention: "house h from contributor C" means the sign
 ``(c_sign + h - 1) % 12`` — house 1 is C's own sign.
 
 References:
+
 - Brihat Parashara Hora Shastra (BPHS) ch. 66 (Prastara), ch. 8
   (Shodhana, Kakshya)
 - Phaladeepika ch. 19 (cross-reference)

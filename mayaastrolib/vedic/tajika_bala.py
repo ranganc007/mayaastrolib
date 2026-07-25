@@ -171,9 +171,10 @@ def harsha_bala(chart, ayanamsa=const.AYANAMSA_LAHIRI):
         ayanamsa: Used only when the chart is tropical.
 
     Returns:
-        Dict ``{planet_id: {"components": {hemisphere, gender, dignity,
-        decanate, joy}, "total": int}}``. Each component is 0 or 5;
-        total ∈ [0, 25].
+        A dict keyed by planet ID. Each value has ``components`` (a dict
+        with the keys ``hemisphere``, ``gender``, ``dignity``,
+        ``decanate`` and ``joy``) and ``total`` (an int). Each component
+        is 0 or 5, so the total is in [0, 25].
     """
     is_diurnal = chart.isDiurnal()
     data = _planet_data(chart, ayanamsa)
@@ -237,8 +238,9 @@ def panchavargiya_bala(chart, ayanamsa=const.AYANAMSA_LAHIRI):
     verified replica of any single text.
 
     Returns:
-        Dict ``{planet_id: {"components": {kshetra, uchcha, hadda,
-        drekkana, navamsa}, "total": float}}``.
+        A dict keyed by planet ID. Each value has ``components`` (a dict
+        with the keys ``kshetra``, ``uchcha``, ``hadda``, ``drekkana``
+        and ``navamsa``) and ``total`` (a float).
     """
     data = _planet_data(chart, ayanamsa)
     result = {}
