@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mayaastrolib"
-version = "0.5.0"
+version = "1.0.0"
 description = "Python library for Traditional and Vedic Astrology (fork of flatangle/flatlib)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -23,11 +23,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Other Environment",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Typing :: Typed",
 ]
 dependencies = [
     "pyswisseph>=2.10.3.2",
