@@ -6,6 +6,80 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-01b — per-thread Swiss Ephemeris path
+
+Branch `v1.0-01b-thread-ephe-path`. Not in the v1.0 backlog — inserted ahead
+of prompt 02 because it was blocking the "CI green" definition-of-done of
+every remaining prompt.
+
+### What was found
+
+`Tests` had been failing on `development` since the 0.5.0 release commit
+(2026-06-08) — seven weeks, every Python version, four tests, never noticed
+because the suite is green on macOS. v1.0-01's skip-guard did **not** silence
+them, and that was the diagnostic that cracked it:
+
+- In the *same* CI run, `test_serialization::test_fixedstar_dict_has_mag` and
+  all of `test_fixstar_mag_cache` **passed** (main thread) while
+  `test_fixedstar_under_threads` **failed** with `could not find star name
+  algol` (worker thread). Same machine, same data files.
+- The three other failures were latitude mismatches of ~5.7e-6° (0.02″)
+  between the serial reference and the threaded/async result — the signature
+  of the built-in Moshier fallback vs the `.se1` files.
+
+One root cause: the Linux `pyswisseph` wheels are built with the Swiss
+Ephemeris `swed` state struct in **thread-local storage**. `swe_set_ephe_path`
+therefore applies to the calling thread only. `mayaastrolib/ephem/__init__.py`
+sets it once at import, on the main thread, so every worker thread ran with no
+ephemeris path at all. macOS wheels are built without thread-local `swed`,
+hence green locally.
+
+Impact: this hit precisely the feature 0.5.0 shipped for — `mayaastrolib.aio`
+runs the computation in an executor thread, so `await afull_report(...)`
+returned quietly less accurate values than `full_report(...)`, and any
+fixed-star access from a thread raised.
+
+### What was done
+
+- `ephem/swe.py`: added `_EPHE_PATH` + `_ephe_thread_state` (a
+  `threading.local`), `_ensure_ephe_path()`, and `_ephe_session()` — a context
+  manager that takes `_SWE_LOCK` *and* guarantees the calling thread's path.
+  All twelve swisseph entry points now use it instead of the bare lock;
+  `setPath` records the path and marks its own thread. Reentrancy preserved
+  (`sweFixedStar` → `_fixstar_mag`).
+- `tests/test_concurrency.py`: new `EphemerisPathPerThreadTests` (3 tests).
+- `docs/CONCURRENCY.md`: documents the thread-local `swed` hazard and the
+  "use `_ephe_session()`, not `_SWE_LOCK`" rule for new code.
+
+### Verification
+
+- Red/green: with `_ensure_ephe_path` monkeypatched to a no-op via a pytest
+  `-p` plugin, `test_worker_thread_has_the_ephemeris_path_applied` fails
+  (`AssertionError: None != '.../swefiles'`); with the fix it passes. That
+  test asserts our own thread-local bookkeeping, so it is platform-independent
+  — it goes red on macOS too. The other two only bite on thread-local builds
+  (documented in the class docstring).
+- Local: `667 passed, 230 subtests`, coverage **95.05%**; ruff format/check
+  clean; `mypy mayaastrolib/` clean.
+- CI is the real verdict here, since the bug does not reproduce on macOS.
+
+### Surprises
+
+- The v1.0-01 prompt's "four tests fail" claim was **right** — I had
+  provisionally recorded it as stale after seeing them pass locally. The count
+  and the file were correct; only the *explanation* ("the data file is not
+  vendored") was wrong. Corrected the v1.0-01 entry below accordingly.
+
+### Follow-ups needed
+
+- `docs/PROJECT-BRIEF-2026-07-25.md` lists "CI green" among the project's
+  strengths. It was not, and had not been since 0.5.0. Worth a note there once
+  CI is actually green.
+- Consider whether `package.yml`'s clean-venv smoke test should exercise a
+  threaded chart, which would have caught this at 0.5.0.
+
+---
+
 ## 2026-07-25 — Task v1.0-01 — release hygiene (pinned tooling, hermetic tests)
 
 Branch `v1.0-01-release-hygiene`. First item of the road-to-1.0 backlog
@@ -36,7 +110,13 @@ reader does not "re-fix" them:
    still worth having — it is what makes that statement stay true — but there
    was no formatting drift to settle.
 2. **"The star data file is not vendored"** and **"four tests in
-   `tests/test_concurrency.py` hard-fail."** Both inaccurate.
+   `tests/test_concurrency.py` hard-fail."** The *diagnosis* is wrong; the
+   *observation* is right. **Corrected by Task v1.0-01b (see the entry above):
+   four tests in that file really were failing — in CI, on every Python
+   version, since 0.5.0 — because the ephemeris path is thread-local on Linux,
+   not because anything is missing from the repo.** The rest of this item
+   stands: the files are present and the guard below does not address the real
+   cause.
    `sefstars.txt` and `fixstars.cat` are tracked in git under
    `mayaastrolib/resources/swefiles/`, shipped via `[tool.setuptools.package-data]`,
    and `mayaastrolib/ephem/__init__.py` points swisseph at them on import — so

@@ -14,10 +14,28 @@ The Swiss Ephemeris C library is **not** fully thread-safe:
   thread's `set_sid_mode` and its `calc_ut`.
 - The library keeps internal static buffers and caches across calls.
 
+- On some platforms the library's global state struct (`swed`) lives in
+  **thread-local storage** — the Linux `pyswisseph` wheels are built this
+  way, the macOS ones are not. On those builds `swe_set_ephe_path` applies
+  only to the calling thread.
+
 To make the engine safe, **every** `swisseph` entry point in
-`mayaastrolib.ephem.swe` is serialised behind a single reentrant lock
-(`_SWE_LOCK`). It is an `RLock` because a few helpers nest calls (e.g.
-`sweFixedStar` → `_fixstar_mag`).
+`mayaastrolib.ephem.swe` runs inside `_ephe_session()`, which does two
+things: it takes a single reentrant lock (`_SWE_LOCK` — an `RLock` because
+a few helpers nest calls, e.g. `sweFixedStar` → `_fixstar_mag`), and it
+(re)applies the configured ephemeris path if the calling thread has not
+seen it yet.
+
+That second part is not optional. Setting the path once at import — on the
+main thread — left worker threads on Linux with **no** ephemeris path, so
+they silently fell back to the built-in Moshier ephemeris (positions off
+by roughly 0.02″) and could not open the fixed-star catalogue at all.
+Results from a thread pool therefore disagreed with the same computation
+run synchronously. Fixed in Task v1.0-01b; pinned by
+`EphemerisPathPerThreadTests` in `tests/test_concurrency.py`.
+
+New code inside `swe.py` should use `_ephe_session()` rather than taking
+`_SWE_LOCK` directly, so the path guarantee is never accidentally skipped.
 
 The practical guarantee: **you can build charts from multiple threads
 concurrently** (mixing tropical and sidereal) and every result is exactly

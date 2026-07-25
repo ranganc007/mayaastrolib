@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Fixed
+- **Charts computed on a worker thread were silently less accurate (Linux).**
+  The Swiss Ephemeris path was applied once at import, on the main thread.
+  The Linux `pyswisseph` wheels put the library's `swed` state struct in
+  thread-local storage, so `swe_set_ephe_path` never reached worker threads:
+  every swisseph call from a thread pool fell back to the built-in Moshier
+  ephemeris — positions off by roughly 0.02″ — and fixed-star lookups failed
+  outright with `swe_fixstar(): could not find star name ...`.
+
+  This affected exactly the paths 0.5.0 added for concurrent use:
+  `mayaastrolib.aio` (`achart` / `afull_report` / `afull_report_json`, which
+  run in an executor thread) and any direct `ThreadPoolExecutor` use. A
+  sidereal chart built via `await afull_report(...)` did not match the same
+  chart built via `full_report(...)`. macOS was unaffected, which is why it
+  went unnoticed locally — it was failing in CI on every Python version
+  since 0.5.0.
+
+  Every swisseph entry point now runs inside `_ephe_session()`, which
+  re-applies the ephemeris path once per thread before the call. Pinned by
+  `EphemerisPathPerThreadTests` in `tests/test_concurrency.py`; see
+  `docs/CONCURRENCY.md`.
+
 ### Changed
 - **Dev tooling is pinned.** `ruff==0.15.16` and `mypy==2.1.0` in the `dev`
   extras (previously bare `"ruff"` / `"mypy"`). `ruff format` output and
