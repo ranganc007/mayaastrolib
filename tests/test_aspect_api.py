@@ -4,11 +4,9 @@ Covers:
 - ``Aspect.name`` property and ``const.ASPECT_NAMES`` mapping
 - ``Aspect.activeObj`` / ``passiveObj`` references to the original Object
 - ``getAspect`` returning ``None`` instead of a sentinel
-- ``getAspectOrSentinel`` deprecation warning
 """
 
 import unittest
-import warnings
 
 from mayaastrolib import aspects, const
 from mayaastrolib.chart import Chart
@@ -47,14 +45,26 @@ class AspectNameTests(unittest.TestCase):
         # Sample chart has Sun-Moon Square per recipes/aspects.py
         self.assertEqual(asp.name, const.ASPECT_NAMES[asp.type])
 
-    def test_no_aspect_name_for_sentinel(self):
-        # Force a sentinel via the deprecated API
+    def test_no_aspect_name_for_no_aspect_type(self):
+        """``Aspect.name`` still degrades gracefully for NO_ASPECT.
+
+        Before 1.0 such an Aspect came from ``getAspectOrSentinel()``. That
+        constructor is gone, so build one directly from a properties dict —
+        the ``name`` lookup is what is under test, not how it was produced.
+        """
         chart = _chart()
         sun = chart.get(const.SUN)
         moon = chart.get(const.MOON)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            asp = aspects.getAspectOrSentinel(sun, moon, [])
+        asp = aspects.Aspect(
+            {
+                "type": const.NO_ASPECT,
+                "orb": 0,
+                "direction": const.DEXTER,
+                "condition": const.ASSOCIATE,
+                "active": {"id": sun.id, "inOrb": False, "movement": const.EXACT},
+                "passive": {"id": moon.id, "inOrb": False, "movement": const.EXACT},
+            }
+        )
         self.assertEqual(asp.type, const.NO_ASPECT)
         self.assertEqual(asp.name, "No Aspect")
 
@@ -118,31 +128,6 @@ class GetAspectReturnTests(unittest.TestCase):
         asp = aspects.getAspect(sun, moon, const.MAJOR_ASPECTS)
         self.assertIsNotNone(asp)
         self.assertIn(asp.type, const.ASPECT_NAMES)
-
-
-class DeprecatedSentinelTests(unittest.TestCase):
-    def test_getAspectOrSentinel_warns(self):
-        chart = _chart()
-        sun = chart.get(const.SUN)
-        moon = chart.get(const.MOON)
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            asp = aspects.getAspectOrSentinel(sun, moon, const.MAJOR_ASPECTS)
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "getAspectOrSentinel should emit DeprecationWarning",
-        )
-        self.assertIsNotNone(asp)
-
-    def test_getAspectOrSentinel_returns_sentinel_on_miss(self):
-        chart = _chart()
-        sun = chart.get(const.SUN)
-        moon = chart.get(const.MOON)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            asp = aspects.getAspectOrSentinel(sun, moon, [])
-        self.assertEqual(asp.type, const.NO_ASPECT)
-        self.assertFalse(asp.exists())
 
 
 if __name__ == "__main__":
