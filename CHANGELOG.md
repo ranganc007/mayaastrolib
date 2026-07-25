@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Dev tooling is pinned.** `ruff==0.15.16` and `mypy==2.1.0` in the `dev`
+  extras (previously bare `"ruff"` / `"mypy"`). `ruff format` output and
+  mypy's error set change between releases, so floating versions made the
+  pre-completion checklist unreproducible on a fresh install. Dev-only —
+  no constraint on library consumers. Re-settling the tree with the pinned
+  ruff produced **zero** churn (131 files unchanged). See
+  `docs/RUFF-DEBT.md`.
+
+### Fixed
+- **Fixed-star tests are now hermetic.** Tests that need the Swiss Ephemeris
+  star catalogue (`sefstars.txt` / `fixstars.cat`) guard on a new
+  `tests/fixstar_support.requires_fixstar_data` probe and *skip* when the
+  catalogue is unreachable, instead of hard-failing with
+  `swisseph.Error: could not find star name algol` — an environmental
+  condition that read like a code bug. Six tests across
+  `test_fixstar_mag_cache.py`, `test_concurrency.py`, and
+  `test_serialization.py` are guarded. No assertion was weakened: with the
+  catalogue present all six still run and pass (664 passed / 0 skipped);
+  with it absent the suite is green at 658 passed / 6 skipped.
+
+  Note: the catalogue **is** vendored in `mayaastrolib/resources/swefiles/`
+  and shipped as package data, so a normal checkout or wheel install runs
+  these tests for real. The guard covers the case where the ephemeris path
+  is repointed via `mayaastrolib.ephem.setPath` or package data is stripped.
+
 ## [0.5.0] — 2026-06-08
 
 ### Added

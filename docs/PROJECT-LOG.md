@@ -6,6 +6,82 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-01 — release hygiene (pinned tooling, hermetic tests)
+
+Branch `v1.0-01-release-hygiene`. First item of the road-to-1.0 backlog
+(`prompts/v1.0-00-INDEX.md`).
+
+### What was done
+
+- **Pinned `ruff==0.15.16` and `mypy==2.1.0`** in the `pyproject.toml` `dev`
+  extras, with the reasoning inline and expanded in `docs/RUFF-DEBT.md`.
+- **Re-settled the format** with the pinned ruff: `ruff format .` → *131 files
+  left unchanged*. Zero churn, so the prompt's suggested separate mechanical
+  "style" commit was unnecessary and was not created.
+- **Made the fixed-star tests hermetic.** New `tests/fixstar_support.py`
+  exposes `fixstar_data_available()` (a `functools.cache`d probe that does one
+  guarded `swe.sweFixedStar(STAR_ALGOL, J2000)` — exercising *both* data files,
+  positions via `sefstars.txt` and magnitudes via `fixstars.cat`) and
+  `requires_fixstar_data`, a `unittest.skipUnless`. Applied to the six tests
+  that genuinely need the catalogue.
+
+### Corrections to the prompt's premises
+
+The prompt was written against a 0.3.0 view of the repo; two of its stated
+observations do not reproduce at 0.5.0, and are recorded here so the next
+reader does not "re-fix" them:
+
+1. **"`ruff format --check .` fails on a fresh install."** It passes. With
+   ruff 0.15.16 the tree is already fully formatted (131/131). The *pin* is
+   still worth having — it is what makes that statement stay true — but there
+   was no formatting drift to settle.
+2. **"The star data file is not vendored"** and **"four tests in
+   `tests/test_concurrency.py` hard-fail."** Both inaccurate.
+   `sefstars.txt` and `fixstars.cat` are tracked in git under
+   `mayaastrolib/resources/swefiles/`, shipped via `[tool.setuptools.package-data]`,
+   and `mayaastrolib/ephem/__init__.py` points swisseph at them on import — so
+   a clean clone *does* have them. And only **one** test in
+   `test_concurrency.py` touches fixed stars, not four; the `full_report` tests
+   never do (`LIST_OBJECTS_TRADITIONAL` has no fixed stars). The real
+   touchpoints are spread across three files: 4 in `test_fixstar_mag_cache.py`,
+   1 in `test_concurrency.py`, 1 in `test_serialization.py`.
+
+   The guard was implemented anyway, because it is genuinely load-bearing for
+   the case the prompt was reaching for: any environment that repoints the
+   ephemeris path or strips package data. That failure was reproduced
+   deliberately (below) rather than assumed.
+
+### Verification
+
+- **Data present:** `664 passed, 230 subtests, 0 skipped`; coverage **95.03%**
+  (gate 80%).
+- **Data absent (simulated):** ran the full suite against a temp ephemeris dir
+  containing only the `.se1` planet files, injected via a pytest `-p` plugin
+  calling `ephem.setPath` before collection → `658 passed, 6 skipped, 0 failed`.
+- **The guard is load-bearing, not cosmetic:** under that same path, a direct
+  `swe.sweFixedStar(STAR_ALGOL, ...)` raises
+  `Error: swisseph.fixstar2_ut: error, swe_fixstar(): could not find star name algol`
+  — exactly the failure the prompt described. Without the guard those 6 tests
+  error out.
+- Checklist: `ruff format --check .` ✅ · `ruff check .` ✅ (3 I001 import-order
+  findings from the new imports, autofixed) · `mypy mayaastrolib/` ✅ *Success:
+  no issues found in 49 source files* · `pytest -x` ✅ · coverage gate ✅.
+- No assertion in any test was weakened; no production code changed.
+
+### Surprises
+
+- `tests/` is not a package (no `__init__.py`) while `tests/golden/` is, so the
+  shared helper must be imported as a bare top-level `from fixstar_support
+  import ...` (pytest's `importmode=prepend` puts `tests/` on `sys.path`), not
+  as a relative or `tests.`-qualified import. Noted inline at each import site.
+
+### Follow-ups needed
+
+- The rest of the v1.0 backlog needs the same premise-check before execution —
+  prompts 04 and 07 are substantially complete already (see below).
+
+---
+
 ## 2026-06-08 — Task 047 — async + thread-safety (0.5.0 #3)
 
 Branch `task-047-async`. Last of the three 0.5.0 "Consumption" items.
