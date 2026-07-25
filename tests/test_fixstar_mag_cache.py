@@ -18,10 +18,14 @@ from __future__ import annotations
 
 import unittest
 
+# tests/ is not a package; pytest puts it on sys.path (importmode=prepend).
+from fixstar_support import requires_fixstar_data
+
 import mayaastrolib.ephem  # noqa: F401 — import side-effect: sets swisseph ephe path
 from mayaastrolib.ephem.swe import _fixstar_mag
 
 
+@requires_fixstar_data
 class FixstarMagCacheTests(unittest.TestCase):
     def test_cached_value_matches_direct_swisseph(self):
         """The cached function must return the same value as a direct

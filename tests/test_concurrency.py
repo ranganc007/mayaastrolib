@@ -12,6 +12,9 @@ import asyncio
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 
+# tests/ is not a package; pytest puts it on sys.path (importmode=prepend).
+from fixstar_support import requires_fixstar_data
+
 from mayaastrolib import const
 from mayaastrolib.aio import achart, afull_report, afull_report_json
 from mayaastrolib.chart import Chart
@@ -62,6 +65,7 @@ class ThreadSafetyTests(unittest.TestCase):
         for idx, report in results:
             self.assertEqual(report, reference[idx], f"case {idx} diverged under threads")
 
+    @requires_fixstar_data
     def test_fixedstar_under_threads(self):
         # sweFixedStar nests _fixstar_mag inside the same lock (RLock
         # reentrancy); pull stars concurrently to exercise it.

@@ -4,6 +4,9 @@ Task 045, the v1 schema."""
 import json
 import unittest
 
+# tests/ is not a package; pytest puts it on sys.path (importmode=prepend).
+from fixstar_support import requires_fixstar_data
+
 from mayaastrolib import aspects as _aspects
 from mayaastrolib import const
 from mayaastrolib.chart import SCHEMA_VERSION, Chart
@@ -106,6 +109,7 @@ class ObjectDictTests(_Base):
             if hid is not None:
                 self.assertIn(o["id"], houses[hid]["objects"])
 
+    @requires_fixstar_data
     def test_fixedstar_dict_has_mag(self):
         star = self.tropical.getFixedStar(const.STAR_ALGOL)
         sd = star.to_dict()
