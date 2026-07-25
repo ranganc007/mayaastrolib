@@ -37,8 +37,14 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "ruff",
-    "mypy",
+    # ruff and mypy are PINNED, not floating. `ruff format` output and mypy's
+    # error set both change between releases, so an unpinned tool makes
+    # "the checklist passes" unreproducible: a newer ruff can report the tree
+    # as unformatted on a fresh install even though it was formatted at the
+    # last commit. These are dev-only and do not constrain library consumers.
+    # See docs/RUFF-DEBT.md.
+    "ruff==0.15.16",
+    "mypy==2.1.0",
     "skyfield>=1.46",  # tests/golden/generate_fixtures.py — MIT, dev-only
 ]
 
