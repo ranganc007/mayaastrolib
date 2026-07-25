@@ -11,7 +11,6 @@ and Fixed-Stars.
 
 from __future__ import annotations
 
-import warnings
 from typing import Any
 
 from . import angle, const, props, utils
@@ -112,7 +111,7 @@ class GenericObject:
         (``movement`` / ``isRetrograde`` / ``isFast``) return ``None``
         for such objects. Pass ``preserve_speed=True`` when the new
         position meaningfully shares dynamics with the original — for
-        example, antiscia, where the reflected point moves with the
+        example, antiscion, where the reflected point moves with the
         original planet.
 
         On :class:`GenericObject`, :class:`House`, and :class:`FixedStar`
@@ -138,30 +137,6 @@ class GenericObject:
                 new.latspeed = None
         return new
 
-    def relocate(self, lon: float) -> None:
-        """[DEPRECATED] In-place relocate. Use ``with_longitude(lon)`` instead.
-
-        ``relocate()`` mutates ``lon`` / ``signlon`` / ``sign`` but
-        leaves any ``lonspeed`` / ``latspeed`` attributes stale, which
-        causes downstream code to read the original object's speed
-        even though the new position is symbolic. For antiscia, use
-        :meth:`antiscion` / :meth:`cantiscion`. For arbitrary
-        repositioning, use :meth:`with_longitude`. Will be removed in
-        version 1.0.
-        """
-        warnings.warn(
-            "Object.relocate(lon) mutates in place and leaves speed "
-            "attributes stale, which causes is_retrograde() and movement "
-            "to return wrong answers. Use obj.with_longitude(lon) for a "
-            "new Object, or obj.antiscion() / obj.cantiscion() for "
-            "reflection. Will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.lon = angle.norm(lon)
-        self.signlon = self.lon % 30
-        self.sign = const.LIST_SIGNS[int(self.lon / 30.0)]
-
     def antiscion(self) -> GenericObject:
         """Return the antiscion of this object — a new instance reflected
         across the 0° Cancer / 0° Capricorn axis.
@@ -183,32 +158,6 @@ class GenericObject:
         new = self.with_longitude(360 - self.lon, preserve_speed=True)
         new.type = const.OBJ_GENERIC
         return new
-
-    def antiscia(self) -> GenericObject:
-        """[DEPRECATED] Use :meth:`antiscion` instead.
-
-        Returns the same antiscion object. Will be removed in 1.0.
-        """
-        warnings.warn(
-            "Object.antiscia() is deprecated. Use obj.antiscion() instead. "
-            "Will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.antiscion()
-
-    def cantiscia(self) -> GenericObject:
-        """[DEPRECATED] Use :meth:`cantiscion` instead.
-
-        Returns the same cantiscion object. Will be removed in 1.0.
-        """
-        warnings.warn(
-            "Object.cantiscia() is deprecated. Use obj.cantiscion() instead. "
-            "Will be removed in version 1.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.cantiscion()
 
 
 # -------------------- #
@@ -365,9 +314,6 @@ class House(GenericObject):
     # docstring. Negative because the math in `inHouse` adds it to
     # `self.lon` to shift the comparison anchor 5° earlier.
     _CUSP_TOLERANCE_DEG = -5.0
-    # Backwards-compatible alias kept for any external caller that
-    # learned the old name. Slated for removal in 1.0.
-    _OFFSET = _CUSP_TOLERANCE_DEG
 
     size: float
     _num: int

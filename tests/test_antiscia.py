@@ -2,12 +2,11 @@
 
 Antiscia preserve dynamics — the reflected position shares
 ``lonspeed`` / ``latspeed`` with the original. The legacy
-``Object.antiscia`` / ``Object.cantiscia`` are now deprecated thin
+``Object.antiscia`` / ``Object.cantiscia`` were deprecated thin
 wrappers and emit ``DeprecationWarning``.
 """
 
 import unittest
-import warnings
 
 from mayaastrolib import const
 from mayaastrolib.chart import Chart
@@ -75,37 +74,6 @@ class CantiscionTests(unittest.TestCase):
         c = self.sun.cantiscion()
         expected = (360 - self.sun.lon) % 360
         self.assertAlmostEqual(c.lon, expected, places=5)
-
-
-class DeprecatedAntisciaTests(unittest.TestCase):
-    def setUp(self):
-        self.chart = _chart()
-        self.sun = self.chart.get(const.SUN)
-
-    def test_antiscia_warns(self):
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            self.sun.antiscia()
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "Object.antiscia() should emit DeprecationWarning",
-        )
-
-    def test_antiscia_returns_same_as_antiscion(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            legacy = self.sun.antiscia()
-        modern = self.sun.antiscion()
-        self.assertAlmostEqual(legacy.lon, modern.lon, places=5)
-
-    def test_cantiscia_warns(self):
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            self.sun.cantiscia()
-        self.assertTrue(
-            any(issubclass(w.category, DeprecationWarning) for w in captured),
-            "Object.cantiscia() should emit DeprecationWarning",
-        )
 
 
 if __name__ == "__main__":
