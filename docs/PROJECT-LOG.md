@@ -6,6 +6,78 @@ Each entry should follow this template:
 
 ---
 
+## 2026-07-25 — Task v1.0-05 — declare and freeze the public API
+
+Branch `v1.0-05-freeze-public-api`.
+
+### What was done
+
+- `__all__` on 25 modules: the 12 core ones and all 13 `vedic` ones.
+  `const.py` gets a **computed** `__all__` (`[n for n in dir() if not
+  n.startswith("_")]`) — it defines 200 constants and imports nothing, so the
+  computed set is exactly right and cannot drift as constants are added.
+- `docs/API-STABILITY.md` — the frozen surface, the `vedic` fidelity tiering,
+  the not-public list with the `Chart` route to each, the post-1.0
+  deprecation policy, and the known wrinkles (camelCase, the `_compat`
+  dual-access form, vestigial `Aspect.exists()`, the empty `profections`
+  module).
+- `tests/test_public_api.py` — 15 tests / 486 subtests.
+- README gains an "API stability" section pointing at the document.
+
+### The design call: lazy, not eager, convenience imports
+
+The prompt asked for top-level re-exports so `from mayaastrolib import
+Chart, Datetime, GeoPos, const` works. Implementing that with ordinary
+imports in `__init__.py` would have **regressed a deliberate 0.5.0
+property**: `import mayaastrolib` is swisseph-free, so metadata-only and
+`const`-only consumers pay nothing for the calculation stack or the ~6 MB of
+ephemeris data. Verified before touching it — `'swisseph' in sys.modules` was
+`False` after a bare import.
+
+So the existing PEP 562 `__getattr__` (which already served `full_report`)
+was generalised into a `_LAZY_EXPORTS` table, with `__all__` and a `__dir__`
+so the surface stays discoverable to tab-completion. Resolved values are
+cached into `globals()`, so `__getattr__` runs once per name. Two tests pin
+both halves in a subprocess: a bare import does **not** load swisseph, and
+touching `mayaastrolib.Chart` **does** — proving the laziness is real and not
+an accident of swisseph never being needed.
+
+Cleaning up after that: `os` and `PackageNotFoundError` were leaking into
+`dir(mayaastrolib)` as implementation detail. Renamed to `_os` /
+`_PackageNotFoundError` so the top level lists exactly the nine contract
+names.
+
+### Verification
+
+- **Red/green on the contract itself.** A pytest plugin simulating drift —
+  appending a nonexistent name to `chart.__all__` and an undocumented one to
+  the top-level `__all__` — trips **four** independent tests
+  (`test_every_name_in_all_exists`, `test_star_import_yields_only_declared_names`,
+  `test_every_top_level_name_resolves`, `test_top_level_all_matches_the_document`).
+  Without the drift, 15 passed. The document is binding, not decorative.
+- Every symbol the README shows was checked to resolve *and* to be in its
+  module's `__all__`: the quick-start imports, the sidereal kwargs, 8 `Chart`
+  methods, 3 `Object` methods, 3 `Datetime` methods, and all 12 `vedic`
+  modules in the README table. The quick-start now runs as a test and asserts
+  the exact repr the README prints.
+- `670 passed, 716 subtests` (was 655 / 230). Coverage 95.70%. ruff and mypy
+  clean.
+
+### Deliberately not done
+
+No public name was renamed — the prompt is explicit that this task *declares*
+the surface only. The camelCase-vs-PEP-8 problem is already logged in
+`docs/IDEAS.md` and is now also recorded in API-STABILITY.md as a 2.0-scale
+change under the policy the same document sets.
+
+### Follow-ups needed
+
+- `dignities.*` and `protocols.*` have no `Chart` equivalent, so they are
+  documented as provisional rather than public. Promoting them (with an
+  `__all__` and a `Chart` route) is a 1.1 candidate.
+
+---
+
 ## 2026-07-25 — Task v1.0-04 — finish the public-API type hints
 
 Branch `v1.0-04-type-hints-core`. **Most of this prompt was already done** —

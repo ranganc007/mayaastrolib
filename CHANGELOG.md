@@ -77,6 +77,33 @@ Notes:
   `EphemerisPathPerThreadTests` in `tests/test_concurrency.py`; see
   `docs/CONCURRENCY.md`.
 
+### Added
+- **The public API is now explicit and frozen** — `docs/API-STABILITY.md`.
+  Before 1.0 "public" meant "whatever the README happened to mention". The
+  rule is now: **a name is public if and only if it appears in its module's
+  `__all__`.** 25 modules declare one (the 12 core modules plus all 13
+  `vedic` modules); `const`'s is computed from its own globals so it cannot
+  drift.
+
+  The document also tiers the `vedic` subsystem by fidelity — modules
+  computing a determinate result (`ayanamsa`, `nakshatras`, `divisional`,
+  `ashtakavarga`, `kp`, `dasha`, `sadesati`) guarantee **values** as well as
+  signatures, while those shipping a documented approximation (`shadbala`,
+  `tajika*`, `upagrahas`, `yogas`) may have values refined in a minor
+  release. It names the modules deliberately *outside* the contract
+  (`ephem`, `dignities`, `predictives`, `protocols`, `tools`) and the route
+  to each through `Chart`, and states the post-1.0 deprecation policy: one
+  minor release of `DeprecationWarning` naming its replacement, a
+  `Removed (BREAKING)` entry, then a major bump.
+
+  `tests/test_public_api.py` enforces it (15 tests, 486 subtests).
+- **Top-level convenience imports:** `from mayaastrolib import Chart,
+  Datetime, GeoPos, const` now works, alongside `full_report` /
+  `full_report_json`. These resolve **lazily** (PEP 562), so
+  `import mayaastrolib` still loads neither swisseph nor the ~6 MB of
+  ephemeris data — a property 0.5.0 introduced and this release keeps under
+  test.
+
 ### Changed
 - **The `@property_with_method_compat` properties now carry real types.**
   `mayaastrolib/_compat.py` was the last untyped module; because it returned
